@@ -226,7 +226,7 @@ void TrainView::draw()
 	// top view only needs one light
 	if (tw->topCam->value()) {
 		glDisable(GL_LIGHT1);
-		glDisable(GL_LIGHT2);
+		//glDisable(GL_LIGHT2);
 	}
 	else {
 		glEnable(GL_LIGHT1);
@@ -261,21 +261,22 @@ void TrainView::draw()
 	glEnable(GL_LIGHT2);
 	glShadeModel(GL_SMOOTH);
 
-	float noAmbient[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	float whiteDiffuse[] = { 1.0f, 1.0f, 1.0f, 0.0f };
-	float position0[] = { 1.0f, 1.0f, 0.0f, 0.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, noAmbient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuse);
+	float Ambient0[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	float Diffuse0[] = { 0.02f, 0.02f, 0.2f, 0.8f };
+	float position0[] = { 0.1f, 1.0f, 0.3f, 0.0f };
+	glLightfv(GL_LIGHT0, GL_AMBIENT, Ambient0);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, Diffuse0);
 	glLightfv(GL_LIGHT0, GL_POSITION, position0);
 
-	float AmbientDiffuse1[] = { 0.5f, 0.5f, 0.0f, 1.0f };
-	float position1[] = { -2.0f, 2.0f, -5.0f, 0.0f };
-	glLightfv(GL_LIGHT1, GL_AMBIENT, AmbientDiffuse1);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, AmbientDiffuse1);
-	glLightfv(GL_LIGHT1, GL_POSITION, position1);
+	float Ambient1[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	float Diffuse1[] = { 1.0f, 1.0f, 0.1f, 1.0f };
+	float direction1[] = { 0.0f, 5.0f, 0.0f, 1.0f };
+	glLightfv(GL_LIGHT1, GL_AMBIENT, Ambient1);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, Diffuse1);
+	glLightfv(GL_LIGHT1, GL_POSITION, direction1);
 
 
-	float noAmbient2[] = { 0.1f, 0.1f, 0.1f, 0.1f };       //low ambient light
+	float noAmbient2[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	float diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	float specular[] = { 1.0,1.0,1.0,1.0 };
 	//properties of the light
@@ -458,8 +459,6 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 	{&vertexes[3],&vertexes[0],&vertexes[4],&vertexes[7]},
 	{&vertexes[4],&vertexes[5],&vertexes[6],&vertexes[7]}
 	};
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT2);
 	glShadeModel(GL_SMOOTH);
 	if (!doingShadows) {
 
@@ -480,7 +479,7 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 			else if (i == 2)
 				glColor3ub(0, 180, 0);
 			else if (i == 5)
-				glColor3ub(10, 10, 10);
+				glColor3ub(0, 0, 180);
 			else
 				glColor3ub(r, g, b);
 		}
@@ -517,16 +516,19 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 }
 
 void TrainView::
-drawSleeper(Pnt3f pos, Pnt3f up, Pnt3f right, bool doingShadows) {
-	Pnt3f front = up * right;
+drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
+	front.normalize();
+	right.normalize();
+	Pnt3f up = right * front;
 	drawCube(pos, front, right, up, 10, 0.5, 2, 255, 255, 255, doingShadows);
 }
 
 void TrainView::
-drawTrain(Pnt3f pos, Pnt3f up, Pnt3f right, bool doingShadows) {
-	up.normalize();
+drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
+	front.normalize();
+	right.normalize();
+	Pnt3f up = right * front;
 	pos = pos + 4.5 * up;
-	Pnt3f front = up * right;
 	drawCube(pos, front, right, up, 6, 8, 10, 128, 128, 180, doingShadows, 1);
 }
 
@@ -566,7 +568,7 @@ void TrainView::drawStuff(bool doingShadows)
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
-	if (arcLength.size()!= num_point)
+	if (arcLength.size()!= num_point && tw->arcLength->value()==true)
 		needToCalArcLength = true;
 	if (needToCalArcLength) {
 		arcLength.clear();
@@ -660,7 +662,7 @@ void TrainView::drawStuff(bool doingShadows)
 			Pnt3f distance = qt1 + (-1 * last_sleeper);
 			bool needToDrawTrain = false;
 			if (distance.len() > 5) {
-				drawSleeper(qt1, orient_t, cross_t, doingShadows);
+				drawSleeper(qt1, qt1 + qt0 * -1, cross_t, doingShadows);
 				last_sleeper = qt1;
 			}
 			if (needToCalArcLength) {
@@ -683,16 +685,13 @@ void TrainView::drawStuff(bool doingShadows)
 					needToDrawTrain = true;
 			}
 			if (needToDrawTrain) {
-				Pnt3f front = orient_t * cross_t;
-				drawTrain(qt1, orient_t, cross_t, doingShadows);
-				float whiteAmbientDiffuse[] = { 0.5f, 0.5f, 0.5f, 0.5f };
-				float position[4] = { 0.0,0.0,0.0, 1.0f };
-				Pnt3f pos0 = m_pTrack->points[0].pos;
-				Pnt3f ori0 = m_pTrack->points[0].orient;
+				Pnt3f front = qt1 + qt0 * -1;
 				float position2[] = { qt1.x,qt1.y,qt1.z + 3, 1.0f };
 				float direction[] = { front.x,front.y,front.z };
 				glLightfv(GL_LIGHT2, GL_POSITION, position2);
 				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction);
+
+				drawTrain(qt1, front, cross_t, doingShadows);
 				trainDrawed = true;
 			}
 		}
