@@ -376,6 +376,14 @@ setProjection()
 #ifdef EXAMPLE_SOLUTION
 		trainCamView(this, aspect);
 #endif
+		//glClear(GL_COLOR_BUFFER_BIT);
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(100, aspect, 0.01, 200);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		gluLookAt(trainPos.x, trainPos.y, trainPos.z, trainPos.x + trainFront.x, trainPos.y + trainFront.y, trainPos.z + trainFront.z, trainUp.x, trainUp.y, trainUp.z);
 	}
 }
 
@@ -415,8 +423,15 @@ void mulRotateMatrix(float* matrix, Pnt3f& points) {
 	}
 }
 
+/*
+material:	0 = shape
+			1 = metal
+			2 = plastic
+*/
+
+
 void TrainView::
-drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float l, float r, float g, float b, bool doingShadows, bool debug = 0) {
+drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float l, float r, float g, float b, int material, bool doingShadows, bool debug = 0) {
 	Pnt3f vertexes[8];
 	char minus[8][3]{
 	{-1,-1, 1 },
@@ -498,18 +513,23 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 			printf("%f %f %f\n", normal.x + diagonal1.x, normal.y + diagonal1.y, normal.z + diagonal1.z);
 			printf("%f %f %f\n", normal.x + diagonal2.x, normal.y + diagonal2.y, normal.z + diagonal2.z);
 		}
-		//glNormal3f(normal.x, normal.y, normal.z);
+		if (material == 2)
+			glNormal3f(normal.x, normal.y, normal.z);
 		glTexCoord2f(0.0f, 0.0f);
-		glNormal3f(normal.x + diagonal1.x, normal.y + diagonal1.y, normal.z + diagonal1.z);
+		if (material == 1)
+			glNormal3f(normal.x + diagonal1.x, normal.y + diagonal1.y, normal.z + diagonal1.z);
 		glVertex3f(surface[i][0]->x, surface[i][0]->y, surface[i][0]->z);
 		glTexCoord2f(1.0f, 0.0f);
-		glNormal3f(normal.x + diagonal2.x, normal.y + diagonal2.y, normal.z + diagonal2.z);
+		if (material == 1)
+			glNormal3f(normal.x + diagonal2.x, normal.y + diagonal2.y, normal.z + diagonal2.z);
 		glVertex3f(surface[i][1]->x, surface[i][1]->y, surface[i][1]->z);
 		glTexCoord2f(1.0f, 1.0f);
-		glNormal3f(normal.x - diagonal1.x, normal.y - diagonal1.y, normal.z - diagonal1.z);
+		if (material == 1)
+			glNormal3f(normal.x - diagonal1.x, normal.y - diagonal1.y, normal.z - diagonal1.z);
 		glVertex3f(surface[i][2]->x, surface[i][2]->y, surface[i][2]->z);
 		glTexCoord2f(0.0f, 1.0f);
-		glNormal3f(normal.x - diagonal2.x, normal.y - diagonal2.y, normal.z - diagonal2.z);
+		if (material == 1)
+			glNormal3f(normal.x - diagonal2.x, normal.y - diagonal2.y, normal.z - diagonal2.z);
 		glVertex3f(surface[i][3]->x, surface[i][3]->y, surface[i][3]->z);
 		glEnd();
 	}
@@ -520,7 +540,7 @@ drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	front.normalize();
 	right.normalize();
 	Pnt3f up = right * front;
-	drawCube(pos, front, right, up, 10, 0.5, 2, 255, 255, 255, doingShadows);
+	drawCube(pos, front, right, up, 10, 0.5, 2, 255, 255, 255,1, doingShadows);
 }
 
 void TrainView::
@@ -529,7 +549,14 @@ drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	right.normalize();
 	Pnt3f up = right * front;
 	pos = pos + 4.5 * up;
-	drawCube(pos, front, right, up, 6, 8, 10, 128, 128, 180, doingShadows, 1);
+	drawCube(pos, front, right, up, 6, 8, 10, 128, 128, 180,1, doingShadows, 1);
+}
+
+void TrainView::
+drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
+	Pnt3f center = (start + end) * 0.5;
+	Pnt3f difference = end + start * -1;
+	drawCube(center, difference, right, right * difference, 0.3, 0.3, difference.len()+0.05, 109, 72, 55,2, doingShadows);
 }
 
 //************************************************************************
@@ -568,7 +595,7 @@ void TrainView::drawStuff(bool doingShadows)
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
-	if (arcLength.size()!= num_point && tw->arcLength->value()==true)
+	if (arcLength.size() != num_point && tw->arcLength->value() == true)
 		needToCalArcLength = true;
 	if (needToCalArcLength) {
 		arcLength.clear();
@@ -653,12 +680,8 @@ void TrainView::drawStuff(bool doingShadows)
 			Pnt3f cross_t = ((qt1 + qt0 * -1) * orient_t);
 			cross_t.normalize();
 			cross_t = cross_t * (track_width / 2);
-			glBegin(GL_LINES);
-			glVertex3f(qt0.x + cross_t.x, qt0.y + cross_t.y, qt0.z + cross_t.z);
-			glVertex3f(qt1.x + cross_t.x, qt1.y + cross_t.y, qt1.z + cross_t.z);
-			glVertex3f(qt0.x - cross_t.x, qt0.y - cross_t.y, qt0.z - cross_t.z);
-			glVertex3f(qt1.x - cross_t.x, qt1.y - cross_t.y, qt1.z - cross_t.z);
-			glEnd();
+			drawTrack(qt0 + cross_t, qt1 + cross_t, cross_t, doingShadows);
+			drawTrack(qt0 + cross_t * -1, qt1 + cross_t * -1, cross_t, doingShadows);
 			Pnt3f distance = qt1 + (-1 * last_sleeper);
 			bool needToDrawTrain = false;
 			if (distance.len() > 5) {
@@ -685,13 +708,21 @@ void TrainView::drawStuff(bool doingShadows)
 					needToDrawTrain = true;
 			}
 			if (needToDrawTrain) {
-				Pnt3f front = qt1 + qt0 * -1;
-				float position2[] = { qt1.x,qt1.y,qt1.z + 3, 1.0f };
-				float direction[] = { front.x,front.y,front.z };
+				trainFront = qt1 + qt0 * -1;
+				trainFront.normalize();
+				trainUp = cross_t * trainFront;
+				trainUp.normalize();
+				trainPos = Pnt3f(qt1 + trainUp * 3);
+				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
+				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
+				float direction[] = { trainFront.x,trainFront.y,trainFront.z };
 				glLightfv(GL_LIGHT2, GL_POSITION, position2);
 				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction);
+				if (!tw->trainCam->value())
+					drawTrain(qt1, trainFront, cross_t, doingShadows);
+					
 
-				drawTrain(qt1, front, cross_t, doingShadows);
+
 				trainDrawed = true;
 			}
 		}

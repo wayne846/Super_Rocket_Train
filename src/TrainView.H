@@ -78,9 +78,10 @@ class TrainView : public Fl_Gl_Window
 		// pick a point (for when the mouse goes down)
 		void doPick();
 	private:
-		void drawCube(Pnt3f, Pnt3f, Pnt3f, Pnt3f, float, float, float, float, float, float, bool, bool);
+		void drawCube(Pnt3f, Pnt3f, Pnt3f, Pnt3f, float, float, float, float, float, float, int, bool, bool);
 		void drawTrain(Pnt3f, Pnt3f, Pnt3f, bool);
 		void drawSleeper(Pnt3f, Pnt3f, Pnt3f, bool);
+		void drawTrack(Pnt3f, Pnt3f, Pnt3f, bool);
 
 	public:
 		ArcBallCam		arcball;			// keep an ArcBall for the UI
@@ -94,4 +95,8 @@ class TrainView : public Fl_Gl_Window
 		
 		std::vector<float> arcLength;
 		float totalArcLength = 0;
+		Pnt3f trainPos;
+		Pnt3f trainFront;
+		Pnt3f trainUp;
+		Pnt3f trainRight;
 };
