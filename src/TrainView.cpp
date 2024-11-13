@@ -133,7 +133,6 @@ int TrainView::handle(int event)
 			cp->pos.y = (float)ry;
 			cp->pos.z = (float)rz;
 			damage(1);
-			needToCalArcLength = true;
 		}
 		break;
 
@@ -635,16 +634,9 @@ void TrainView::drawStuff(bool doingShadows)
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
-	if (arcLength.size() != num_point && tw->arcLength->value() == true)
-		needToCalArcLength = true;
-	if (needToCalArcLength) {
-		arcLength.clear();
-		for (int i = 0; i < num_point; i++)
-			arcLength.push_back(0);
-		totalArcLength = 0;
-	}
 
 	bool trainDrawed = false;
+	float presentArcLength = 0;
 	for (int i = 0; i < num_point; ++i) {
 
 		// pos
@@ -707,6 +699,8 @@ void TrainView::drawStuff(bool doingShadows)
 		float percent = 1.0f / DIVIDE_LINE;
 		float t = 0;
 		Pnt3f qt(MxT(cp_pos_x, t), MxT(cp_pos_y, t), MxT(cp_pos_z, t));
+		
+
 		for (size_t j = 0; j < DIVIDE_LINE; j++) {
 			Pnt3f qt0 = qt;
 			t += percent;
@@ -728,23 +722,13 @@ void TrainView::drawStuff(bool doingShadows)
 				drawSleeper(qt1, qt1 + qt0 * -1, cross_t, doingShadows);
 				last_sleeper = qt1;
 			}
-			if (needToCalArcLength) {
-				float qtl = (qt1 + (-1 * qt0)).len();
-				totalArcLength += qtl;
-				arcLength[i] += qtl;
-				t_time = 0;
-			}
 			if (tw->arcLength->value() == false) {
 				if (t_time * m_pTrack->points.size() >= i + t && t_time * m_pTrack->points.size() <= i + t + percent)
 					needToDrawTrain = true;
 			}
-			else if (!trainDrawed) {
-				float totalPercrnt = 0;
-				for (int k = 0; k < i; k++) {
-					totalPercrnt += arcLength[k] / totalArcLength;
-				}
-				totalPercrnt += arcLength[i] / totalArcLength * t;
-				if (totalPercrnt >= t_time)
+			else  {
+				presentArcLength += (qt1 + (-1 * qt0)).len();
+				if (!trainDrawed && presentArcLength / totalArcLength >= t_time)
 					needToDrawTrain = true;
 			}
 			if (needToDrawTrain) {
@@ -760,16 +744,11 @@ void TrainView::drawStuff(bool doingShadows)
 				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction);
 				if (!tw->trainCam->value())
 					drawTrain(qt1, trainFront, cross_t, doingShadows);
-					
-
-
 				trainDrawed = true;
 			}
 		}
-
 	}
-	if (needToCalArcLength)
-		needToCalArcLength = false;
+	totalArcLength = presentArcLength;
 
 #ifdef EXAMPLE_SOLUTION
 	drawTrack(this, doingShadows);

@@ -81,7 +81,6 @@ void addPointCB(Fl_Widget*, TrainWindow* tw)
 		tw->m_Track.trainU += 1;
 		if (tw->m_Track.trainU >= npts) tw->m_Track.trainU -= npts;
 	}
-	tw->trainView->needToCalArcLength = true;
 	tw->damageMe();
 }
 
@@ -99,7 +98,6 @@ void deletePointCB(Fl_Widget*, TrainWindow* tw)
 			tw->m_Track.points.pop_back();
 		printf("deleted Point\n");
 	}
-	tw->trainView->needToCalArcLength = true;
 	tw->damageMe();
 }
 //***************************************************************************

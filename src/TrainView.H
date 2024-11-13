@@ -91,7 +91,6 @@ class TrainView : public Fl_Gl_Window
 		const float		DIVIDE_LINE = 128;
 		TrainWindow*	tw;				// The parent of this display window
 		CTrack*			m_pTrack;		// The track of the entire scene
-		bool needToCalArcLength;
 
 		const int MATERIAL_SHAPE = 0;
 		const int MATERIAL_METAL = 1;
