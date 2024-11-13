@@ -82,6 +82,7 @@ class TrainView : public Fl_Gl_Window
 		void drawTrain(Pnt3f, Pnt3f, Pnt3f, bool);
 		void drawSleeper(Pnt3f, Pnt3f, Pnt3f, bool);
 		void drawTrack(Pnt3f, Pnt3f, Pnt3f, bool);
+		void drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 
 	public:
 		ArcBallCam		arcball;			// keep an ArcBall for the UI
@@ -91,6 +92,11 @@ class TrainView : public Fl_Gl_Window
 		TrainWindow*	tw;				// The parent of this display window
 		CTrack*			m_pTrack;		// The track of the entire scene
 		bool needToCalArcLength;
+
+		const int MATERIAL_SHAPE = 0;
+		const int MATERIAL_METAL = 1;
+		const int MATERIAL_PLASTIC = 2;
+
 	private:
 		
 		std::vector<float> arcLength;

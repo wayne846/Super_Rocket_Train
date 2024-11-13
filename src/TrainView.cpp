@@ -559,6 +559,42 @@ drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
 	drawCube(center, difference, right, right * difference, 0.3, 0.3, difference.len()+0.05, 109, 72, 55,2, doingShadows);
 }
 
+void TrainView::
+drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth, float treeHeight, float leafHeight, float leafWidth, float leafWidthDecreaseDelta) {
+	//check to make sure tree is look good
+	if (leafWidth - (treeHeight / 2.0f / leafHeight) * leafWidthDecreaseDelta < treeTrunkWidth) {
+		leafWidth = (treeHeight / 2.0f / leafHeight) * leafWidthDecreaseDelta + treeTrunkWidth;
+	}
+
+	int treeTrunkColor[] = { 92, 64, 3 };
+	int leafColor[] = { 12, 171, 23 };
+
+	const Pnt3f ORIGIN = Pnt3f(0, 0, 0);
+	const Pnt3f UP = Pnt3f(0, 1, 0);
+	const Pnt3f FRONT = Pnt3f(0, 0, -1);
+	const Pnt3f RIGHT = Pnt3f(1, 0, 0);
+
+	int meterial = MATERIAL_PLASTIC;
+
+	//transform
+	glPushMatrix();
+	glTranslatef(pos.x, pos.y, pos.z);
+	glRotatef(rotateTheta, 0, 1, 0);
+
+	//draw trunk
+	drawCube(ORIGIN + UP * (treeHeight / 2.0f), FRONT, RIGHT, UP, treeTrunkWidth, treeHeight, treeTrunkWidth, treeTrunkColor[0], treeTrunkColor[1], treeTrunkColor[2], meterial, doingShadows);
+
+	//draw leaf
+	for (Pnt3f baseHeight = ORIGIN + UP * (treeHeight / 2.0f) + UP * (leafHeight / 2.0f); baseHeight.y <= treeHeight + leafHeight; baseHeight = baseHeight + UP * leafHeight) {
+		drawCube(baseHeight, FRONT, RIGHT, UP, leafWidth, leafHeight, leafWidth, leafColor[0], leafColor[1], leafColor[2], meterial, doingShadows);
+		leafWidth -= leafWidthDecreaseDelta;
+	}
+
+	glPopMatrix();
+	
+	
+}
+
 //************************************************************************
 // cp_pos_p0.x,cp_pos_p1.x,cp_pos_p2.x,cp_pos_p3.x };
 // * this draws all of the stuff in the world
@@ -587,6 +623,10 @@ void TrainView::drawStuff(bool doingShadows)
 			m_pTrack->points[i].draw();
 		}
 	}
+
+	//draw the tree
+	drawTree(Pnt3f(0, 0, 0), 0, doingShadows);
+
 	// draw the track
 	//####################################################################
 	// TODO: 
