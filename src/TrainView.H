@@ -92,9 +92,9 @@ class TrainView : public Fl_Gl_Window
 		TrainWindow*	tw;				// The parent of this display window
 		CTrack*			m_pTrack;		// The track of the entire scene
 
-		const int MATERIAL_SHAPE = 0;
-		const int MATERIAL_METAL = 1;
-		const int MATERIAL_PLASTIC = 2;
+		static const int MATERIAL_SHAPE = 0;
+		static const int MATERIAL_METAL = 1;
+		static const int MATERIAL_PLASTIC = 2;
 
 	private:
 		

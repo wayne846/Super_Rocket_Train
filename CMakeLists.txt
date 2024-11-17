@@ -25,6 +25,7 @@ add_executable(RollerCoasters
     ${SRC_DIR}TrainView.cpp
     ${SRC_DIR}TrainWindow.h
     ${SRC_DIR}TrainWindow.cpp
+    ${SRC_DIR}MathHelper.h
     ${INCLUDE_DIR}glad4.6/src/glad.c)
 
 add_library(Utilities 

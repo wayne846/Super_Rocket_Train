@@ -38,6 +38,8 @@
 #include "TrainWindow.H"
 #include "Utilities/3DUtils.H"
 
+#include "MathHelper.h"
+
 
 #ifdef EXAMPLE_SOLUTION
 #	include "TrainExample/TrainExample.H"
@@ -237,13 +239,16 @@ void TrainView::draw()
 	// * set the light parameters
 	//
 	//**********************************************************************
-	GLfloat lightPosition1[] = { 0,1,1,0 }; // {50, 200.0, 50, 1.0};
-	GLfloat lightPosition2[] = { 1, 0, 0, 0 };
-	GLfloat lightPosition3[] = { 0, -1, 0, 0 };
+	//GLfloat lightPosition1[] = { 0,1,1,0 }; // {50, 200.0, 50, 1.0};
+	//GLfloat lightPosition2[] = { 1, 0, 0, 0 };
+	//GLfloat lightPosition3[] = { 0, -1, 0, 0 };
 	GLfloat yellowLight[] = { 0.5f, 0.5f, .1f, 1.0 };
-	GLfloat whiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0 };
 	GLfloat blueLight[] = { .1f,.1f,.3f,1.0 };
+	GLfloat whiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0 };
+	GLfloat lightgrayLight[] = { 0.7f, 0.7f, 0.7f, 1.0 };
 	GLfloat grayLight[] = { .3f, .3f, .3f, 1.0 };
+	GLfloat darkLight[] = { .1f, .1f, .1f, 1.0 };
+	GLfloat blackLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 	//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition1);
 	//glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteLight);
@@ -260,45 +265,40 @@ void TrainView::draw()
 	glEnable(GL_LIGHT2);
 	glShadeModel(GL_SMOOTH);
 
-	float Ambient0[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-	float Diffuse0[] = { 0.02f, 0.02f, 0.2f, 0.8f };
-	float position0[] = { 0.1f, 1.0f, 0.3f, 0.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, Ambient0);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, Diffuse0);
-	glLightfv(GL_LIGHT0, GL_POSITION, position0);
+	//set light0, the main light
+	float light0_position[] = { 200.0f, 200.0f, 100.0f, 1.0f };
+	glLightfv(GL_LIGHT0, GL_AMBIENT, darkLight);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, grayLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, grayLight);
 
-	float Ambient1[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	float Diffuse1[] = { 1.0f, 1.0f, 0.1f, 1.0f };
-	float direction1[] = { 0.0f, 5.0f, 0.0f, 1.0f };
-	glLightfv(GL_LIGHT1, GL_AMBIENT, Ambient1);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, Diffuse1);
-	glLightfv(GL_LIGHT1, GL_POSITION, direction1);
+	//set light1, the first control point light
+	float light1_position[] = { m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z, 1.0 };
+	glLightfv(GL_LIGHT1, GL_AMBIENT, blackLight);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, whiteLight);
+	glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
+	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.0001f);
+	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0001f);
 
-
-	float noAmbient2[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	//set light2, the train headlight
+	float light2_position[] = { trainPos.x, trainPos.y, trainPos.z, 1.0 };
 	float diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	float specular[] = { 1.0,1.0,1.0,1.0 };
 	//properties of the light
-	glLightfv(GL_LIGHT2, GL_AMBIENT, noAmbient2);
-	glLightfv(GL_LIGHT2, GL_DIFFUSE, diffuse);
-	//glLightfv(GL_LIGHT2, GL_SPECULAR, specular);
-
-
+	glLightfv(GL_LIGHT2, GL_POSITION, light2_position);
+	glLightfv(GL_LIGHT2, GL_AMBIENT, blackLight);
+	glLightfv(GL_LIGHT2, GL_DIFFUSE, yellowLight);
+	glLightfv(GL_LIGHT2, GL_SPECULAR, yellowLight);
 	/*Spot properties*/
 	//spot direction
-	float position2[] = { 0,6,0, 1.0f };
-	float direction2[] = { 1,0,0 };
-	//glLightfv(GL_LIGHT2, GL_POSITION, position2);
-	//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction2);
-
+	float light2_direction[] = { trainFront.x, trainFront.y, trainFront.z };
+	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light2_direction);
 	//angle of the cone light emitted by the spot : value between 0 to 180
-	float spotCutOff = 60;
+	float spotCutOff = 45;
 	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotCutOff);
-
 	//exponent propertie defines the concentration of the light
 	glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, 50.0f);
-	//light attenuation (default values used here : no attenuation with the distance)
-	glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0.001f);
+	glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0.1f);
 	glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, 0.0001f);
 	glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, 0.0f);
 
@@ -309,8 +309,8 @@ void TrainView::draw()
 	glUseProgram(0);
 
 	setupFloor();
-	glDisable(GL_LIGHTING);
-	drawFloor(200, 10);
+	//glDisable(GL_LIGHTING);
+	drawFloor(200, 200);
 
 
 	//*********************************************************************
@@ -479,8 +479,8 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 		glColor3ub(r, g, b);
 		GLfloat materialAmbient[] = { r, g, b, 1.0 };
 		GLfloat materialDiffuse[] = { r, g, b, 1.0 };
-		GLfloat materialSpecular[] = { 1.0, 1.0, 1.0, 1.0 };
-		GLfloat materialShininess = 10.0;
+		GLfloat materialShininess = MathHelper::lerp(0, 128.f, 0.7);
+		GLfloat materialSpecular[] = { 1.0 * (materialShininess / 128.0f), 1.0 * (materialShininess / 128.0f), 1.0 * (materialShininess / 128.0f), 1.0 };
 		glMaterialfv(GL_FRONT, GL_AMBIENT, materialAmbient);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
@@ -512,22 +512,22 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 			printf("%f %f %f\n", normal.x + diagonal1.x, normal.y + diagonal1.y, normal.z + diagonal1.z);
 			printf("%f %f %f\n", normal.x + diagonal2.x, normal.y + diagonal2.y, normal.z + diagonal2.z);
 		}
-		if (material == 2)
+		if (material == MATERIAL_PLASTIC)
 			glNormal3f(normal.x, normal.y, normal.z);
 		glTexCoord2f(0.0f, 0.0f);
-		if (material == 1)
+		if (material == MATERIAL_METAL)
 			glNormal3f(normal.x + diagonal1.x, normal.y + diagonal1.y, normal.z + diagonal1.z);
 		glVertex3f(surface[i][0]->x, surface[i][0]->y, surface[i][0]->z);
 		glTexCoord2f(1.0f, 0.0f);
-		if (material == 1)
+		if (material == MATERIAL_METAL)
 			glNormal3f(normal.x + diagonal2.x, normal.y + diagonal2.y, normal.z + diagonal2.z);
 		glVertex3f(surface[i][1]->x, surface[i][1]->y, surface[i][1]->z);
 		glTexCoord2f(1.0f, 1.0f);
-		if (material == 1)
+		if (material == MATERIAL_METAL)
 			glNormal3f(normal.x - diagonal1.x, normal.y - diagonal1.y, normal.z - diagonal1.z);
 		glVertex3f(surface[i][2]->x, surface[i][2]->y, surface[i][2]->z);
 		glTexCoord2f(0.0f, 1.0f);
-		if (material == 1)
+		if (material == MATERIAL_METAL)
 			glNormal3f(normal.x - diagonal2.x, normal.y - diagonal2.y, normal.z - diagonal2.z);
 		glVertex3f(surface[i][3]->x, surface[i][3]->y, surface[i][3]->z);
 		glEnd();
@@ -656,7 +656,7 @@ void TrainView::drawStuff(bool doingShadows)
 		float cp_orient_x[4] = { cp_orient_p0.x,cp_orient_p1.x,cp_orient_p2.x,cp_orient_p3.x };
 		float cp_orient_y[4] = { cp_orient_p0.y,cp_orient_p1.y,cp_orient_p2.y,cp_orient_p3.y };
 		float cp_orient_z[4] = { cp_orient_p0.z,cp_orient_p1.z,cp_orient_p2.z,cp_orient_p3.z };
-		if (tw->splineBrowser->value() == 1) {
+		if (tw->splineBrowser->value() == TrainWindow::LINEAR) { //linear
 			M = new float[16]{
 				0,0,0,0,
 				0,0,-1,1,
@@ -667,7 +667,7 @@ void TrainView::drawStuff(bool doingShadows)
 				M[i] /= 1.0f;
 			}
 		}
-		else if (tw->splineBrowser->value() == 2) {
+		else if (tw->splineBrowser->value() == TrainWindow::CARDINAL) { //cardinal
 			M = new float[16]{
 				-1,2,-1,0,
 				3,-5,0,2,
@@ -678,7 +678,7 @@ void TrainView::drawStuff(bool doingShadows)
 				M[i] /= 2.0f;
 			}
 		}
-		else {
+		else { // B-spline
 			M = new float[16]{
 				-1,3,-3,1,
 				3,-6,0,4,

@@ -68,6 +68,10 @@ class TrainWindow : public Fl_Double_Window {
 		double cycle_time();
 
 	public:
+		static const int LINEAR = 1;
+		static const int CARDINAL = 2;
+		static const int B_SPLINE = 3;
+
 		// keep track of the stuff in the world
 		CTrack				m_Track;
 
