@@ -268,9 +268,9 @@ void TrainView::draw()
 	//set light0, the main light
 	float light0_position[] = { 200.0f, 200.0f, 100.0f, 1.0f };
 	glLightfv(GL_LIGHT0, GL_AMBIENT, darkLight);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, grayLight);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, blueLight);
 	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, grayLight);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, whiteLight);
 
 	//set light1, the first control point light
 	float light1_position[] = { m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z, 1.0 };
@@ -281,7 +281,8 @@ void TrainView::draw()
 	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0001f);
 
 	//set light2, the train headlight
-	float light2_position[] = { trainPos.x, trainPos.y, trainPos.z, 1.0 };
+	Pnt3f light2_position_pnt3f = trainPos + trainFront * 5.1 + trainUp * 4;
+	float light2_position[] = { light2_position_pnt3f.x, light2_position_pnt3f.y, light2_position_pnt3f.z, 1.0 };
 	float diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	float specular[] = { 1.0,1.0,1.0,1.0 };
 	//properties of the light
@@ -294,7 +295,7 @@ void TrainView::draw()
 	float light2_direction[] = { trainFront.x, trainFront.y, trainFront.z };
 	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light2_direction);
 	//angle of the cone light emitted by the spot : value between 0 to 180
-	float spotCutOff = 45;
+	float spotCutOff = 60;
 	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotCutOff);
 	//exponent propertie defines the concentration of the light
 	glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, 50.0f);
@@ -421,16 +422,19 @@ void mulRotateMatrix(float* matrix, Pnt3f& points) {
 		}
 	}
 }
-
-/*
-material:	0 = shape
-			1 = metal
-			2 = plastic
-*/
-
-
+/**
+ * @brief draw a cuboid in the world space
+ * @param pos center of cuboid
+ * @param front front direction of cuboid
+ * @param up up direction of cuboid
+ * @param height height of cuboid (y axis)
+ * @param length lenght of cuboid (z axis)
+ * @param width width of cuboid (x axis)
+ * @param material influence the normal vector, 0=shape, 1=metal, 2=plastic
+ * @param smoothness influence the strength of specular, range is [0, 1]
+ */
 void TrainView::
-drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float l, float r, float g, float b, int material, bool doingShadows, bool debug = 0) {
+drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug) {
 	Pnt3f vertexes[8];
 	char minus[8][3]{
 	{-1,-1, 1 },
@@ -442,13 +446,12 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 	{ 1, 1,-1 },
 	{-1, 1,-1 }
 	};
-
 	for (int i = 0; i < 8; i++) {
-		vertexes[i].x = minus[i][0] * w / 2;
-		vertexes[i].y = minus[i][1] * h / 2;
-		vertexes[i].z = minus[i][2] * l / 2;
+		vertexes[i].x = minus[i][0] * width / 2;
+		vertexes[i].y = minus[i][1] * height / 2;
+		vertexes[i].z = minus[i][2] * length / 2;
 	}
-
+	Pnt3f right = front * up;
 	front.normalize();
 	right.normalize();
 	up.normalize();
@@ -475,14 +478,8 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 	};
 	glShadeModel(GL_SMOOTH);
 	if (!doingShadows) {
-
-		glColor3ub(r, g, b);
-		GLfloat materialAmbient[] = { r, g, b, 1.0 };
-		GLfloat materialDiffuse[] = { r, g, b, 1.0 };
-		GLfloat materialShininess = MathHelper::lerp(0, 128.f, 0.7);
-		GLfloat materialSpecular[] = { 1.0 * (materialShininess / 128.0f), 1.0 * (materialShininess / 128.0f), 1.0 * (materialShininess / 128.0f), 1.0 };
-		glMaterialfv(GL_FRONT, GL_AMBIENT, materialAmbient);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
+		GLfloat materialShininess = MathHelper::lerp(0, 128.f, smoothness);
+		GLfloat materialSpecular[] = { 1.0 * smoothness, 1.0 * smoothness, 1.0 * smoothness, 1.0 };
 		glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
 		glMaterialf(GL_FRONT, GL_SHININESS, materialShininess);
 	}
@@ -494,8 +491,6 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f right, Pnt3f up, float w, float h, float 
 				glColor3ub(0, 180, 0);
 			else if (i == 5)
 				glColor3ub(0, 0, 180);
-			else
-				glColor3ub(r, g, b);
 		}
 		glBegin(GL_QUADS);
 		Pnt3f normal = (*surface[i][3] + -1 * *surface[i][0]) * (*surface[i][1] + -1 * *surface[i][0]);
@@ -539,7 +534,10 @@ drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	front.normalize();
 	right.normalize();
 	Pnt3f up = right * front;
-	drawCube(pos, front, right, up, 10, 0.5, 2, 255, 255, 255,1, doingShadows);
+	if (!doingShadows) {
+		glColor3ub(255, 255, 255);
+	}
+	drawCube(pos, front, up, 10, 0.5, 2, MATERIAL_METAL, 0.9, doingShadows);
 }
 
 void TrainView::
@@ -548,14 +546,20 @@ drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	right.normalize();
 	Pnt3f up = right * front;
 	pos = pos + 4.5 * up;
-	drawCube(pos, front, right, up, 6, 8, 10, 128, 128, 180,1, doingShadows, 1);
+	if (!doingShadows) {
+		glColor3ub(128, 128, 180);
+	}
+	drawCube(pos, front, up, 6, 8, 10, MATERIAL_METAL, 0.9, doingShadows, true);
 }
 
 void TrainView::
 drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
 	Pnt3f center = (start + end) * 0.5;
 	Pnt3f difference = end + start * -1;
-	drawCube(center, difference, right, right * difference, 0.3, 0.3, difference.len()+0.05, 109, 72, 55,2, doingShadows);
+	if (!doingShadows) {
+		glColor3ub(109, 72, 55);
+	}
+	drawCube(center, difference, right * difference, 0.3, 0.3, difference.len() + 0.05, MATERIAL_PLASTIC, 0.7, doingShadows);
 }
 
 void TrainView::
@@ -573,7 +577,7 @@ drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth, 
 	const Pnt3f FRONT = Pnt3f(0, 0, -1);
 	const Pnt3f RIGHT = Pnt3f(1, 0, 0);
 
-	int meterial = MATERIAL_PLASTIC;
+	int material = MATERIAL_PLASTIC;
 
 	//transform
 	glPushMatrix();
@@ -581,17 +585,20 @@ drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth, 
 	glRotatef(rotateTheta, 0, 1, 0);
 
 	//draw trunk
-	drawCube(ORIGIN + UP * (treeHeight / 2.0f), FRONT, RIGHT, UP, treeTrunkWidth, treeHeight, treeTrunkWidth, treeTrunkColor[0], treeTrunkColor[1], treeTrunkColor[2], meterial, doingShadows);
+	if (!doingShadows) {
+		glColor3ub(treeTrunkColor[0], treeTrunkColor[1], treeTrunkColor[2]);
+	}
+	drawCube(ORIGIN + UP * (treeHeight / 2.0f), FRONT, UP, treeTrunkWidth, treeHeight, treeTrunkWidth, material, 0.3, doingShadows);
 
 	//draw leaf
+	if (!doingShadows) {
+		glColor3ub(leafColor[0], leafColor[1], leafColor[2]);
+	}
 	for (Pnt3f baseHeight = ORIGIN + UP * (treeHeight / 2.0f) + UP * (leafHeight / 2.0f); baseHeight.y <= treeHeight + leafHeight; baseHeight = baseHeight + UP * leafHeight) {
-		drawCube(baseHeight, FRONT, RIGHT, UP, leafWidth, leafHeight, leafWidth, leafColor[0], leafColor[1], leafColor[2], meterial, doingShadows);
+		drawCube(baseHeight, FRONT, UP, leafWidth, leafHeight, leafWidth, material, 0.3, doingShadows);
 		leafWidth -= leafWidthDecreaseDelta;
 	}
-
 	glPopMatrix();
-	
-	
 }
 
 //************************************************************************
@@ -740,8 +747,8 @@ void TrainView::drawStuff(bool doingShadows)
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
 				float direction[] = { trainFront.x,trainFront.y,trainFront.z };
-				glLightfv(GL_LIGHT2, GL_POSITION, position2);
-				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction);
+				//glLightfv(GL_LIGHT2, GL_POSITION, position2);
+				//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction);
 				if (!tw->trainCam->value())
 					drawTrain(qt1, trainFront, cross_t, doingShadows);
 				trainDrawed = true;

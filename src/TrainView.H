@@ -78,7 +78,7 @@ class TrainView : public Fl_Gl_Window
 		// pick a point (for when the mouse goes down)
 		void doPick();
 	private:
-		void drawCube(Pnt3f, Pnt3f, Pnt3f, Pnt3f, float, float, float, float, float, float, int, bool, bool);
+		void drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug = 0);
 		void drawTrain(Pnt3f, Pnt3f, Pnt3f, bool);
 		void drawSleeper(Pnt3f, Pnt3f, Pnt3f, bool);
 		void drawTrack(Pnt3f, Pnt3f, Pnt3f, bool);

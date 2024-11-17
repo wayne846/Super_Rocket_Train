@@ -124,6 +124,13 @@ void drawFloor(float size, int nSquares)
 	v[2] = 0;
 	xd = (maxX - minX) / ((float) nSquares);
 	yd = (maxY - minY) / ((float) nSquares);
+
+	float smoothness = 0.2f;
+	GLfloat materialShininess = 128.0 * smoothness;
+	GLfloat materialSpecular[] = { 1.0 * smoothness, 1.0 * smoothness, 1.0 * smoothness, 1.0 };
+	glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
+	glMaterialf(GL_FRONT, GL_SHININESS, materialShininess);
+
 	glBegin(GL_QUADS);
 	for(x=0,xp=minX; x<nSquares; x++,xp+=xd) {
 		for(y=0,yp=minY,i=x; y<nSquares; y++,i++,yp+=yd) {
