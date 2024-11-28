@@ -51,6 +51,7 @@
 #pragma once
 
 #include "3DUtils.H"
+#include <glm/glm.hpp>
 
 //***************************************************************************
 //
@@ -171,6 +172,8 @@ class ArcBallCam {
 		// this really goes with the window, but its handy here, and we can't
 		// assume the window does it
 		void getMouseNDC(float& x, float& y);
+
+		glm::vec3 getEyePos();
 
 	private:
 		// This keeps track of the rotation - the current rotation is

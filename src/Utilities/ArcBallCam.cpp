@@ -368,6 +368,11 @@ computeNow(const float nowX, const float nowY)
 	}
 }
 
+glm::vec3 ArcBallCam::
+getEyePos() {
+	return glm::vec3(-eyeX, -eyeY, -eyeZ);
+}
+
 //*****************************************************************************
 //
 // Minimal Quaternion Class - if you don't know what a quaternion is, don't

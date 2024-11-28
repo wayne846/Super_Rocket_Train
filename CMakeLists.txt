@@ -5,6 +5,15 @@ set(SRC_DIR ${PROJECT_SOURCE_DIR}/src/)
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include/)
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib/)
 
+set(SRC_SHADER 
+    ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.frag
+) 
+
+set(SRC_RENDER_UNIT
+    ${SRC_DIR}RenderUnit/Shader.h
+)
+
 include_directories(${INCLUDE_DIR})
 include_directories(${INCLUDE_DIR}glad4.6/include/)
 include_directories(${INCLUDE_DIR}glm-0.9.8.5/glm/)
@@ -26,7 +35,14 @@ add_executable(RollerCoasters
     ${SRC_DIR}TrainWindow.h
     ${SRC_DIR}TrainWindow.cpp
     ${SRC_DIR}MathHelper.h
-    ${INCLUDE_DIR}glad4.6/src/glad.c)
+    ${INCLUDE_DIR}glad4.6/src/glad.c
+
+    ${SRC_SHADER}
+    ${SRC_RENDER_UNIT}
+)
+
+source_group("shaders" FILES ${SRC_SHADER})
+source_group("RenderUnit" FILES ${SRC_RENDER_UNIT})
 
 add_library(Utilities 
     ${SRC_DIR}Utilities/3DUtils.h
@@ -50,4 +66,25 @@ target_link_libraries(RollerCoasters
     ${LIB_DIR}glu32.lib)
 
 target_link_libraries(RollerCoasters Utilities)
+
+set(ASSETS_SOURCE_PATHS
+    ${PROJECT_SOURCE_DIR}/assets
+)
+
+# 每次編譯完成後，複製資料夾到執行檔所在資料夾(debug/release)
+foreach(SOURCE_DIR ${ASSETS_SOURCE_PATHS})
+	get_filename_component(SOURCE_DIR_NAME ${SOURCE_DIR} NAME)
+	add_custom_command(TARGET RollerCoasters POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory 
+		${SOURCE_DIR}
+		${CMAKE_CURRENT_BINARY_DIR}/$(Configuration)/${SOURCE_DIR_NAME}
+	)
+endforeach()
+
+# 設定visual studio在編輯情況下的工作目錄與輸出目錄相同
+set_target_properties(RollerCoasters PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$(Configuration)"
+)
     
+# 設定起始專案
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT RollerCoasters)

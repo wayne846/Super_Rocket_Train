@@ -32,6 +32,8 @@
 //#include "GL/gl.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "GL/glu.h"
 
 #include "TrainView.H"
@@ -40,11 +42,8 @@
 
 #include "MathHelper.h"
 
-
-#ifdef EXAMPLE_SOLUTION
-#	include "TrainExample/TrainExample.H"
-#endif
-
+#define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
+#define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
 
 //************************************************************************
 //
@@ -58,6 +57,7 @@ TrainView(int x, int y, int w, int h, const char* l)
 	mode(FL_RGB | FL_ALPHA | FL_DOUBLE | FL_STENCIL);
 
 	resetArcball();
+	
 }
 
 //************************************************************************
@@ -172,6 +172,120 @@ int TrainView::handle(int event)
 	return Fl_Gl_Window::handle(event);
 }
 
+//need called under if(gladLoadGL())
+void TrainView::initRander() {
+	//init shader
+	simpleObjectShader = new Shader(PROJECT_DIR "/assets/shaders/simpleObject.vert", PROJECT_DIR "/assets/shaders/simpleObject.frag");
+
+	//init VAO
+	//------------------
+	//cube
+	GLfloat cubeVertices[] = {
+		//down
+		0.5f, -0.5f, 0.5f,
+		-0.5f, -0.5f, 0.5f,
+		-0.5f, -0.5f, -0.5f,
+		0.5f, -0.5f, -0.5f,
+		//front -z
+		0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, 0.5f, -0.5f,
+		0.5f, 0.5f, -0.5f,
+		//right +x
+		0.5f, -0.5f, 0.5f,
+		0.5f, -0.5f, -0.5f,
+		0.5f, 0.5f, -0.5f,
+		0.5f, 0.5f, 0.5f,
+		//back
+		-0.5f, -0.5f, 0.5f,
+		0.5f, -0.5f, 0.5f,
+		0.5f, 0.5f, 0.5f,
+		-0.5f, 0.5f, 0.5f,
+		//left
+		-0.5f, -0.5f, 0.5f,
+		-0.5f, 0.5f, 0.5f,
+		-0.5f, 0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		//top +y
+		0.5f, 0.5f, 0.5f,
+		0.5f, 0.5f, -0.5f,
+		-0.5f, 0.5f, -0.5f,
+		-0.5f, 0.5f, 0.5f
+	};
+	GLfloat cubeNormal[] = {
+		//down
+		0, -1.0f, 0,
+		0, -1.0f, 0,
+		0, -1.0f, 0,
+		0, -1.0f, 0,
+		//front -z
+		0, 0, -1.0f,
+		0, 0, -1.0f,
+		0, 0, -1.0f,
+		0, 0, -1.0f,
+		//right +x
+		1.0f, 0, 0,
+		1.0f, 0, 0,
+		1.0f, 0, 0,
+		1.0f, 0, 0,
+		//back
+		0, 0, 1.0f,
+		0, 0, 1.0f,
+		0, 0, 1.0f,
+		0, 0, 1.0f,
+		//left
+		-1.0f, 0, 0,
+		-1.0f, 0, 0,
+		-1.0f, 0, 0,
+		-1.0f, 0, 0,
+		//top +y
+		0, 1.0f, 0,
+		0, 1.0f, 0,
+		0, 1.0f, 0,
+		0, 1.0f, 0
+	};
+	GLuint cubeElement[] = {
+		//down
+		0, 1, 2,
+		0, 2, 3,
+		//front -z
+		4, 5, 6,
+		4, 6, 7,
+		//right +x
+		8, 9, 10,
+		8, 10, 11,
+		//back
+		12, 13, 14,
+		12, 14, 15,
+		//left
+		16, 17, 18,
+		16, 18, 19,
+		//top +y
+		20, 21, 22,
+		20, 22, 23,
+	};
+	glGenVertexArrays(1, &cube_VAO);
+	glGenBuffers(2, cube_VBO);
+	glGenBuffers(1, &cube_EBO);
+	glBindVertexArray(cube_VAO);
+	cube_element_amount = sizeof(cubeElement) / sizeof(GLuint);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cube_VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Normal attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cube_VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeNormal), cubeNormal, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	//Element attribute
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeElement), cubeElement, GL_STATIC_DRAW);
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+
 //************************************************************************
 //
 // * this is the code that actually draws the window
@@ -189,6 +303,10 @@ void TrainView::draw()
 	if (gladLoadGL())
 	{
 		//initiailize VAO, VBO, Shader...
+		if (!hasInitShader) {
+			initRander();
+			hasInitShader = true;
+		}
 	}
 	else
 		throw std::runtime_error("Could not initialize GLAD!");
@@ -291,7 +409,6 @@ void TrainView::draw()
 	glLightfv(GL_LIGHT2, GL_DIFFUSE, yellowLight);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, yellowLight);
 	/*Spot properties*/
-	//spot direction
 	float light2_direction[] = { trainFront.x, trainFront.y, trainFront.z };
 	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light2_direction);
 	//angle of the cone light emitted by the spot : value between 0 to 180
@@ -631,7 +748,7 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 
 	//draw the tree
-	drawTree(Pnt3f(0, 0, 0), 0, doingShadows);
+	//drawTree(Pnt3f(0, 0, 0), 0, doingShadows);
 
 	// draw the track
 	//####################################################################
@@ -757,24 +874,75 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 	totalArcLength = presentArcLength;
 
-#ifdef EXAMPLE_SOLUTION
-	drawTrack(this, doingShadows);
-#endif
+	//draw axis
+	glLineWidth(5);
+	glBegin(GL_LINES);
+	if (!doingShadows) {
+		glColor3f(1, 0, 0);
+	}
+	glVertex3f(0, 0, 0);
+	glVertex3f(20, 0, 0);
+	if (!doingShadows) {
+		glColor3f(0, 1, 0);
+	}
+	glVertex3f(0, 0, 0);
+	glVertex3f(0, 20, 0);
+	if (!doingShadows) {
+		glColor3f(0, 0, 1);
+	}
+	glVertex3f(0, 0, 0);
+	glVertex3f(0, 0, 20);
+	glEnd();
+	glLineWidth(1);
+
+
+	if (!doingShadows) {
+		//draw cube
+		simpleObjectShader->use();
+
+		glm::mat4 view;
+		glGetFloatv(GL_MODELVIEW_MATRIX, &view[0][0]);
+		glm::mat4 projection;
+		glGetFloatv(GL_PROJECTION_MATRIX, &projection[0][0]);
+		glm::mat4 model2(1.0f);
+		model2 = glm::translate(model2, glm::vec3(0, 10, 0));
+		model2 = glm::scale(model2, glm::vec3(10,10,10));
+
+		simpleObjectShader->setMat4("view", view);
+		simpleObjectShader->setMat4("projection", projection);
+		simpleObjectShader->setMat4("model", model2);
+		glm::vec3 lightPos2 = glm::vec3(50.0f, 50.0f, 50.0f);
+		simpleObjectShader->setVec3("light.position", lightPos2);
+		glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
+		simpleObjectShader->setVec3("EyePosition", eyepos);
+	
+		// light properties
+		glm::vec3 lightColor = glm::vec3(1, 1, 1);
+		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f); // decrease the influence
+		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
+		simpleObjectShader->setVec3("light.ambient", ambientColor);
+		simpleObjectShader->setVec3("light.diffuse", diffuseColor);
+		simpleObjectShader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+		// material properties
+		simpleObjectShader->setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+		simpleObjectShader->setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+		simpleObjectShader->setVec3("material.specular", 0.5f, 0.5f, 0.5f); // specular lighting doesn't have full effect on this object's material
+		simpleObjectShader->setFloat("material.shininess", 32.0f);
+
+		glBindVertexArray(cube_VAO);
+		glDrawElements(GL_TRIANGLES, cube_element_amount, GL_UNSIGNED_INT, 0);
+
+		//unbind VAO
+		glBindVertexArray(0);
+
+		//unbind shader(switch to fixed pipeline)
+		glUseProgram(0);
+	}
+	
 
 	// draw the train
-	//####################################################################
-	// TODO: 
-	//	call your own train drawing code
-	//####################################################################
-
-
-
-
-#ifdef EXAMPLE_SOLUTION
-	// don't draw the train if you're looking out the front window
-	if (!tw->trainCam->value())
-		drawTrain(this, doingShadows);
-#endif
+	
 }
 
 // 

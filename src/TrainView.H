@@ -47,11 +47,15 @@ class CTrack;
 #pragma warning(disable:4311)
 #include <Fl/Fl_Gl_Window.h>
 #include <vector>
+#include <string>
 #pragma warning(pop)
 
 // this uses the old ArcBall Code
 #include "Utilities/ArcBallCam.H"
 #include "Utilities/Pnt3f.H"
+
+#include "RenderUnit/Shader.h"
+
 class TrainView : public Fl_Gl_Window
 {
 	public:
@@ -78,6 +82,8 @@ class TrainView : public Fl_Gl_Window
 		// pick a point (for when the mouse goes down)
 		void doPick();
 	private:
+		void initRander();
+
 		void drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug = 0);
 		void drawTrain(Pnt3f, Pnt3f, Pnt3f, bool);
 		void drawSleeper(Pnt3f, Pnt3f, Pnt3f, bool);
@@ -85,23 +91,31 @@ class TrainView : public Fl_Gl_Window
 		void drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 
 	public:
+		const float DIVIDE_LINE = 128; //how many segment are track divide
+		const int MATERIAL_SHAPE = 0;
+		const int MATERIAL_METAL = 1;
+		const int MATERIAL_PLASTIC = 2;
+
 		ArcBallCam		arcball;			// keep an ArcBall for the UI
 		int				selectedCube;  // simple - just remember which cube is selected
 		float			t_time = 0;
-		const float		DIVIDE_LINE = 128;
+		
 		TrainWindow*	tw;				// The parent of this display window
 		CTrack*			m_pTrack;		// The track of the entire scene
 
-		static const int MATERIAL_SHAPE = 0;
-		static const int MATERIAL_METAL = 1;
-		static const int MATERIAL_PLASTIC = 2;
-
 	private:
-		
 		std::vector<float> arcLength;
 		float totalArcLength = 0;
 		Pnt3f trainPos;
 		Pnt3f trainFront;
 		Pnt3f trainUp;
 		Pnt3f trainRight;
+
+		//something about shader
+		bool hasInitShader = false;
+		Shader* simpleObjectShader;
+		unsigned int cube_VAO;
+		unsigned int cube_VBO[2];
+		unsigned int cube_EBO;
+		unsigned int cube_element_amount;
 };
