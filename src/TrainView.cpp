@@ -264,26 +264,62 @@ void TrainView::initRander() {
 		20, 21, 22,
 		20, 22, 23,
 	};
-	glGenVertexArrays(1, &cube_VAO);
-	glGenBuffers(2, cube_VBO);
-	glGenBuffers(1, &cube_EBO);
-	glBindVertexArray(cube_VAO);
-	cube_element_amount = sizeof(cubeElement) / sizeof(GLuint);
+	glGenVertexArrays(1, &cube.VAO);
+	glGenBuffers(2, cube.VBO);
+	glGenBuffers(1, &cube.EBO);
+	glBindVertexArray(cube.VAO);
+	cube.element_amount = sizeof(cubeElement) / sizeof(GLuint);
 	// Position attribute
-	glBindBuffer(GL_ARRAY_BUFFER, cube_VBO[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, cube.VBO[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 	// Normal attribute
-	glBindBuffer(GL_ARRAY_BUFFER, cube_VBO[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, cube.VBO[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeNormal), cubeNormal, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
 	//Element attribute
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube.EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeElement), cubeElement, GL_STATIC_DRAW);
 	// Unbind VAO
 	glBindVertexArray(0);
+}
+
+//set all light to dark
+void TrainView::initLight() {
+	const glm::vec3 ZERO = glm::vec3(0, 0, 0);
+	const glm::vec3 UP = glm::vec3(0, 1, 0);
+	const float ONE_FLOAT = 1.0f;
+	const float ZERO_FLOAT = 0.0f;
+	//set directional light
+	dirLight.ambient = ZERO;
+	dirLight.diffuse = ZERO;
+	dirLight.specular = ZERO;
+	dirLight.direction = UP;
+	//set point light
+	for (int i = 0; i < 4; i++) {
+		pointLights[i].ambient = ZERO;
+		pointLights[i].diffuse = ZERO;
+		pointLights[i].specular = ZERO;
+		pointLights[i].position = ZERO;
+		pointLights[i].constant = ONE_FLOAT;
+		pointLights[i].linear = ZERO_FLOAT;
+		pointLights[i].quadratic = ZERO_FLOAT;
+	}
+	//set spot light
+	for (int i = 0; i < 4; i++) {
+		spotLights[i].ambient = ZERO;
+		spotLights[i].diffuse = ZERO;
+		spotLights[i].specular = ZERO;
+		spotLights[i].position = ZERO;
+		spotLights[i].direction = UP;
+		spotLights[i].cutOff = ZERO_FLOAT;
+		spotLights[i].outerCutOff = ZERO_FLOAT;
+		spotLights[i].constant = ONE_FLOAT;
+		spotLights[i].linear = ZERO_FLOAT;
+		spotLights[i].quadratic = ZERO_FLOAT;
+	}
 }
 
 //************************************************************************
@@ -339,86 +375,42 @@ void TrainView::draw()
 	// enable the lighting
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-
-	// top view only needs one light
-	if (tw->topCam->value()) {
-		glDisable(GL_LIGHT1);
-		//glDisable(GL_LIGHT2);
-	}
-	else {
-		glEnable(GL_LIGHT1);
-		glEnable(GL_LIGHT2);
-	}
 
 	//*********************************************************************
 	//
 	// * set the light parameters
 	//
 	//**********************************************************************
-	//GLfloat lightPosition1[] = { 0,1,1,0 }; // {50, 200.0, 50, 1.0};
-	//GLfloat lightPosition2[] = { 1, 0, 0, 0 };
-	//GLfloat lightPosition3[] = { 0, -1, 0, 0 };
-	GLfloat yellowLight[] = { 0.5f, 0.5f, .1f, 1.0 };
-	GLfloat blueLight[] = { .1f,.1f,.3f,1.0 };
-	GLfloat whiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0 };
-	GLfloat lightgrayLight[] = { 0.7f, 0.7f, 0.7f, 1.0 };
-	GLfloat grayLight[] = { .3f, .3f, .3f, 1.0 };
-	GLfloat darkLight[] = { .1f, .1f, .1f, 1.0 };
-	GLfloat blackLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition1);
-	//glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteLight);
-	//glLightfv(GL_LIGHT0, GL_AMBIENT, grayLight);
-
-	//glLightfv(GL_LIGHT1, GL_POSITION, lightPosition2);
-	//glLightfv(GL_LIGHT1, GL_DIFFUSE, yellowLight);
-
-	//glLightfv(GL_LIGHT2, GL_POSITION, lightPosition3);
-	//glLightfv(GL_LIGHT2, GL_DIFFUSE, blueLight);
-
-	glMatrixMode(GL_MODELVIEW);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT2);
-	glShadeModel(GL_SMOOTH);
-
-	//set light0, the main light
-	float light0_position[] = { 200.0f, 200.0f, 100.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, darkLight);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, blueLight);
-	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, whiteLight);
-
-	//set light1, the first control point light
-	float light1_position[] = { m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z, 1.0 };
-	glLightfv(GL_LIGHT1, GL_AMBIENT, blackLight);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, whiteLight);
-	glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
-	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.0001f);
-	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0001f);
-
-	//set light2, the train headlight
-	Pnt3f light2_position_pnt3f = trainPos + trainFront * 5.1 + trainUp * 4;
-	float light2_position[] = { light2_position_pnt3f.x, light2_position_pnt3f.y, light2_position_pnt3f.z, 1.0 };
-	float diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	float specular[] = { 1.0,1.0,1.0,1.0 };
-	//properties of the light
-	glLightfv(GL_LIGHT2, GL_POSITION, light2_position);
-	glLightfv(GL_LIGHT2, GL_AMBIENT, blackLight);
-	glLightfv(GL_LIGHT2, GL_DIFFUSE, yellowLight);
-	glLightfv(GL_LIGHT2, GL_SPECULAR, yellowLight);
-	/*Spot properties*/
-	float light2_direction[] = { trainFront.x, trainFront.y, trainFront.z };
-	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light2_direction);
-	//angle of the cone light emitted by the spot : value between 0 to 180
-	float spotCutOff = 60;
-	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotCutOff);
-	//exponent propertie defines the concentration of the light
-	glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, 50.0f);
-	glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0.1f);
-	glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, 0.0001f);
-	glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, 0.0f);
+	initLight();
+	glm::vec3 yellowLight = glm::vec3(0.5f, 0.5f, .1f);
+	glm::vec3 blueLight = glm::vec3(.1f,.1f,.3f);
+	glm::vec3 whiteLight = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 lightgrayLight = glm::vec3(0.7f, 0.7f, 0.7f);
+	glm::vec3 grayLight = glm::vec3(.3f, .3f, .3f);
+	glm::vec3 darkLight = glm::vec3(.1f, .1f, .1f);
+	glm::vec3 blackLight = glm::vec3(0.0f, 0.0f, 0.0f);
+	//point light 0, main light
+	pointLights[0].position = glm::vec3(200.0f, 200.0f, 100.0f);
+	pointLights[0].ambient = darkLight;
+	pointLights[0].diffuse = lightgrayLight;
+	pointLights[0].specular = whiteLight;
+	//point light 1, first controlpoint light
+	glm::vec3 firstContropointPos = glm::vec3(m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z);
+	pointLights[1].position = firstContropointPos;
+	pointLights[1].diffuse = whiteLight;
+	pointLights[1].specular = whiteLight;
+	pointLights[1].linear = 0.014f;
+	pointLights[1].quadratic = 0.0007f;
+	//spot light 0, train headlight
+	glm::vec3 trainHeadlightPos = trainPos.glmvec3() + trainFront.glmvec3() * 5.1f + trainUp.glmvec3() * 4.0f;
+	spotLights[0].position = trainHeadlightPos;
+	spotLights[0].direction = trainFront.glmvec3();
+	spotLights[0].diffuse = yellowLight;
+	spotLights[0].specular = yellowLight;
+	spotLights[0].cutOff = cos(MathHelper::degreeToRadians(30));
+	spotLights[0].outerCutOff = cos(MathHelper::degreeToRadians(35));
+	spotLights[0].linear = 0.007; 
+	spotLights[0].quadratic = 0.0002;
 
 	//*********************************************************************
 	// now draw the ground plane
@@ -441,11 +433,12 @@ void TrainView::draw()
 	drawStuff();
 
 	// this time drawing is for shadows (except for top view)
+	/*
 	if (!tw->topCam->value()) {
 		setupShadows();
 		drawStuff(true);
 		unsetupShadows();
-	}
+	}*/
 }
 
 //************************************************************************
@@ -489,10 +482,7 @@ setProjection()
 	// TODO: 
 	// put code for train view projection here!	
 	//####################################################################
-	else {
-#ifdef EXAMPLE_SOLUTION
-		trainCamView(this, aspect);
-#endif
+	else if (tw->trainCam->value()) {
 		//glClear(GL_COLOR_BUFFER_BIT);
 
 		glMatrixMode(GL_PROJECTION);
@@ -504,54 +494,85 @@ setProjection()
 	}
 }
 
-void GxM(float* points, float* matrix) {
-	float tempPoints[4] = { points[0],points[1],points[2],points[3] };
+
+
+//draw object by simple object shader
+void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, const Material material) {
+	simpleObjectShader->use();
+	
+	//get view matrix and projection matrix
+	glm::mat4 view;
+	glGetFloatv(GL_MODELVIEW_MATRIX, &view[0][0]);
+	glm::mat4 projection;
+	glGetFloatv(GL_PROJECTION_MATRIX, &projection[0][0]);
+
+	//set the uniform
+	simpleObjectShader->setMat4("view", view);
+	simpleObjectShader->setMat4("projection", projection);
+	simpleObjectShader->setMat4("model", model);
+	simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));
+	
+	glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
+	simpleObjectShader->setVec3("eyePosition", eyepos);
+
+	// light properties
+	simpleObjectShader->setVec3("dirLight.ambient", dirLight.ambient);
+	simpleObjectShader->setVec3("dirLight.diffuse", dirLight.diffuse);
+	simpleObjectShader->setVec3("dirLight.specular", dirLight.specular);
+	simpleObjectShader->setVec3("dirLight.direction", dirLight.direction);
 	for (int i = 0; i < 4; i++) {
-		points[i] = 0;
+		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].ambient", pointLights[i].ambient);
+		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].diffuse", pointLights[i].diffuse);
+		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].specular", pointLights[i].specular);
+		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].position", pointLights[i].position);
+		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].constant", pointLights[i].constant);
+		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].linear", pointLights[i].linear);
+		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].quadratic", pointLights[i].quadratic);
+	}
+	for (int i = 0; i < 4; i++) {
+		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].ambient", spotLights[i].ambient);
+		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].diffuse", spotLights[i].diffuse);
+		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].specular", spotLights[i].specular);
+		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].position", spotLights[i].position);
+		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].direction", spotLights[i].direction);
+		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].cutOff", spotLights[i].cutOff);
+		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].outerCutOff", spotLights[i].outerCutOff);
+		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].constant", spotLights[i].constant);
+		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].linear", spotLights[i].linear);
+		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].quadratic", spotLights[i].quadratic);
 	}
 
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			points[i] += matrix[j * 4 + i] * tempPoints[j];
-		}
-	}
+	// material properties
+	simpleObjectShader->setVec3("material.ambient", material.ambient);
+	simpleObjectShader->setVec3("material.diffuse", material.diffuse);
+	simpleObjectShader->setVec3("material.specular", material.specular);
+	simpleObjectShader->setFloat("material.shininess", material.shininess);
+
+	glBindVertexArray(object.VAO);
+	glDrawElements(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0);
+
+	//unbind VAO
+	glBindVertexArray(0);
+
+	//unbind shader(switch to fixed pipeline)
+	glUseProgram(0);
 }
 
-float MxT(float* matrix, float t) {
-	float result = 0;
-	float points[4] = { t * t * t,t * t,t,1 };
-	for (int i = 0; i < 4; i++) {
-		result += points[i] * matrix[i];
-	}
-	return result;
-}
-
-void mulRotateMatrix(float* matrix, Pnt3f& points) {
-	float tempPoints[3] = { points.x,points.y,points.z };
-	float* pointsP[3] = { &points.x,&points.y,&points.z };
-	for (int i = 0; i < 3; i++) {
-		*pointsP[i] = 0;
-	}
-
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			*pointsP[i] += matrix[j * 3 + i] * tempPoints[j];
-		}
-	}
-}
 /**
  * @brief draw a cuboid in the world space
  * @param pos center of cuboid
  * @param front front direction of cuboid
  * @param up up direction of cuboid
+ * @param width width of cuboid (x axis)
  * @param height height of cuboid (y axis)
  * @param length lenght of cuboid (z axis)
- * @param width width of cuboid (x axis)
  * @param material influence the normal vector, 0=shape, 1=metal, 2=plastic
  * @param smoothness influence the strength of specular, range is [0, 1]
  */
 void TrainView::
 drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug) {
+	
+	/*
 	Pnt3f vertexes[8];
 	char minus[8][3]{
 	{-1,-1, 1 },
@@ -578,7 +599,7 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float leng
 		front.x, front.y, front.z,
 	};
 	for (int i = 0; i < 8; i++) {
-		mulRotateMatrix(rotateMatrix, vertexes[i]);
+		MathHelper::mulRotateMatrix(rotateMatrix, vertexes[i]);
 	}
 	for (int i = 0; i < 8; i++) {
 		vertexes[i].x += pos.x;
@@ -644,17 +665,19 @@ drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float leng
 		glVertex3f(surface[i][3]->x, surface[i][3]->y, surface[i][3]->z);
 		glEnd();
 	}
+	*/
 }
 
 void TrainView::
 drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
-	front.normalize();
-	right.normalize();
-	Pnt3f up = right * front;
-	if (!doingShadows) {
-		glColor3ub(255, 255, 255);
-	}
-	drawCube(pos, front, up, 10, 0.5, 2, MATERIAL_METAL, 0.9, doingShadows);
+	glm::vec3 up = glm::cross(right.glmvec3(), front.glmvec3());
+	glm::mat4 model = MathHelper::getTransformMatrix(pos.glmvec3(), front.glmvec3(), up, glm::vec3(10, 0.5, 2));
+	Material sleeperMaterial;
+	sleeperMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.19225f);
+	sleeperMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.50754f);
+	sleeperMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.508273f);
+	sleeperMaterial.shininess = 51.2f;
+	drawSimpleObject(cube, model, sleeperMaterial);
 }
 
 void TrainView::
@@ -671,12 +694,17 @@ drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 
 void TrainView::
 drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
+	Material trackMaterial;
+	trackMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.19225f);
+	trackMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.50754f);
+	trackMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.508273f);
+	trackMaterial.shininess = 51.2f;
+
 	Pnt3f center = (start + end) * 0.5;
 	Pnt3f difference = end + start * -1;
-	if (!doingShadows) {
-		glColor3ub(109, 72, 55);
-	}
-	drawCube(center, difference, right * difference, 0.3, 0.3, difference.len() + 0.05, MATERIAL_PLASTIC, 0.7, doingShadows);
+	glm::mat4 model = MathHelper::getTransformMatrix(center.glmvec3(), difference.glmvec3(), (right * difference).glmvec3(), glm::vec3(0.3, 0.3, difference.len() + 0.05));
+	//drawSimpleObject(cube, model, trackMaterial);
+	//drawCube(center, difference, right * difference, 0.3, 0.3, difference.len() + 0.05, MATERIAL_PLASTIC, 0.7, doingShadows);
 }
 
 void TrainView::
@@ -813,27 +841,27 @@ void TrainView::drawStuff(bool doingShadows)
 				M[i] /= 6.0f;
 			}
 		}
-		GxM(cp_pos_x, M);
-		GxM(cp_pos_y, M);
-		GxM(cp_pos_z, M);
-		GxM(cp_orient_x, M);
-		GxM(cp_orient_y, M);
-		GxM(cp_orient_z, M);
+		MathHelper::GxM(cp_pos_x, M);
+		MathHelper::GxM(cp_pos_y, M);
+		MathHelper::GxM(cp_pos_z, M);
+		MathHelper::GxM(cp_orient_x, M);
+		MathHelper::GxM(cp_orient_y, M);
+		MathHelper::GxM(cp_orient_z, M);
 		delete[] M;
 		float percent = 1.0f / DIVIDE_LINE;
 		float t = 0;
-		Pnt3f qt(MxT(cp_pos_x, t), MxT(cp_pos_y, t), MxT(cp_pos_z, t));
+		Pnt3f qt(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
 		
 
 		for (size_t j = 0; j < DIVIDE_LINE; j++) {
 			Pnt3f qt0 = qt;
 			t += percent;
-			qt = Pnt3f(MxT(cp_pos_x, t), MxT(cp_pos_y, t), MxT(cp_pos_z, t));
+			qt = Pnt3f(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
 			Pnt3f qt1 = qt;
 			glLineWidth(1);
 			if (!doingShadows)
 				glColor3ub(32, 32, 64);
-			Pnt3f orient_t(MxT(cp_orient_x, t), MxT(cp_orient_y, t), MxT(cp_orient_z, t));
+			Pnt3f orient_t(MathHelper::MxT(cp_orient_x, t), MathHelper::MxT(cp_orient_y, t), MathHelper::MxT(cp_orient_z, t));
 			orient_t.normalize();
 			Pnt3f cross_t = ((qt1 + qt0 * -1) * orient_t);
 			cross_t.normalize();
@@ -895,49 +923,15 @@ void TrainView::drawStuff(bool doingShadows)
 	glEnd();
 	glLineWidth(1);
 
-
+	//draw cube
 	if (!doingShadows) {
-		//draw cube
-		simpleObjectShader->use();
-
-		glm::mat4 view;
-		glGetFloatv(GL_MODELVIEW_MATRIX, &view[0][0]);
-		glm::mat4 projection;
-		glGetFloatv(GL_PROJECTION_MATRIX, &projection[0][0]);
-		glm::mat4 model2(1.0f);
-		model2 = glm::translate(model2, glm::vec3(0, 10, 0));
-		model2 = glm::scale(model2, glm::vec3(10,10,10));
-
-		simpleObjectShader->setMat4("view", view);
-		simpleObjectShader->setMat4("projection", projection);
-		simpleObjectShader->setMat4("model", model2);
-		glm::vec3 lightPos2 = glm::vec3(50.0f, 50.0f, 50.0f);
-		simpleObjectShader->setVec3("light.position", lightPos2);
-		glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
-		simpleObjectShader->setVec3("EyePosition", eyepos);
-	
-		// light properties
-		glm::vec3 lightColor = glm::vec3(1, 1, 1);
-		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f); // decrease the influence
-		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
-		simpleObjectShader->setVec3("light.ambient", ambientColor);
-		simpleObjectShader->setVec3("light.diffuse", diffuseColor);
-		simpleObjectShader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-
-		// material properties
-		simpleObjectShader->setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-		simpleObjectShader->setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-		simpleObjectShader->setVec3("material.specular", 0.5f, 0.5f, 0.5f); // specular lighting doesn't have full effect on this object's material
-		simpleObjectShader->setFloat("material.shininess", 32.0f);
-
-		glBindVertexArray(cube_VAO);
-		glDrawElements(GL_TRIANGLES, cube_element_amount, GL_UNSIGNED_INT, 0);
-
-		//unbind VAO
-		glBindVertexArray(0);
-
-		//unbind shader(switch to fixed pipeline)
-		glUseProgram(0);
+		Material cubeMaterial;
+		cubeMaterial.ambient = glm::vec3(1.0f, 0.5f, 0.31f);
+		cubeMaterial.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
+		cubeMaterial.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+		cubeMaterial.shininess = 32.0f;
+		glm::mat4 model = MathHelper::getTransformMatrix(glm::vec3(0, 20, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(5, 10, 15));
+		drawSimpleObject(cube, model, cubeMaterial);
 	}
 	
 

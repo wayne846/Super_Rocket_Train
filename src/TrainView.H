@@ -55,6 +55,7 @@ class CTrack;
 #include "Utilities/Pnt3f.H"
 
 #include "RenderUnit/Shader.h"
+#include "RenderUnit/RanderStructure.h"
 
 class TrainView : public Fl_Gl_Window
 {
@@ -83,6 +84,9 @@ class TrainView : public Fl_Gl_Window
 		void doPick();
 	private:
 		void initRander();
+		void initLight(); //init all light to dark(black)(0 ,0, 0)
+
+		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
 
 		void drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug = 0);
 		void drawTrain(Pnt3f, Pnt3f, Pnt3f, bool);
@@ -111,11 +115,13 @@ class TrainView : public Fl_Gl_Window
 		Pnt3f trainUp;
 		Pnt3f trainRight;
 
+		//all light in the scene
+		DirLight dirLight;
+		PointLight pointLights[4];
+		SpotLight spotLights[4];
+
 		//something about shader
 		bool hasInitShader = false;
 		Shader* simpleObjectShader;
-		unsigned int cube_VAO;
-		unsigned int cube_VBO[2];
-		unsigned int cube_EBO;
-		unsigned int cube_element_amount;
+		Object cube;
 };

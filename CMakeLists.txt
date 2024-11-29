@@ -12,6 +12,7 @@ set(SRC_SHADER
 
 set(SRC_RENDER_UNIT
     ${SRC_DIR}RenderUnit/Shader.h
+    ${SRC_DIR}RenderUnit/RanderStructure.h
 )
 
 include_directories(${INCLUDE_DIR})

@@ -89,3 +89,7 @@ float Pnt3f::len()
 	l = sqrt(l);
 	return l;
 }
+
+glm::vec3 Pnt3f::glmvec3() {
+	return glm::vec3(x, y, z);
+}

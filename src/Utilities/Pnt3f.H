@@ -30,7 +30,7 @@
 
 *************************************************************************/
 #pragma once
-
+#include <glm/glm.hpp>
 
 class Pnt3f {
 	public:
@@ -58,6 +58,8 @@ class Pnt3f {
 		void normalize();
 
 		float len();
+
+		glm::vec3 glmvec3();
 
 		// note - the operators above are for Pnt3f*scalar, here we have scalar*Pnt3f
 		friend Pnt3f operator * (const float s, const Pnt3f& p );
