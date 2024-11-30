@@ -8,13 +8,15 @@ set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib/)
 set(SRC_SHADER 
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/simpleInstanceObject.vert
 ) 
 
 set(SRC_RENDER_UNIT
     ${SRC_DIR}RenderUnit/Shader.h
     ${SRC_DIR}RenderUnit/RanderStructure.h
-    ${SRC_DIR}RenderUnit/Instance.h
-    ${SRC_DIR}RenderUnit/Instance.cpp
+    ${SRC_DIR}RenderUnit/RanderStructure.cpp
+    ${SRC_DIR}RenderUnit/InstanceDrawer.h
+    ${SRC_DIR}RenderUnit/InstanceDrawer.cpp
 )
 
 include_directories(${INCLUDE_DIR})

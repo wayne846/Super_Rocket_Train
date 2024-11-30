@@ -44,6 +44,7 @@
 
 #define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
 #define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
+#define SIMPLE_INSTANCE_OBJECT_VERT_PATH "/assets/shaders/simpleInstanceObject.vert"
 
 //************************************************************************
 //
@@ -175,7 +176,8 @@ int TrainView::handle(int event)
 //need called under if(gladLoadGL())
 void TrainView::initRander() {
 	//init shader
-	simpleObjectShader = new Shader(PROJECT_DIR "/assets/shaders/simpleObject.vert", PROJECT_DIR "/assets/shaders/simpleObject.frag");
+	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
+	simpleInstanceObjectShader = new Shader(PROJECT_DIR SIMPLE_INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 
 	//init VAO
 	//------------------
@@ -339,9 +341,9 @@ void TrainView::draw()
 	if (gladLoadGL())
 	{
 		//initiailize VAO, VBO, Shader...
-		if (!hasInitShader) {
+		if (!hasInitRander) {
 			initRander();
-			hasInitShader = true;
+			hasInitRander = true;
 		}
 	}
 	else
@@ -382,31 +384,24 @@ void TrainView::draw()
 	//
 	//**********************************************************************
 	initLight();
-	glm::vec3 yellowLight = glm::vec3(0.5f, 0.5f, .1f);
-	glm::vec3 blueLight = glm::vec3(.1f,.1f,.3f);
-	glm::vec3 whiteLight = glm::vec3(1.0f, 1.0f, 1.0f);
-	glm::vec3 lightgrayLight = glm::vec3(0.7f, 0.7f, 0.7f);
-	glm::vec3 grayLight = glm::vec3(.3f, .3f, .3f);
-	glm::vec3 darkLight = glm::vec3(.1f, .1f, .1f);
-	glm::vec3 blackLight = glm::vec3(0.0f, 0.0f, 0.0f);
 	//point light 0, main light
 	pointLights[0].position = glm::vec3(200.0f, 200.0f, 100.0f);
-	pointLights[0].ambient = darkLight;
-	pointLights[0].diffuse = lightgrayLight;
-	pointLights[0].specular = whiteLight;
+	pointLights[0].ambient = RanderDatabase::DARK_COLOR;
+	pointLights[0].diffuse = RanderDatabase::LIGHT_GRAY_COLOR;
+	pointLights[0].specular = RanderDatabase::WHITE_COLOR;
 	//point light 1, first controlpoint light
 	glm::vec3 firstContropointPos = glm::vec3(m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z);
 	pointLights[1].position = firstContropointPos;
-	pointLights[1].diffuse = whiteLight;
-	pointLights[1].specular = whiteLight;
+	pointLights[1].diffuse = RanderDatabase::WHITE_COLOR;
+	pointLights[1].specular = RanderDatabase::WHITE_COLOR;
 	pointLights[1].linear = 0.014f;
 	pointLights[1].quadratic = 0.0007f;
 	//spot light 0, train headlight
 	glm::vec3 trainHeadlightPos = trainPos.glmvec3() + trainFront.glmvec3() * 5.1f + trainUp.glmvec3() * 4.0f;
 	spotLights[0].position = trainHeadlightPos;
 	spotLights[0].direction = trainFront.glmvec3();
-	spotLights[0].diffuse = yellowLight;
-	spotLights[0].specular = yellowLight;
+	spotLights[0].diffuse = RanderDatabase::YELLOW_COLOR;
+	spotLights[0].specular = RanderDatabase::YELLOW_COLOR;
 	spotLights[0].cutOff = cos(MathHelper::degreeToRadians(30));
 	spotLights[0].outerCutOff = cos(MathHelper::degreeToRadians(35));
 	spotLights[0].linear = 0.007; 
@@ -494,70 +489,77 @@ setProjection()
 	}
 }
 
-void TrainView::initShaders() {
-	simpleObjectShader->use();
+//set shader uniform, like view, projection, lights...
+void TrainView::setShaders() {
 	//get view matrix and projection matrix
 	glm::mat4 view;
 	glGetFloatv(GL_MODELVIEW_MATRIX, &view[0][0]);
 	glm::mat4 projection;
 	glGetFloatv(GL_PROJECTION_MATRIX, &projection[0][0]);
 
-	//set the uniform
-	simpleObjectShader->setMat4("view", view);
-	simpleObjectShader->setMat4("projection", projection);
+	//set simpleObjectShader and simpleInstanceObjectShader
+	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader };
+	for (int i = 0; i < 2; i++) {
+		shaders[i]->use();
 
-	glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
-	simpleObjectShader->setVec3("eyePosition", eyepos);
+		//set the uniform
+		shaders[i]->setMat4("view", view);
+		shaders[i]->setMat4("projection", projection);
 
-	// light properties
-	simpleObjectShader->setVec3("dirLight.ambient", dirLight.ambient);
-	simpleObjectShader->setVec3("dirLight.diffuse", dirLight.diffuse);
-	simpleObjectShader->setVec3("dirLight.specular", dirLight.specular);
-	simpleObjectShader->setVec3("dirLight.direction", dirLight.direction);
-	for (int i = 0; i < 4; i++) {
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].ambient", pointLights[i].ambient);
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].diffuse", pointLights[i].diffuse);
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].specular", pointLights[i].specular);
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].position", pointLights[i].position);
-		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].constant", pointLights[i].constant);
-		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].linear", pointLights[i].linear);
-		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].quadratic", pointLights[i].quadratic);
+		glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
+		shaders[i]->setVec3("eyePosition", eyepos);
+
+		// light properties
+		shaders[i]->setVec3("dirLight.ambient", dirLight.ambient);
+		shaders[i]->setVec3("dirLight.diffuse", dirLight.diffuse);
+		shaders[i]->setVec3("dirLight.specular", dirLight.specular);
+		shaders[i]->setVec3("dirLight.direction", dirLight.direction);
+		for (int j = 0; j < 4; j++) {
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].ambient", pointLights[j].ambient);
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].diffuse", pointLights[j].diffuse);
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].specular", pointLights[j].specular);
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].position", pointLights[j].position);
+			shaders[i]->setFloat("pointLights[" + std::to_string(j) + "].constant", pointLights[j].constant);
+			shaders[i]->setFloat("pointLights[" + std::to_string(j) + "].linear", pointLights[j].linear);
+			shaders[i]->setFloat("pointLights[" + std::to_string(j) + "].quadratic", pointLights[j].quadratic);
+		}
+		for (int j = 0; j < 4; j++) {
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].ambient", spotLights[j].ambient);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].diffuse", spotLights[j].diffuse);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].specular", spotLights[j].specular);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].position", spotLights[j].position);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].direction", spotLights[j].direction);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].cutOff", spotLights[j].cutOff);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].outerCutOff", spotLights[j].outerCutOff);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].constant", spotLights[j].constant);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].linear", spotLights[j].linear);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].quadratic", spotLights[j].quadratic);
+		}
 	}
-	for (int i = 0; i < 4; i++) {
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].ambient", spotLights[i].ambient);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].diffuse", spotLights[i].diffuse);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].specular", spotLights[i].specular);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].position", spotLights[i].position);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].direction", spotLights[i].direction);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].cutOff", spotLights[i].cutOff);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].outerCutOff", spotLights[i].outerCutOff);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].constant", spotLights[i].constant);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].linear", spotLights[i].linear);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].quadratic", spotLights[i].quadratic);
-	}
+	
 }
 
 //draw object by simple object shader
 void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, const Material material) {
-	//simpleObjectShader->use();
+	simpleObjectShader->use();
 
-	//simpleObjectShader->setMat4("model", model);
-	//simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));	
+	simpleObjectShader->setMat4("model", model);
+	simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));	
 
-	//// material properties
-	//simpleObjectShader->setVec3("material.ambient", material.ambient);
-	//simpleObjectShader->setVec3("material.diffuse", material.diffuse);
-	//simpleObjectShader->setVec3("material.specular", material.specular);
-	//simpleObjectShader->setFloat("material.shininess", material.shininess);
+	// material properties
+	simpleObjectShader->setVec3("material.ambient", material.ambient);
+	simpleObjectShader->setVec3("material.diffuse", material.diffuse);
+	simpleObjectShader->setVec3("material.specular", material.specular);
+	simpleObjectShader->setFloat("material.shininess", material.shininess);
 
-	//glBindVertexArray(object.VAO);
-	//glDrawElements(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(object.VAO);
+	glDrawElements(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0);
 
-	////unbind VAO
-	//glBindVertexArray(0);
+	//unbind VAO
+	glBindVertexArray(0);
 
-	////unbind shader(switch to fixed pipeline)
-	//glUseProgram(0);
+	//unbind shader(switch to fixed pipeline)
+	glUseProgram(0);
 }
 
 /**
@@ -680,7 +682,7 @@ drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	sleeperMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.508273f);
 	sleeperMaterial.shininess = 51.2f;
 	//drawSimpleObject(cube, model, sleeperMaterial);
-	instance.addInstance("sleeper", model, sleeperMaterial);
+	//instance.addInstance("sleeper", model, sleeperMaterial);
 }
 
 void TrainView::
@@ -701,7 +703,7 @@ drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	trainMaterial.shininess = 51.2f;
 	//drawSimpleObject(cube, model, trainMaterial);
 	//drawCube(pos, front, up, 6, 8, 10, MATERIAL_METAL, 0.9, doingShadows, true);
-	instance.addInstance("train", model, trainMaterial);
+	//instance.addInstance("train", model, trainMaterial);
 }
 
 void TrainView::
@@ -717,7 +719,7 @@ drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
 	glm::mat4 model = MathHelper::getTransformMatrix(center.glmvec3(), difference.glmvec3(), (right * difference).glmvec3(), glm::vec3(0.3, 0.3, difference.len() + 0.05));
 	//drawSimpleObject(cube, model, trackMaterial);
 	//drawCube(center, difference, right * difference, 0.3, 0.3, difference.len() + 0.05, MATERIAL_PLASTIC, 0.7, doingShadows);
-	instance.addInstance("track", model, trackMaterial);
+	//instance.addInstance("track", model, trackMaterial);
 }
 
 void TrainView::
@@ -773,6 +775,9 @@ drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth, 
 //========================================================================
 void TrainView::drawStuff(bool doingShadows)
 {
+	//set up shaders uniform
+	setShaders();
+
 	// Draw the control points
 	// don't draw the control points if you're driving 
 	// (otherwise you get sea-sick as you drive through them)
@@ -791,13 +796,15 @@ void TrainView::drawStuff(bool doingShadows)
 	//draw the tree
 	//drawTree(Pnt3f(0, 0, 0), 0, doingShadows);
 
-	// draw the track
-	//####################################################################
-	// TODO: 
-	// call your own track drawing code
-	//####################################################################
-	initShaders();
-
+	// draw the track, sleeper, train
+	Material trainMaterial;
+	trainMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.89225f);
+	trainMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.80754f);
+	trainMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.808273f);
+	trainMaterial.shininess = 51.2f;
+	InstanceDrawer trackInstance(RanderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer sleeperInstance(RanderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer trainInstance(trainMaterial);
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
@@ -867,7 +874,6 @@ void TrainView::drawStuff(bool doingShadows)
 		float t = 0;
 		Pnt3f qt(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
 		
-
 		for (size_t j = 0; j < DIVIDE_LINE; j++) {
 			Pnt3f qt0 = qt;
 			t += percent;
@@ -881,12 +887,23 @@ void TrainView::drawStuff(bool doingShadows)
 			Pnt3f cross_t = ((qt1 + qt0 * -1) * orient_t);
 			cross_t.normalize();
 			cross_t = cross_t * (track_width / 2);
-			drawTrack(qt0 + cross_t, qt1 + cross_t, cross_t, doingShadows);
-			drawTrack(qt0 + cross_t * -1, qt1 + cross_t * -1, cross_t, doingShadows);
+			//draw track
+			Pnt3f trackCenter1 = (qt0 + cross_t + qt1 + cross_t) * 0.5f;
+			Pnt3f trackCenter2 = (qt0 + cross_t * -1 + qt1 + cross_t * -1) * 0.5;
+			Pnt3f trackDifference = qt1 - qt0;
+			glm::mat4 trackModel1 = MathHelper::getTransformMatrix(trackCenter1.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
+			glm::mat4 trackModel2 = MathHelper::getTransformMatrix(trackCenter2.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
+			trackInstance.addModelMatrix(trackModel1);
+			trackInstance.addModelMatrix(trackModel2);
+
 			Pnt3f distance = qt1 + (-1 * last_sleeper);
 			bool needToDrawTrain = false;
 			if (distance.len() > 5) {
-				drawSleeper(qt1, qt1 + qt0 * -1, cross_t, doingShadows);
+				//draw sleeper
+				glm::vec3 up = glm::cross(cross_t.glmvec3(), (qt1 + qt0 * -1).glmvec3());
+				glm::mat4 sleeperModel = MathHelper::getTransformMatrix(qt1.glmvec3(), (qt1 + qt0 * -1).glmvec3(), up, glm::vec3(10, 0.5, 2));
+				sleeperInstance.addModelMatrix(sleeperModel);
+
 				last_sleeper = qt1;
 			}
 			if (tw->arcLength->value() == false) {
@@ -907,17 +924,23 @@ void TrainView::drawStuff(bool doingShadows)
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
 				float direction[] = { trainFront.x,trainFront.y,trainFront.z };
-				//glLightfv(GL_LIGHT2, GL_POSITION, position2);
-				//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction);
-				if (!tw->trainCam->value())
-					drawTrain(qt1, trainFront, cross_t, doingShadows);
+				if (!tw->trainCam->value()) {
+					//draw train
+					glm::vec3 right = cross_t.glmvec3();
+					glm::vec3 up = glm::cross(glm::normalize(right), trainFront.glmvec3());
+					glm::vec3 glmpos = qt1.glmvec3();
+					glmpos = glmpos + 4.5f * up;
+					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
+					trainInstance.addModelMatrix(model);
+				}	
 				trainDrawed = true;
 			}
 		}
 	}
 	totalArcLength = presentArcLength;
-
-	instance.drawByInstance(simpleObjectShader, cube);
+	trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
+	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube);
+	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
 
 	//draw axis
 	glLineWidth(5);
@@ -950,7 +973,6 @@ void TrainView::drawStuff(bool doingShadows)
 		glm::mat4 model = MathHelper::getTransformMatrix(glm::vec3(0, 20, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(5, 10, 15));
 		drawSimpleObject(cube, model, cubeMaterial);
 	}
-	
 
 	// draw the train
 	
