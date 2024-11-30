@@ -494,12 +494,8 @@ setProjection()
 	}
 }
 
-
-
-//draw object by simple object shader
-void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, const Material material) {
+void TrainView::initShaders() {
 	simpleObjectShader->use();
-	
 	//get view matrix and projection matrix
 	glm::mat4 view;
 	glGetFloatv(GL_MODELVIEW_MATRIX, &view[0][0]);
@@ -509,9 +505,7 @@ void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, co
 	//set the uniform
 	simpleObjectShader->setMat4("view", view);
 	simpleObjectShader->setMat4("projection", projection);
-	simpleObjectShader->setMat4("model", model);
-	simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));
-	
+
 	glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
 	simpleObjectShader->setVec3("eyePosition", eyepos);
 
@@ -541,21 +535,29 @@ void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, co
 		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].linear", spotLights[i].linear);
 		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].quadratic", spotLights[i].quadratic);
 	}
+}
 
-	// material properties
-	simpleObjectShader->setVec3("material.ambient", material.ambient);
-	simpleObjectShader->setVec3("material.diffuse", material.diffuse);
-	simpleObjectShader->setVec3("material.specular", material.specular);
-	simpleObjectShader->setFloat("material.shininess", material.shininess);
+//draw object by simple object shader
+void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, const Material material) {
+	//simpleObjectShader->use();
 
-	glBindVertexArray(object.VAO);
-	glDrawElements(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0);
+	//simpleObjectShader->setMat4("model", model);
+	//simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));	
 
-	//unbind VAO
-	glBindVertexArray(0);
+	//// material properties
+	//simpleObjectShader->setVec3("material.ambient", material.ambient);
+	//simpleObjectShader->setVec3("material.diffuse", material.diffuse);
+	//simpleObjectShader->setVec3("material.specular", material.specular);
+	//simpleObjectShader->setFloat("material.shininess", material.shininess);
 
-	//unbind shader(switch to fixed pipeline)
-	glUseProgram(0);
+	//glBindVertexArray(object.VAO);
+	//glDrawElements(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0);
+
+	////unbind VAO
+	//glBindVertexArray(0);
+
+	////unbind shader(switch to fixed pipeline)
+	//glUseProgram(0);
 }
 
 /**
@@ -677,19 +679,29 @@ drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	sleeperMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.50754f);
 	sleeperMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.508273f);
 	sleeperMaterial.shininess = 51.2f;
-	drawSimpleObject(cube, model, sleeperMaterial);
+	//drawSimpleObject(cube, model, sleeperMaterial);
+	instance.addInstance("sleeper", model, sleeperMaterial);
 }
 
 void TrainView::
 drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	front.normalize();
 	right.normalize();
-	Pnt3f up = right * front;
-	pos = pos + 4.5 * up;
+	glm::vec3 up = glm::cross(right.glmvec3(), front.glmvec3());
+	glm::vec3 glmpos = pos.glmvec3();
+	glmpos = glmpos + 4.5f * up;
+	glm::mat4 model = MathHelper::getTransformMatrix(glmpos, front.glmvec3(), up, glm::vec3(6,8,10));
 	if (!doingShadows) {
 		glColor3ub(128, 128, 180);
 	}
-	drawCube(pos, front, up, 6, 8, 10, MATERIAL_METAL, 0.9, doingShadows, true);
+	Material trainMaterial;
+	trainMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.89225f);
+	trainMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.80754f);
+	trainMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.808273f);
+	trainMaterial.shininess = 51.2f;
+	//drawSimpleObject(cube, model, trainMaterial);
+	//drawCube(pos, front, up, 6, 8, 10, MATERIAL_METAL, 0.9, doingShadows, true);
+	instance.addInstance("train", model, trainMaterial);
 }
 
 void TrainView::
@@ -705,6 +717,7 @@ drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
 	glm::mat4 model = MathHelper::getTransformMatrix(center.glmvec3(), difference.glmvec3(), (right * difference).glmvec3(), glm::vec3(0.3, 0.3, difference.len() + 0.05));
 	//drawSimpleObject(cube, model, trackMaterial);
 	//drawCube(center, difference, right * difference, 0.3, 0.3, difference.len() + 0.05, MATERIAL_PLASTIC, 0.7, doingShadows);
+	instance.addInstance("track", model, trackMaterial);
 }
 
 void TrainView::
@@ -783,6 +796,8 @@ void TrainView::drawStuff(bool doingShadows)
 	// TODO: 
 	// call your own track drawing code
 	//####################################################################
+	initShaders();
+
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
@@ -901,6 +916,8 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 	}
 	totalArcLength = presentArcLength;
+
+	instance.drawByInstance(simpleObjectShader, cube);
 
 	//draw axis
 	glLineWidth(5);

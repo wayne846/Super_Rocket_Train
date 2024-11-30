@@ -146,12 +146,13 @@ TrainWindow(const int x, const int y)
 #ifdef EXAMPLE_SOLUTION
 		makeExampleWidgets(this,pty);
 #endif
-
 		// we need to make a little phantom widget to have things resize correctly
 		Fl_Box* resizebox = new Fl_Box(600,595,200,5);
 		widgets->resizable(resizebox);
 
 		widgets->end();
+
+		
 	}
 	end();	// done adding to this widget
 

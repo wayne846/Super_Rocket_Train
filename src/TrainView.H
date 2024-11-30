@@ -56,6 +56,7 @@ class CTrack;
 
 #include "RenderUnit/Shader.h"
 #include "RenderUnit/RanderStructure.h"
+#include "RenderUnit/Instance.h"
 
 class TrainView : public Fl_Gl_Window
 {
@@ -87,7 +88,7 @@ class TrainView : public Fl_Gl_Window
 		void initLight(); //init all light to dark(black)(0 ,0, 0)
 
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
-
+		void initShaders();
 		void drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug = 0);
 		void drawTrain(Pnt3f, Pnt3f, Pnt3f, bool);
 		void drawSleeper(Pnt3f, Pnt3f, Pnt3f, bool);
@@ -124,4 +125,5 @@ class TrainView : public Fl_Gl_Window
 		bool hasInitShader = false;
 		Shader* simpleObjectShader;
 		Object cube;
+		Instance instance;
 };
