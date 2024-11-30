@@ -341,9 +341,9 @@ void TrainView::draw()
 	if (gladLoadGL())
 	{
 		//initiailize VAO, VBO, Shader...
-		if (!hasInitShader) {
+		if (!hasInitRander) {
 			initRander();
-			hasInitShader = true;
+			hasInitRander = true;
 		}
 	}
 	else
@@ -384,31 +384,24 @@ void TrainView::draw()
 	//
 	//**********************************************************************
 	initLight();
-	glm::vec3 yellowLight = glm::vec3(0.5f, 0.5f, .1f);
-	glm::vec3 blueLight = glm::vec3(.1f,.1f,.3f);
-	glm::vec3 whiteLight = glm::vec3(1.0f, 1.0f, 1.0f);
-	glm::vec3 lightgrayLight = glm::vec3(0.7f, 0.7f, 0.7f);
-	glm::vec3 grayLight = glm::vec3(.3f, .3f, .3f);
-	glm::vec3 darkLight = glm::vec3(.1f, .1f, .1f);
-	glm::vec3 blackLight = glm::vec3(0.0f, 0.0f, 0.0f);
 	//point light 0, main light
 	pointLights[0].position = glm::vec3(200.0f, 200.0f, 100.0f);
-	pointLights[0].ambient = darkLight;
-	pointLights[0].diffuse = lightgrayLight;
-	pointLights[0].specular = whiteLight;
+	pointLights[0].ambient = RanderDatabase::DARK_COLOR;
+	pointLights[0].diffuse = RanderDatabase::LIGHT_GRAY_COLOR;
+	pointLights[0].specular = RanderDatabase::WHITE_COLOR;
 	//point light 1, first controlpoint light
 	glm::vec3 firstContropointPos = glm::vec3(m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z);
 	pointLights[1].position = firstContropointPos;
-	pointLights[1].diffuse = whiteLight;
-	pointLights[1].specular = whiteLight;
+	pointLights[1].diffuse = RanderDatabase::WHITE_COLOR;
+	pointLights[1].specular = RanderDatabase::WHITE_COLOR;
 	pointLights[1].linear = 0.014f;
 	pointLights[1].quadratic = 0.0007f;
 	//spot light 0, train headlight
 	glm::vec3 trainHeadlightPos = trainPos.glmvec3() + trainFront.glmvec3() * 5.1f + trainUp.glmvec3() * 4.0f;
 	spotLights[0].position = trainHeadlightPos;
 	spotLights[0].direction = trainFront.glmvec3();
-	spotLights[0].diffuse = yellowLight;
-	spotLights[0].specular = yellowLight;
+	spotLights[0].diffuse = RanderDatabase::YELLOW_COLOR;
+	spotLights[0].specular = RanderDatabase::YELLOW_COLOR;
 	spotLights[0].cutOff = cos(MathHelper::degreeToRadians(30));
 	spotLights[0].outerCutOff = cos(MathHelper::degreeToRadians(35));
 	spotLights[0].linear = 0.007; 
@@ -497,7 +490,7 @@ setProjection()
 }
 
 //set shader uniform, like view, projection, lights...
-void TrainView::initShaders() {
+void TrainView::setShaders() {
 	//get view matrix and projection matrix
 	glm::mat4 view;
 	glGetFloatv(GL_MODELVIEW_MATRIX, &view[0][0]);
@@ -548,25 +541,25 @@ void TrainView::initShaders() {
 
 //draw object by simple object shader
 void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, const Material material) {
-	//simpleObjectShader->use();
+	simpleObjectShader->use();
 
-	//simpleObjectShader->setMat4("model", model);
-	//simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));	
+	simpleObjectShader->setMat4("model", model);
+	simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));	
 
-	//// material properties
-	//simpleObjectShader->setVec3("material.ambient", material.ambient);
-	//simpleObjectShader->setVec3("material.diffuse", material.diffuse);
-	//simpleObjectShader->setVec3("material.specular", material.specular);
-	//simpleObjectShader->setFloat("material.shininess", material.shininess);
+	// material properties
+	simpleObjectShader->setVec3("material.ambient", material.ambient);
+	simpleObjectShader->setVec3("material.diffuse", material.diffuse);
+	simpleObjectShader->setVec3("material.specular", material.specular);
+	simpleObjectShader->setFloat("material.shininess", material.shininess);
 
-	//glBindVertexArray(object.VAO);
-	//glDrawElements(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(object.VAO);
+	glDrawElements(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0);
 
-	////unbind VAO
-	//glBindVertexArray(0);
+	//unbind VAO
+	glBindVertexArray(0);
 
-	////unbind shader(switch to fixed pipeline)
-	//glUseProgram(0);
+	//unbind shader(switch to fixed pipeline)
+	glUseProgram(0);
 }
 
 /**
@@ -689,7 +682,7 @@ drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	sleeperMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.508273f);
 	sleeperMaterial.shininess = 51.2f;
 	//drawSimpleObject(cube, model, sleeperMaterial);
-	instance.addInstance("sleeper", model, sleeperMaterial);
+	//instance.addInstance("sleeper", model, sleeperMaterial);
 }
 
 void TrainView::
@@ -710,7 +703,7 @@ drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
 	trainMaterial.shininess = 51.2f;
 	//drawSimpleObject(cube, model, trainMaterial);
 	//drawCube(pos, front, up, 6, 8, 10, MATERIAL_METAL, 0.9, doingShadows, true);
-	instance.addInstance("train", model, trainMaterial);
+	//instance.addInstance("train", model, trainMaterial);
 }
 
 void TrainView::
@@ -726,7 +719,7 @@ drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
 	glm::mat4 model = MathHelper::getTransformMatrix(center.glmvec3(), difference.glmvec3(), (right * difference).glmvec3(), glm::vec3(0.3, 0.3, difference.len() + 0.05));
 	//drawSimpleObject(cube, model, trackMaterial);
 	//drawCube(center, difference, right * difference, 0.3, 0.3, difference.len() + 0.05, MATERIAL_PLASTIC, 0.7, doingShadows);
-	instance.addInstance("track", model, trackMaterial);
+	//instance.addInstance("track", model, trackMaterial);
 }
 
 void TrainView::
@@ -782,6 +775,9 @@ drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth, 
 //========================================================================
 void TrainView::drawStuff(bool doingShadows)
 {
+	//set up shaders uniform
+	setShaders();
+
 	// Draw the control points
 	// don't draw the control points if you're driving 
 	// (otherwise you get sea-sick as you drive through them)
@@ -800,13 +796,13 @@ void TrainView::drawStuff(bool doingShadows)
 	//draw the tree
 	//drawTree(Pnt3f(0, 0, 0), 0, doingShadows);
 
-	// draw the track
-	//####################################################################
-	// TODO: 
-	// call your own track drawing code
-	//####################################################################
-	initShaders();
-
+	// draw the track, sleeper, train
+	Material trainMaterial;
+	trainMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.89225f);
+	trainMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.80754f);
+	trainMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.808273f);
+	trainMaterial.shininess = 51.2f;
+	Instance instance;
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
@@ -876,7 +872,6 @@ void TrainView::drawStuff(bool doingShadows)
 		float t = 0;
 		Pnt3f qt(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
 		
-
 		for (size_t j = 0; j < DIVIDE_LINE; j++) {
 			Pnt3f qt0 = qt;
 			t += percent;
@@ -890,12 +885,23 @@ void TrainView::drawStuff(bool doingShadows)
 			Pnt3f cross_t = ((qt1 + qt0 * -1) * orient_t);
 			cross_t.normalize();
 			cross_t = cross_t * (track_width / 2);
-			drawTrack(qt0 + cross_t, qt1 + cross_t, cross_t, doingShadows);
-			drawTrack(qt0 + cross_t * -1, qt1 + cross_t * -1, cross_t, doingShadows);
+			//draw track
+			Pnt3f trackCenter1 = (qt0 + cross_t + qt1 + cross_t) * 0.5f;
+			Pnt3f trackCenter2 = (qt0 + cross_t * -1 + qt1 + cross_t * -1) * 0.5;
+			Pnt3f trackDifference = qt1 - qt0;
+			glm::mat4 trackModel1 = MathHelper::getTransformMatrix(trackCenter1.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
+			glm::mat4 trackModel2 = MathHelper::getTransformMatrix(trackCenter2.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
+			instance.addInstance("track", trackModel1, RanderDatabase::SLIVER_MATERIAL);
+			instance.addInstance("track", trackModel2, RanderDatabase::SLIVER_MATERIAL);
+
 			Pnt3f distance = qt1 + (-1 * last_sleeper);
 			bool needToDrawTrain = false;
 			if (distance.len() > 5) {
-				drawSleeper(qt1, qt1 + qt0 * -1, cross_t, doingShadows);
+				//draw sleeper
+				glm::vec3 up = glm::cross(cross_t.glmvec3(), (qt1 + qt0 * -1).glmvec3());
+				glm::mat4 sleeperModel = MathHelper::getTransformMatrix(qt1.glmvec3(), (qt1 + qt0 * -1).glmvec3(), up, glm::vec3(10, 0.5, 2));
+				instance.addInstance("sleeper", sleeperModel, RanderDatabase::SLIVER_MATERIAL);
+
 				last_sleeper = qt1;
 			}
 			if (tw->arcLength->value() == false) {
@@ -916,16 +922,20 @@ void TrainView::drawStuff(bool doingShadows)
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
 				float direction[] = { trainFront.x,trainFront.y,trainFront.z };
-				//glLightfv(GL_LIGHT2, GL_POSITION, position2);
-				//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, direction);
-				if (!tw->trainCam->value())
-					drawTrain(qt1, trainFront, cross_t, doingShadows);
+				if (!tw->trainCam->value()) {
+					//draw train
+					glm::vec3 right = cross_t.glmvec3();
+					glm::vec3 up = glm::cross(glm::normalize(right), trainFront.glmvec3());
+					glm::vec3 glmpos = qt1.glmvec3();
+					glmpos = glmpos + 4.5f * up;
+					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
+					instance.addInstance("train", model, trainMaterial);
+				}	
 				trainDrawed = true;
 			}
 		}
 	}
 	totalArcLength = presentArcLength;
-
 	instance.drawByInstance(simpleInstanceObjectShader, cube);
 
 	//draw axis
@@ -959,7 +969,6 @@ void TrainView::drawStuff(bool doingShadows)
 		glm::mat4 model = MathHelper::getTransformMatrix(glm::vec3(0, 20, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(5, 10, 15));
 		drawSimpleObject(cube, model, cubeMaterial);
 	}
-	
 
 	// draw the train
 	

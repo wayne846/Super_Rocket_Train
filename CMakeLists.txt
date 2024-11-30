@@ -8,6 +8,7 @@ set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib/)
 set(SRC_SHADER 
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/simpleInstanceObject.vert
 ) 
 
 set(SRC_RENDER_UNIT

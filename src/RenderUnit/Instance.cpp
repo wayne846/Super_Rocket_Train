@@ -2,7 +2,7 @@
 #include "Instance.h"
 #include <glad/glad.h>
 
-void Instance::addInstance(std::string name, glm::mat4 modelMatrix, Material &material)
+void Instance::addInstance(std::string name, glm::mat4 modelMatrix, const Material &material)
 {
 	bool added = false;
 	for (int i = 0; i < objins.size(); i++) {

@@ -49,3 +49,15 @@ struct Object {
     unsigned int EBO;
     unsigned int element_amount;
 };
+
+namespace RanderDatabase {
+    extern const Material SLIVER_MATERIAL;
+
+    extern const glm::vec3 YELLOW_COLOR;
+    extern const glm::vec3 BLUE_COLOR;
+    extern const glm::vec3 WHITE_COLOR;
+    extern const glm::vec3 LIGHT_GRAY_COLOR;
+    extern const glm::vec3 GRAY_COLOR;
+    extern const glm::vec3 DARK_COLOR;
+    extern const glm::vec3 BLACK_COLOR;
+}

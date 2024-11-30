@@ -27,6 +27,6 @@ public:
 		instanceVBO[0] = 0;
 		instanceVBO[1] = 0;
 	}
-	void addInstance(std::string name, glm::mat4 modelMatrix, Material &material);
+	void addInstance(std::string name, glm::mat4 modelMatrix, const Material &material);
 	void drawByInstance(Shader* shader, Object &object);
 };
