@@ -124,6 +124,7 @@ class TrainView : public Fl_Gl_Window
 		//something about shader
 		bool hasInitShader = false;
 		Shader* simpleObjectShader;
+		Shader* simpleInstanceObjectShader;
 		Object cube;
 		Instance instance;
 };

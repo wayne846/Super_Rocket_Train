@@ -44,6 +44,7 @@
 
 #define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
 #define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
+#define SIMPLE_INSTANCE_OBJECT_VERT_PATH "/assets/shaders/simpleInstanceObject.vert"
 
 //************************************************************************
 //
@@ -175,7 +176,8 @@ int TrainView::handle(int event)
 //need called under if(gladLoadGL())
 void TrainView::initRander() {
 	//init shader
-	simpleObjectShader = new Shader(PROJECT_DIR "/assets/shaders/simpleObject.vert", PROJECT_DIR "/assets/shaders/simpleObject.frag");
+	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
+	simpleInstanceObjectShader = new Shader(PROJECT_DIR SIMPLE_INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 
 	//init VAO
 	//------------------
@@ -494,47 +496,54 @@ setProjection()
 	}
 }
 
+//set shader uniform, like view, projection, lights...
 void TrainView::initShaders() {
-	simpleObjectShader->use();
 	//get view matrix and projection matrix
 	glm::mat4 view;
 	glGetFloatv(GL_MODELVIEW_MATRIX, &view[0][0]);
 	glm::mat4 projection;
 	glGetFloatv(GL_PROJECTION_MATRIX, &projection[0][0]);
 
-	//set the uniform
-	simpleObjectShader->setMat4("view", view);
-	simpleObjectShader->setMat4("projection", projection);
+	//set simpleObjectShader and simpleInstanceObjectShader
+	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader };
+	for (int i = 0; i < 2; i++) {
+		shaders[i]->use();
 
-	glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
-	simpleObjectShader->setVec3("eyePosition", eyepos);
+		//set the uniform
+		shaders[i]->setMat4("view", view);
+		shaders[i]->setMat4("projection", projection);
 
-	// light properties
-	simpleObjectShader->setVec3("dirLight.ambient", dirLight.ambient);
-	simpleObjectShader->setVec3("dirLight.diffuse", dirLight.diffuse);
-	simpleObjectShader->setVec3("dirLight.specular", dirLight.specular);
-	simpleObjectShader->setVec3("dirLight.direction", dirLight.direction);
-	for (int i = 0; i < 4; i++) {
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].ambient", pointLights[i].ambient);
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].diffuse", pointLights[i].diffuse);
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].specular", pointLights[i].specular);
-		simpleObjectShader->setVec3("pointLights[" + std::to_string(i) + "].position", pointLights[i].position);
-		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].constant", pointLights[i].constant);
-		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].linear", pointLights[i].linear);
-		simpleObjectShader->setFloat("pointLights[" + std::to_string(i) + "].quadratic", pointLights[i].quadratic);
+		glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
+		shaders[i]->setVec3("eyePosition", eyepos);
+
+		// light properties
+		shaders[i]->setVec3("dirLight.ambient", dirLight.ambient);
+		shaders[i]->setVec3("dirLight.diffuse", dirLight.diffuse);
+		shaders[i]->setVec3("dirLight.specular", dirLight.specular);
+		shaders[i]->setVec3("dirLight.direction", dirLight.direction);
+		for (int j = 0; j < 4; j++) {
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].ambient", pointLights[j].ambient);
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].diffuse", pointLights[j].diffuse);
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].specular", pointLights[j].specular);
+			shaders[i]->setVec3("pointLights[" + std::to_string(j) + "].position", pointLights[j].position);
+			shaders[i]->setFloat("pointLights[" + std::to_string(j) + "].constant", pointLights[j].constant);
+			shaders[i]->setFloat("pointLights[" + std::to_string(j) + "].linear", pointLights[j].linear);
+			shaders[i]->setFloat("pointLights[" + std::to_string(j) + "].quadratic", pointLights[j].quadratic);
+		}
+		for (int j = 0; j < 4; j++) {
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].ambient", spotLights[j].ambient);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].diffuse", spotLights[j].diffuse);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].specular", spotLights[j].specular);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].position", spotLights[j].position);
+			shaders[i]->setVec3("spotLights[" + std::to_string(j) + "].direction", spotLights[j].direction);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].cutOff", spotLights[j].cutOff);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].outerCutOff", spotLights[j].outerCutOff);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].constant", spotLights[j].constant);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].linear", spotLights[j].linear);
+			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].quadratic", spotLights[j].quadratic);
+		}
 	}
-	for (int i = 0; i < 4; i++) {
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].ambient", spotLights[i].ambient);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].diffuse", spotLights[i].diffuse);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].specular", spotLights[i].specular);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].position", spotLights[i].position);
-		simpleObjectShader->setVec3("spotLights[" + std::to_string(i) + "].direction", spotLights[i].direction);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].cutOff", spotLights[i].cutOff);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].outerCutOff", spotLights[i].outerCutOff);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].constant", spotLights[i].constant);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].linear", spotLights[i].linear);
-		simpleObjectShader->setFloat("spotLights[" + std::to_string(i) + "].quadratic", spotLights[i].quadratic);
-	}
+	
 }
 
 //draw object by simple object shader
@@ -917,7 +926,7 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 	totalArcLength = presentArcLength;
 
-	instance.drawByInstance(simpleObjectShader, cube);
+	instance.drawByInstance(simpleInstanceObjectShader, cube);
 
 	//draw axis
 	glLineWidth(5);
