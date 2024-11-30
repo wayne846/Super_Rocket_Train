@@ -56,7 +56,7 @@ class CTrack;
 
 #include "RenderUnit/Shader.h"
 #include "RenderUnit/RanderStructure.h"
-#include "RenderUnit/Instance.h"
+#include "RenderUnit/InstanceDrawer.h"
 
 class TrainView : public Fl_Gl_Window
 {

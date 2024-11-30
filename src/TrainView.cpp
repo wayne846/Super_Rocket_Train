@@ -802,7 +802,9 @@ void TrainView::drawStuff(bool doingShadows)
 	trainMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.80754f);
 	trainMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.808273f);
 	trainMaterial.shininess = 51.2f;
-	Instance instance;
+	InstanceDrawer trackInstance(RanderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer sleeperInstance(RanderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer trainInstance(trainMaterial);
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
@@ -891,8 +893,8 @@ void TrainView::drawStuff(bool doingShadows)
 			Pnt3f trackDifference = qt1 - qt0;
 			glm::mat4 trackModel1 = MathHelper::getTransformMatrix(trackCenter1.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
 			glm::mat4 trackModel2 = MathHelper::getTransformMatrix(trackCenter2.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
-			instance.addInstance("track", trackModel1, RanderDatabase::SLIVER_MATERIAL);
-			instance.addInstance("track", trackModel2, RanderDatabase::SLIVER_MATERIAL);
+			trackInstance.addModelMatrix(trackModel1);
+			trackInstance.addModelMatrix(trackModel2);
 
 			Pnt3f distance = qt1 + (-1 * last_sleeper);
 			bool needToDrawTrain = false;
@@ -900,7 +902,7 @@ void TrainView::drawStuff(bool doingShadows)
 				//draw sleeper
 				glm::vec3 up = glm::cross(cross_t.glmvec3(), (qt1 + qt0 * -1).glmvec3());
 				glm::mat4 sleeperModel = MathHelper::getTransformMatrix(qt1.glmvec3(), (qt1 + qt0 * -1).glmvec3(), up, glm::vec3(10, 0.5, 2));
-				instance.addInstance("sleeper", sleeperModel, RanderDatabase::SLIVER_MATERIAL);
+				sleeperInstance.addModelMatrix(sleeperModel);
 
 				last_sleeper = qt1;
 			}
@@ -929,14 +931,16 @@ void TrainView::drawStuff(bool doingShadows)
 					glm::vec3 glmpos = qt1.glmvec3();
 					glmpos = glmpos + 4.5f * up;
 					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
-					instance.addInstance("train", model, trainMaterial);
+					trainInstance.addModelMatrix(model);
 				}	
 				trainDrawed = true;
 			}
 		}
 	}
 	totalArcLength = presentArcLength;
-	instance.drawByInstance(simpleInstanceObjectShader, cube);
+	trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
+	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube);
+	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
 
 	//draw axis
 	glLineWidth(5);
