@@ -386,7 +386,7 @@ void TrainView::draw()
 	initLight();
 	//point light 0, main light
 	pointLights[0].position = glm::vec3(200.0f, 200.0f, 100.0f);
-	pointLights[0].ambient = RanderDatabase::DARK_COLOR;
+	pointLights[0].ambient = RanderDatabase::GRAY_COLOR;
 	pointLights[0].diffuse = RanderDatabase::LIGHT_GRAY_COLOR;
 	pointLights[0].specular = RanderDatabase::WHITE_COLOR;
 	//point light 1, first controlpoint light
@@ -415,7 +415,7 @@ void TrainView::draw()
 
 	setupFloor();
 	//glDisable(GL_LIGHTING);
-	drawFloor(200, 200);
+	//drawFloor(200, 200);
 
 
 	//*********************************************************************
@@ -562,203 +562,41 @@ void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, co
 	glUseProgram(0);
 }
 
-/**
- * @brief draw a cuboid in the world space
- * @param pos center of cuboid
- * @param front front direction of cuboid
- * @param up up direction of cuboid
- * @param width width of cuboid (x axis)
- * @param height height of cuboid (y axis)
- * @param length lenght of cuboid (z axis)
- * @param material influence the normal vector, 0=shape, 1=metal, 2=plastic
- * @param smoothness influence the strength of specular, range is [0, 1]
- */
+//roatateTheta is degree and anticlockwise by +y
 void TrainView::
-drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug) {
-	
-	/*
-	Pnt3f vertexes[8];
-	char minus[8][3]{
-	{-1,-1, 1 },
-	{ 1,-1, 1 },
-	{ 1,-1,-1 },
-	{-1,-1,-1 },
-	{-1, 1, 1 },
-	{ 1, 1, 1 },
-	{ 1, 1,-1 },
-	{-1, 1,-1 }
-	};
-	for (int i = 0; i < 8; i++) {
-		vertexes[i].x = minus[i][0] * width / 2;
-		vertexes[i].y = minus[i][1] * height / 2;
-		vertexes[i].z = minus[i][2] * length / 2;
-	}
-	Pnt3f right = front * up;
-	front.normalize();
-	right.normalize();
-	up.normalize();
-	float rotateMatrix[9] = {
-		right.x, right.y, right.z,
-		up.x, up.y, up.z,
-		front.x, front.y, front.z,
-	};
-	for (int i = 0; i < 8; i++) {
-		MathHelper::mulRotateMatrix(rotateMatrix, vertexes[i]);
-	}
-	for (int i = 0; i < 8; i++) {
-		vertexes[i].x += pos.x;
-		vertexes[i].y += pos.y;
-		vertexes[i].z += pos.z;
-	}
-	Pnt3f* surface[6][4]{
-	{&vertexes[0],&vertexes[3],&vertexes[2],&vertexes[1]},
-	{&vertexes[0],&vertexes[1],&vertexes[5],&vertexes[4]},
-	{&vertexes[1],&vertexes[2],&vertexes[6],&vertexes[5]},
-	{&vertexes[2],&vertexes[3],&vertexes[7],&vertexes[6]},
-	{&vertexes[3],&vertexes[0],&vertexes[4],&vertexes[7]},
-	{&vertexes[4],&vertexes[5],&vertexes[6],&vertexes[7]}
-	};
-	glShadeModel(GL_SMOOTH);
-	if (!doingShadows) {
-		GLfloat materialShininess = MathHelper::lerp(0, 128.f, smoothness);
-		GLfloat materialSpecular[] = { 1.0 * smoothness, 1.0 * smoothness, 1.0 * smoothness, 1.0 };
-		glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
-		glMaterialf(GL_FRONT, GL_SHININESS, materialShininess);
-	}
-	for (int i = 0; i < 6; i++) {
-		if (debug && !doingShadows) {
-			if (i == 1)
-				glColor3ub(180, 0, 0);
-			else if (i == 2)
-				glColor3ub(0, 180, 0);
-			else if (i == 5)
-				glColor3ub(0, 0, 180);
-		}
-		glBegin(GL_QUADS);
-		Pnt3f normal = (*surface[i][3] + -1 * *surface[i][0]) * (*surface[i][1] + -1 * *surface[i][0]);
-		normal.normalize();
-		Pnt3f diagonal1(*surface[i][0] + -1 * *surface[i][2]);
-		Pnt3f diagonal2(*surface[i][1] + -1 * *surface[i][3]);
-		diagonal1.normalize();
-		diagonal2.normalize();
-		diagonal1 = diagonal1 * 0.2;
-		diagonal2 = diagonal2 * 0.2;
-		if (debug && 0) {
-			//printf("%f %f %f\n", surface[i][0]->x, surface[i][0]->y, surface[i][0]->z);
-			printf("%f %f %f\n", normal.x, normal.y, normal.z);
-			printf("%f %f %f\n", normal.x + diagonal1.x, normal.y + diagonal1.y, normal.z + diagonal1.z);
-			printf("%f %f %f\n", normal.x + diagonal2.x, normal.y + diagonal2.y, normal.z + diagonal2.z);
-		}
-		if (material == MATERIAL_PLASTIC)
-			glNormal3f(normal.x, normal.y, normal.z);
-		glTexCoord2f(0.0f, 0.0f);
-		if (material == MATERIAL_METAL)
-			glNormal3f(normal.x + diagonal1.x, normal.y + diagonal1.y, normal.z + diagonal1.z);
-		glVertex3f(surface[i][0]->x, surface[i][0]->y, surface[i][0]->z);
-		glTexCoord2f(1.0f, 0.0f);
-		if (material == MATERIAL_METAL)
-			glNormal3f(normal.x + diagonal2.x, normal.y + diagonal2.y, normal.z + diagonal2.z);
-		glVertex3f(surface[i][1]->x, surface[i][1]->y, surface[i][1]->z);
-		glTexCoord2f(1.0f, 1.0f);
-		if (material == MATERIAL_METAL)
-			glNormal3f(normal.x - diagonal1.x, normal.y - diagonal1.y, normal.z - diagonal1.z);
-		glVertex3f(surface[i][2]->x, surface[i][2]->y, surface[i][2]->z);
-		glTexCoord2f(0.0f, 1.0f);
-		if (material == MATERIAL_METAL)
-			glNormal3f(normal.x - diagonal2.x, normal.y - diagonal2.y, normal.z - diagonal2.z);
-		glVertex3f(surface[i][3]->x, surface[i][3]->y, surface[i][3]->z);
-		glEnd();
-	}
-	*/
-}
-
-void TrainView::
-drawSleeper(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
-	glm::vec3 up = glm::cross(right.glmvec3(), front.glmvec3());
-	glm::mat4 model = MathHelper::getTransformMatrix(pos.glmvec3(), front.glmvec3(), up, glm::vec3(10, 0.5, 2));
-	Material sleeperMaterial;
-	sleeperMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.19225f);
-	sleeperMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.50754f);
-	sleeperMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.508273f);
-	sleeperMaterial.shininess = 51.2f;
-	//drawSimpleObject(cube, model, sleeperMaterial);
-	//instance.addInstance("sleeper", model, sleeperMaterial);
-}
-
-void TrainView::
-drawTrain(Pnt3f pos, Pnt3f front, Pnt3f right, bool doingShadows) {
-	front.normalize();
-	right.normalize();
-	glm::vec3 up = glm::cross(right.glmvec3(), front.glmvec3());
-	glm::vec3 glmpos = pos.glmvec3();
-	glmpos = glmpos + 4.5f * up;
-	glm::mat4 model = MathHelper::getTransformMatrix(glmpos, front.glmvec3(), up, glm::vec3(6,8,10));
-	if (!doingShadows) {
-		glColor3ub(128, 128, 180);
-	}
-	Material trainMaterial;
-	trainMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.89225f);
-	trainMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.80754f);
-	trainMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.808273f);
-	trainMaterial.shininess = 51.2f;
-	//drawSimpleObject(cube, model, trainMaterial);
-	//drawCube(pos, front, up, 6, 8, 10, MATERIAL_METAL, 0.9, doingShadows, true);
-	//instance.addInstance("train", model, trainMaterial);
-}
-
-void TrainView::
-drawTrack(Pnt3f start, Pnt3f end, Pnt3f right, bool doingShadows) {
-	Material trackMaterial;
-	trackMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.19225f);
-	trackMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.50754f);
-	trackMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.508273f);
-	trackMaterial.shininess = 51.2f;
-
-	Pnt3f center = (start + end) * 0.5;
-	Pnt3f difference = end + start * -1;
-	glm::mat4 model = MathHelper::getTransformMatrix(center.glmvec3(), difference.glmvec3(), (right * difference).glmvec3(), glm::vec3(0.3, 0.3, difference.len() + 0.05));
-	//drawSimpleObject(cube, model, trackMaterial);
-	//drawCube(center, difference, right * difference, 0.3, 0.3, difference.len() + 0.05, MATERIAL_PLASTIC, 0.7, doingShadows);
-	//instance.addInstance("track", model, trackMaterial);
-}
-
-void TrainView::
-drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth, float treeHeight, float leafHeight, float leafWidth, float leafWidthDecreaseDelta) {
+drawTree(glm::vec3 pos, float rotateTheta, float treeTrunkWidth, float treeHeight, float leafHeight, float leafWidth, float leafWidthDecreaseDelta) {
 	//check to make sure tree is look good
 	if (leafWidth - (treeHeight / 2.0f / leafHeight) * leafWidthDecreaseDelta < treeTrunkWidth) {
 		leafWidth = (treeHeight / 2.0f / leafHeight) * leafWidthDecreaseDelta + treeTrunkWidth;
 	}
 
-	int treeTrunkColor[] = { 92, 64, 3 };
-	int leafColor[] = { 12, 171, 23 };
+	Material treeTrunkMaterial = {
+		glm::vec3(0.36f, 0.25f, 0.011f),
+		glm::vec3(0.36f, 0.25f, 0.011f),
+		glm::vec3(0.3f, 0.3f, 0.3f),
+		10.0f
+	};
+	Material leafMaterial = {
+		glm::vec3(0.047f, 0.67f, 0.011f),
+		glm::vec3(0.047f, 0.67f, 0.011f),
+		glm::vec3(0.3f, 0.3f, 0.3f),
+		10.0f
+	};
 
-	const Pnt3f ORIGIN = Pnt3f(0, 0, 0);
-	const Pnt3f UP = Pnt3f(0, 1, 0);
-	const Pnt3f FRONT = Pnt3f(0, 0, -1);
-	const Pnt3f RIGHT = Pnt3f(1, 0, 0);
-
-	int material = MATERIAL_PLASTIC;
-
-	//transform
-	glPushMatrix();
-	glTranslatef(pos.x, pos.y, pos.z);
-	glRotatef(rotateTheta, 0, 1, 0);
+	const glm::vec3 ORIGIN = pos;
+	const glm::vec3 UP = glm::vec3(0, 1, 0);
+	const glm::vec3 FRONT = glm::vec3(sin(MathHelper::degreeToRadians(rotateTheta)), 0, -cos(MathHelper::degreeToRadians(rotateTheta)));
 
 	//draw trunk
-	if (!doingShadows) {
-		glColor3ub(treeTrunkColor[0], treeTrunkColor[1], treeTrunkColor[2]);
-	}
-	drawCube(ORIGIN + UP * (treeHeight / 2.0f), FRONT, UP, treeTrunkWidth, treeHeight, treeTrunkWidth, material, 0.3, doingShadows);
+	glm::mat4 treeTrunkModel = MathHelper::getTransformMatrix(ORIGIN + UP * (treeHeight / 2.0f), FRONT, UP, glm::vec3(treeTrunkWidth, treeHeight, treeTrunkWidth));
+	drawSimpleObject(cube, treeTrunkModel, treeTrunkMaterial);
 
 	//draw leaf
-	if (!doingShadows) {
-		glColor3ub(leafColor[0], leafColor[1], leafColor[2]);
-	}
-	for (Pnt3f baseHeight = ORIGIN + UP * (treeHeight / 2.0f) + UP * (leafHeight / 2.0f); baseHeight.y <= treeHeight + leafHeight; baseHeight = baseHeight + UP * leafHeight) {
-		drawCube(baseHeight, FRONT, UP, leafWidth, leafHeight, leafWidth, material, 0.3, doingShadows);
+	for (glm::vec3 baseHeight = ORIGIN + UP * (treeHeight / 2.0f) + UP * (leafHeight / 2.0f); baseHeight.y <= treeHeight + leafHeight; baseHeight = baseHeight + UP * leafHeight) {
+		glm::mat4 leafModel = MathHelper::getTransformMatrix(baseHeight, FRONT, UP, glm::vec3(leafWidth, leafHeight, leafWidth));
+		drawSimpleObject(cube, leafModel, leafMaterial);
 		leafWidth -= leafWidthDecreaseDelta;
 	}
-	glPopMatrix();
 }
 
 //************************************************************************
@@ -793,15 +631,20 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 	}
 
+	//draw the floor
+	glm::mat4 floorModel = MathHelper::getTransformMatrix(glm::vec3(0, -0.5, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(200, 1, 200));
+	drawSimpleObject(cube, floorModel, RanderDatabase::GREEN_PLASTIC_MATERIAL);
+
 	//draw the tree
-	//drawTree(Pnt3f(0, 0, 0), 0, doingShadows);
+	drawTree(glm::vec3(0, 0, 0), 0);
 
 	// draw the track, sleeper, train
-	Material trainMaterial;
-	trainMaterial.ambient = glm::vec3(0.19225f, 0.19225f, 0.89225f);
-	trainMaterial.diffuse = glm::vec3(0.50754f, 0.50754f, 0.80754f);
-	trainMaterial.specular = glm::vec3(0.508273f, 0.508273f, 0.808273f);
-	trainMaterial.shininess = 51.2f;
+	Material trainMaterial = {
+		glm::vec3(0.19225f, 0.19225f, 0.89225f),
+		glm::vec3(0.50754f, 0.50754f, 0.80754f),
+		glm::vec3(0.508273f, 0.508273f, 0.808273f),
+		51.2f
+	};
 	InstanceDrawer trackInstance(RanderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer sleeperInstance(RanderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer trainInstance(trainMaterial);
@@ -964,6 +807,7 @@ void TrainView::drawStuff(bool doingShadows)
 	glLineWidth(1);
 
 	//draw cube
+	/*
 	if (!doingShadows) {
 		Material cubeMaterial;
 		cubeMaterial.ambient = glm::vec3(1.0f, 0.5f, 0.31f);
@@ -972,7 +816,7 @@ void TrainView::drawStuff(bool doingShadows)
 		cubeMaterial.shininess = 32.0f;
 		glm::mat4 model = MathHelper::getTransformMatrix(glm::vec3(0, 20, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(5, 10, 15));
 		drawSimpleObject(cube, model, cubeMaterial);
-	}
+	}*/
 
 	// draw the train
 	

@@ -89,11 +89,7 @@ class TrainView : public Fl_Gl_Window
 		void setShaders();
 
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
-		void drawCube(Pnt3f pos, Pnt3f front, Pnt3f up, float width, float height, float length, int material, float smoothness, bool doingShadows, bool debug = 0);
-		void drawTrain(Pnt3f, Pnt3f, Pnt3f, bool);
-		void drawSleeper(Pnt3f, Pnt3f, Pnt3f, bool);
-		void drawTrack(Pnt3f, Pnt3f, Pnt3f, bool);
-		void drawTree(Pnt3f pos, float rotateTheta, bool doingShadows, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
+		void drawTree(glm::vec3 pos, float rotateTheta, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 
 	public:
 		const float DIVIDE_LINE = 128; //how many segment are track divide
