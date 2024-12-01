@@ -45,7 +45,7 @@
 
 #define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
 #define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
-#define SIMPLE_INSTANCE_OBJECT_VERT_PATH "/assets/shaders/simpleInstanceObject.vert"
+#define INSTANCE_OBJECT_VERT_PATH "/assets/shaders/instanceObject.vert"
 
 //************************************************************************
 //
@@ -178,7 +178,7 @@ int TrainView::handle(int event)
 void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
-	simpleInstanceObjectShader = new Shader(PROJECT_DIR SIMPLE_INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
+	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 
 	//init VAO
 	//------------------
