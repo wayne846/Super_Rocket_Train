@@ -677,7 +677,7 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 		glm::vec3(0.25f, 0.52f, 0.96f),
 		glm::vec3(0.25f, 0.52f, 0.96f),
 		glm::vec3(0.5f, 0.5f, 0.5f),
-		51.2f
+		70.0f
 	};
 
 	waterShader->use();
@@ -745,10 +745,10 @@ void TrainView::drawStuff(bool doingShadows)
 	drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
 
 	//draw the tree
-	drawTree(glm::vec3(0, 0, 0));
+	//drawTree(glm::vec3(0, 0, 0));
 
 	//draw the water
-	drawWater(glm::vec3(0, 1, 50), glm::vec3(100, 1, 50));
+	drawWater(glm::vec3(0, 1, 0), glm::vec3(20, 1, 20));
 
 	// draw the track, sleeper, train
 	Material trainMaterial = {

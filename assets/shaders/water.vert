@@ -12,24 +12,14 @@ uniform mat4 projection;
 
 out V_OUT {
     vec3 position;
-    vec3 normal;
     vec2 texCoords;
 } v_out;
 
 void main()
 {
-    mat3 rotate = mat3(
-        1.0f, 0.0f ,0.0f,
-        0.0f, 0.0f, -1.0f,
-        0.0f, 1.0f, 0.0f
-    );
+    const float heightMapStrength = 2;
 
-    //get normal in world space
-    vec3 normal = normalize(rotate * texture(normalMap, texCoords).xyz);
-    normal = mat3(normalMatrix) * normal;
-
-    v_out.position = (model * vec4(position, 1)).xyz + normal * texture(heightMap, texCoords).r;
-    v_out.normal = normal;
+    v_out.position = (model * vec4(position, 1)).xyz + vec3(0, 1, 0) * texture(heightMap, texCoords).r * heightMapStrength;
     v_out.texCoords = texCoords;
     gl_Position = projection * view * vec4(v_out.position, 1);
 }

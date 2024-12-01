@@ -46,7 +46,6 @@ struct SpotLight {
 in V_OUT
 {
    vec3 position;
-   vec3 normal;
    vec2 texCoords;
 } f_in;
 
@@ -58,6 +57,9 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 #define NR_SPOT_LIGHTS 4  
 uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 
+uniform sampler2D normalMap;
+uniform mat4 normalMatrix;
+
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 position, vec3 eyeDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 position, vec3 eyeDir);
@@ -65,7 +67,13 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 position, vec3 eyeDir);
 void main()
 {   
     // properties
-    vec3 norm = normalize(f_in.normal);
+    mat3 rotate = mat3(
+        1.0f, 0.0f ,0.0f,
+        0.0f, 0.0f, -1.0f,
+        0.0f, 1.0f, 0.0f
+    );
+    vec3 norm = normalize(rotate * texture(normalMap, f_in.texCoords).xyz);
+    norm = normalize(mat3(normalMatrix) * norm);
     vec3 eyeDir = normalize(eyePosition - f_in.position);
 
     // phase 1: Directional lighting
