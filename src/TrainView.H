@@ -125,6 +125,9 @@ class TrainView : public Fl_Gl_Window
 		Shader* waterShader;
 		Object cube;
 		Object water; //1x1 plane
+
+		//texture
 		unsigned int waterHeightMap;
 		unsigned int waterNormalMap;
+		unsigned int skybox;
 };

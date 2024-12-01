@@ -50,7 +50,16 @@
 #define WATER_FRAG_PATH "/assets/shaders/water.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/000.png"
-#define WATER_NORMAL_PATH "/assets/images/waterNormal/000normal.png"
+#define WATER_NORMAL_PATH "/assets/images/waterNormal/001normal.png"
+
+const std::vector<std::string> SKYBOX_PATH = {
+	PROJECT_DIR "/assets/images/skybox/right.jpg",
+	PROJECT_DIR "/assets/images/skybox/left.jpg",
+	PROJECT_DIR "/assets/images/skybox/top.jpg",
+	PROJECT_DIR "/assets/images/skybox/bottom.jpg",
+	PROJECT_DIR "/assets/images/skybox/front.jpg",
+	PROJECT_DIR "/assets/images/skybox/back.jpg"
+};
 
 #define WATER_RESOLUTION 100
 
@@ -191,6 +200,7 @@ void TrainView::initRander() {
 	//init texture
 	waterHeightMap = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH);
 	waterNormalMap = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH);
+	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
 	//init VAO
 	//------------------
@@ -676,8 +686,8 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	Material waterMaterial = {
 		glm::vec3(0.25f, 0.52f, 0.96f),
 		glm::vec3(0.25f, 0.52f, 0.96f),
-		glm::vec3(0.5f, 0.5f, 0.5f),
-		70.0f
+		glm::vec3(1.0f, 1.0f, 1.0f),
+		128.0f
 	};
 
 	waterShader->use();
@@ -697,6 +707,9 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, waterNormalMap);
 	waterShader->setInt("normalMap", 1);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+	waterShader->setInt("skybox", 2);
 
 	glBindVertexArray(water.VAO);
 	glDrawElements(GL_TRIANGLES, water.element_amount, GL_UNSIGNED_INT, 0);
@@ -748,14 +761,14 @@ void TrainView::drawStuff(bool doingShadows)
 	//drawTree(glm::vec3(0, 0, 0));
 
 	//draw the water
-	drawWater(glm::vec3(0, 1, 0), glm::vec3(20, 1, 20));
+	drawWater(glm::vec3(0, 1, 0), glm::vec3(40, 1, 40));
 
 	// draw the track, sleeper, train
 	Material trainMaterial = {
 		glm::vec3(0.19225f, 0.19225f, 0.89225f),
 		glm::vec3(0.50754f, 0.50754f, 0.80754f),
 		glm::vec3(0.508273f, 0.508273f, 0.808273f),
-		52.1f
+		128.0f
 	};
 	InstanceDrawer trackInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer sleeperInstance(RenderDatabase::SLIVER_MATERIAL);

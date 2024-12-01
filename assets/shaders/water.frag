@@ -60,6 +60,8 @@ uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 uniform sampler2D normalMap;
 uniform mat4 normalMatrix;
 
+uniform samplerCube skybox;
+
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 position, vec3 eyeDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 position, vec3 eyeDir);
@@ -87,8 +89,13 @@ void main()
     for(int i = 0; i < NR_SPOT_LIGHTS; i++){
         result += CalcSpotLight(spotLights[i], norm, f_in.position, eyeDir);
     }
+
+    vec4 reflectColor = texture(skybox, reflect(-eyeDir, norm));
+    float ratio = 1.00 / 1.52;
+    vec3 R = refract(-eyeDir, norm, ratio);
+    vec4 refractColor = vec4(texture(skybox, R).rgb, 1.0);
     
-    f_color = vec4(result, 1.0);
+    f_color = mix(reflectColor, vec4(result, 1.0), 0.5);//vec4(result, 1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir)
