@@ -15,6 +15,7 @@ private:
 public:
 	InstanceDrawer();
 	InstanceDrawer(const Material& m);
+	~InstanceDrawer();
 
 	void addModelMatrix(glm::mat4 modelMatrix);
 	void setMaterial(const Material& m);

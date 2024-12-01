@@ -25,6 +25,7 @@
 *************************************************************************/
 
 #include <iostream>
+#include <algorithm>
 #include <Fl/fl.h>
 
 // we will need OpenGL, and OpenGL needs windows.h
@@ -656,6 +657,7 @@ void TrainView::drawStuff(bool doingShadows)
 
 	bool trainDrawed = false;
 	float presentArcLength = 0;
+	
 	for (int i = 0; i < num_point; ++i) {
 
 		// pos
@@ -668,42 +670,47 @@ void TrainView::drawStuff(bool doingShadows)
 		Pnt3f cp_orient_p1 = m_pTrack->points[i].orient;
 		Pnt3f cp_orient_p2 = m_pTrack->points[(i + 1) % num_point].orient;
 		Pnt3f cp_orient_p3 = m_pTrack->points[(i + 2) % num_point].orient;
-		float* M;
+		
 		float cp_pos_x[4] = { cp_pos_p0.x,cp_pos_p1.x,cp_pos_p2.x,cp_pos_p3.x };
 		float cp_pos_y[4] = { cp_pos_p0.y,cp_pos_p1.y,cp_pos_p2.y,cp_pos_p3.y };
 		float cp_pos_z[4] = { cp_pos_p0.z,cp_pos_p1.z,cp_pos_p2.z,cp_pos_p3.z };
 		float cp_orient_x[4] = { cp_orient_p0.x,cp_orient_p1.x,cp_orient_p2.x,cp_orient_p3.x };
 		float cp_orient_y[4] = { cp_orient_p0.y,cp_orient_p1.y,cp_orient_p2.y,cp_orient_p3.y };
 		float cp_orient_z[4] = { cp_orient_p0.z,cp_orient_p1.z,cp_orient_p2.z,cp_orient_p3.z };
+
+		float M[16];
+		float linearMatrix[16] = {
+			0,0,0,0,
+			0,0,-1,1,
+			0,0,1,0,
+			0,0,0,0
+		};
+		float cardinalMatrix[16] = {
+			-1,2,-1,0,
+			3,-5,0,2,
+			-3,4,1,0,
+			1,-1,0,0
+		};
+		float bSplineMatrix[16] = {
+			-1,3,-3,1,
+			3,-6,0,4,
+			-3,3,3,1,
+			1,0,0,0
+		};
 		if (tw->splineBrowser->value() == TrainWindow::LINEAR) { //linear
-			M = new float[16]{
-				0,0,0,0,
-				0,0,-1,1,
-				0,0,1,0,
-				0,0,0,0
-			};
+			std::copy(std::begin(linearMatrix), std::end(linearMatrix), std::begin(M));
 			for (int i = 0; i < 16; i++) {
 				M[i] /= 1.0f;
 			}
 		}
 		else if (tw->splineBrowser->value() == TrainWindow::CARDINAL) { //cardinal
-			M = new float[16]{
-				-1,2,-1,0,
-				3,-5,0,2,
-				-3,4,1,0,
-				1,-1,0,0
-			};
+			std::copy(std::begin(cardinalMatrix), std::end(cardinalMatrix), std::begin(M));
 			for (int i = 0; i < 16; i++) {
 				M[i] /= 2.0f;
 			}
 		}
 		else { // B-spline
-			M = new float[16]{
-				-1,3,-3,1,
-				3,-6,0,4,
-				-3,3,3,1,
-				1,0,0,0
-			};
+			std::copy(std::begin(bSplineMatrix), std::end(bSplineMatrix), std::begin(M));
 			for (int i = 0; i < 16; i++) {
 				M[i] /= 6.0f;
 			}
@@ -714,7 +721,7 @@ void TrainView::drawStuff(bool doingShadows)
 		MathHelper::GxM(cp_orient_x, M);
 		MathHelper::GxM(cp_orient_y, M);
 		MathHelper::GxM(cp_orient_z, M);
-		delete[] M;
+
 		float percent = 1.0f / DIVIDE_LINE;
 		float t = 0;
 		Pnt3f qt(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
@@ -807,20 +814,6 @@ void TrainView::drawStuff(bool doingShadows)
 	glVertex3f(0, 0, 20);
 	glEnd();
 	glLineWidth(1);
-
-	//draw cube
-	/*
-	if (!doingShadows) {
-		Material cubeMaterial;
-		cubeMaterial.ambient = glm::vec3(1.0f, 0.5f, 0.31f);
-		cubeMaterial.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
-		cubeMaterial.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-		cubeMaterial.shininess = 32.0f;
-		glm::mat4 model = MathHelper::getTransformMatrix(glm::vec3(0, 20, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(5, 10, 15));
-		drawSimpleObject(cube, model, cubeMaterial);
-	}*/
-
-	// draw the train
 	
 }
 

@@ -7,6 +7,12 @@ InstanceDrawer::InstanceDrawer() {
 	this->instanceVBO[1] = 0;
 }
 
+InstanceDrawer::~InstanceDrawer() {
+	if (instanceVBO[0] != 0 || instanceVBO[1] != 0) {
+		glDeleteBuffers(2, this->instanceVBO);
+	}
+}
+
 InstanceDrawer::InstanceDrawer(const Material& m) {
 	this->instanceVBO[0] = 0;
 	this->instanceVBO[1] = 0;
@@ -28,8 +34,7 @@ void InstanceDrawer::setMaterial(const Material& m) {
 void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 {
 	if (instanceVBO[0] == 0 && instanceVBO[1] == 0) {
-		glGenBuffers(2, instanceVBO);
-
+		glGenBuffers(2, this->instanceVBO);
 	}
 	glBindVertexArray(object.VAO);
 	shader->use();
