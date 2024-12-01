@@ -46,6 +46,13 @@
 #define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
 #define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
 #define INSTANCE_OBJECT_VERT_PATH "/assets/shaders/instanceObject.vert"
+#define WATER_VERT_PATH "/assets/shaders/water.vert"
+#define WATER_FRAG_PATH "/assets/shaders/water.frag"
+
+#define WATER_HEIGHT_PATH "/assets/images/waterHeight/000.png"
+#define WATER_NORMAL_PATH "/assets/images/waterNormal/000normal.png"
+
+#define WATER_RESOLUTION 100
 
 //************************************************************************
 //
@@ -179,6 +186,11 @@ void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
+	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
+
+	//init texture
+	waterHeightMap = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH);
+	waterNormalMap = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH);
 
 	//init VAO
 	//------------------
@@ -287,6 +299,59 @@ void TrainView::initRander() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeElement), cubeElement, GL_STATIC_DRAW);
 	// Unbind VAO
 	glBindVertexArray(0);
+
+	//water
+	GLfloat  waterVertices[WATER_RESOLUTION * WATER_RESOLUTION * 3];
+	GLfloat  waterTexcoords[WATER_RESOLUTION * WATER_RESOLUTION * 2];
+	GLuint waterElement[(WATER_RESOLUTION - 1) * (WATER_RESOLUTION - 1) * 6];
+	for (int i = 0; i < WATER_RESOLUTION; i++) {
+		for (int j = 0; j < WATER_RESOLUTION; j++) {
+			int t = (i * WATER_RESOLUTION + j) * 3;
+			waterVertices[t] = j / (float)(WATER_RESOLUTION - 1) - 0.5f;
+			waterVertices[t + 1] = 0;
+			waterVertices[t + 2] = i / (float)(WATER_RESOLUTION - 1) - 0.5f;
+		}
+	}
+	for (int i = 0; i < WATER_RESOLUTION; i++) {
+		for (int j = 0; j < WATER_RESOLUTION; j++) {
+			int t = (i * WATER_RESOLUTION + j) * 2;
+			waterTexcoords[t] = j / (float)(WATER_RESOLUTION - 1);
+			waterTexcoords[t + 1] = i / (float)(WATER_RESOLUTION - 1);
+		}
+	}
+	for (int i = 0; i < WATER_RESOLUTION; i++) {
+		for (int j = 0; j < WATER_RESOLUTION; j++) {
+			if (i == WATER_RESOLUTION - 1 || j == WATER_RESOLUTION - 1) continue;
+			int t = (i * (WATER_RESOLUTION - 1) + j) * 6;
+			int p = i * WATER_RESOLUTION + j;
+			waterElement[t] = p;
+			waterElement[t + 1] = p + WATER_RESOLUTION + 1;
+			waterElement[t + 2] = p + 1;
+			waterElement[t + 3] = p;
+			waterElement[t + 4] = p + WATER_RESOLUTION;
+			waterElement[t + 5] = p + WATER_RESOLUTION + 1;
+		}
+	}
+	glGenVertexArrays(1, &water.VAO);
+	glGenBuffers(2, water.VBO);
+	glGenBuffers(1, &water.EBO);
+	glBindVertexArray(water.VAO);
+	water.element_amount = sizeof(waterElement) / sizeof(GLuint);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, water.VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(waterVertices), waterVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Texcoords attribute
+	glBindBuffer(GL_ARRAY_BUFFER, water.VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(waterTexcoords), waterTexcoords, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	//Element attribute
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, water.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(waterElement), waterElement, GL_STATIC_DRAW);
+	// Unbind VAO
+	glBindVertexArray(0);
 }
 
 //set all light to dark
@@ -387,22 +452,22 @@ void TrainView::draw()
 	initLight();
 	//point light 0, main light
 	pointLights[0].position = glm::vec3(200.0f, 200.0f, 100.0f);
-	pointLights[0].ambient = RanderDatabase::GRAY_COLOR;
-	pointLights[0].diffuse = RanderDatabase::LIGHT_GRAY_COLOR;
-	pointLights[0].specular = RanderDatabase::WHITE_COLOR;
+	pointLights[0].ambient = RenderDatabase::GRAY_COLOR;
+	pointLights[0].diffuse = RenderDatabase::LIGHT_GRAY_COLOR;
+	pointLights[0].specular = RenderDatabase::WHITE_COLOR;
 	//point light 1, first controlpoint light
 	glm::vec3 firstContropointPos = glm::vec3(m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z);
 	pointLights[1].position = firstContropointPos;
-	pointLights[1].diffuse = RanderDatabase::WHITE_COLOR;
-	pointLights[1].specular = RanderDatabase::WHITE_COLOR;
+	pointLights[1].diffuse = RenderDatabase::WHITE_COLOR;
+	pointLights[1].specular = RenderDatabase::WHITE_COLOR;
 	pointLights[1].linear = 0.014f;
 	pointLights[1].quadratic = 0.0007f;
 	//spot light 0, train headlight
 	glm::vec3 trainHeadlightPos = trainPos.glmvec3() + trainFront.glmvec3() * 5.1f + trainUp.glmvec3() * 4.0f;
 	spotLights[0].position = trainHeadlightPos;
 	spotLights[0].direction = trainFront.glmvec3();
-	spotLights[0].diffuse = RanderDatabase::YELLOW_COLOR;
-	spotLights[0].specular = RanderDatabase::YELLOW_COLOR;
+	spotLights[0].diffuse = RenderDatabase::YELLOW_COLOR;
+	spotLights[0].specular = RenderDatabase::YELLOW_COLOR;
 	spotLights[0].cutOff = cos(MathHelper::degreeToRadians(30));
 	spotLights[0].outerCutOff = cos(MathHelper::degreeToRadians(35));
 	spotLights[0].linear = 0.007; 
@@ -499,8 +564,9 @@ void TrainView::setShaders() {
 	glGetFloatv(GL_PROJECTION_MATRIX, &projection[0][0]);
 
 	//set simpleObjectShader and simpleInstanceObjectShader
-	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader };
-	for (int i = 0; i < 2; i++) {
+	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader };
+	int size = sizeof(shaders) / sizeof(Shader*);
+	for (int i = 0; i < size; i++) {
 		shaders[i]->use();
 
 		//set the uniform
@@ -602,6 +668,46 @@ drawTree(glm::vec3 pos, float rotateTheta, float treeTrunkWidth, float treeHeigh
 	}
 }
 
+void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
+	const glm::vec3 UP = glm::vec3(0, 1, 0);
+	const glm::vec3 FRONT = glm::vec3(sin(MathHelper::degreeToRadians(rotateTheta)), 0, -cos(MathHelper::degreeToRadians(rotateTheta)));
+	glm::mat4 model = MathHelper::getTransformMatrix(pos, FRONT, UP, scale);
+
+	Material waterMaterial = {
+		glm::vec3(0.25f, 0.52f, 0.96f),
+		glm::vec3(0.25f, 0.52f, 0.96f),
+		glm::vec3(0.5f, 0.5f, 0.5f),
+		51.2f
+	};
+
+	waterShader->use();
+
+	waterShader->setMat4("model", model);
+	waterShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));
+
+	// material properties
+	waterShader->setVec3("material.ambient", waterMaterial.ambient);
+	waterShader->setVec3("material.diffuse", waterMaterial.diffuse);
+	waterShader->setVec3("material.specular", waterMaterial.specular);
+	waterShader->setFloat("material.shininess", waterMaterial.shininess);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, waterHeightMap);
+	waterShader->setInt("heightMap", 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, waterNormalMap);
+	waterShader->setInt("normalMap", 1);
+
+	glBindVertexArray(water.VAO);
+	glDrawElements(GL_TRIANGLES, water.element_amount, GL_UNSIGNED_INT, 0);
+
+	//unbind VAO
+	glBindVertexArray(0);
+
+	//unbind shader(switch to fixed pipeline)
+	glUseProgram(0);
+}
+
 //************************************************************************
 // cp_pos_p0.x,cp_pos_p1.x,cp_pos_p2.x,cp_pos_p3.x };
 // * this draws all of the stuff in the world
@@ -636,20 +742,23 @@ void TrainView::drawStuff(bool doingShadows)
 
 	//draw the floor
 	glm::mat4 floorModel = MathHelper::getTransformMatrix(glm::vec3(0, -0.5, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(200, 1, 200));
-	drawSimpleObject(cube, floorModel, RanderDatabase::GREEN_PLASTIC_MATERIAL);
+	drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
 
 	//draw the tree
-	drawTree(glm::vec3(0, 0, 0), 0);
+	drawTree(glm::vec3(0, 0, 0));
+
+	//draw the water
+	drawWater(glm::vec3(0, 1, 50), glm::vec3(100, 1, 50));
 
 	// draw the track, sleeper, train
 	Material trainMaterial = {
 		glm::vec3(0.19225f, 0.19225f, 0.89225f),
 		glm::vec3(0.50754f, 0.50754f, 0.80754f),
 		glm::vec3(0.508273f, 0.508273f, 0.808273f),
-		51.2f
+		52.1f
 	};
-	InstanceDrawer trackInstance(RanderDatabase::SLIVER_MATERIAL);
-	InstanceDrawer sleeperInstance(RanderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer trackInstance(RenderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer sleeperInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer trainInstance(trainMaterial);
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);

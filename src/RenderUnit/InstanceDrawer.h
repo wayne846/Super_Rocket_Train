@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "RanderStructure.h"
+#include "RenderStructure.h"
 #include "Shader.h"
 #include <glm/glm.hpp>
 

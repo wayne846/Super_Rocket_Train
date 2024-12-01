@@ -55,7 +55,7 @@ class CTrack;
 #include "Utilities/Pnt3f.H"
 
 #include "RenderUnit/Shader.h"
-#include "RenderUnit/RanderStructure.h"
+#include "RenderUnit/RenderStructure.h"
 #include "RenderUnit/InstanceDrawer.h"
 
 class TrainView : public Fl_Gl_Window
@@ -89,7 +89,8 @@ class TrainView : public Fl_Gl_Window
 		void setShaders();
 
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
-		void drawTree(glm::vec3 pos, float rotateTheta, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
+		void drawTree(glm::vec3 pos, float rotateTheta = 0.0f, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
+		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
 
 	public:
 		const float DIVIDE_LINE = 128; //how many segment are track divide
@@ -121,5 +122,9 @@ class TrainView : public Fl_Gl_Window
 		bool hasInitRander = false;
 		Shader* simpleObjectShader;
 		Shader* simpleInstanceObjectShader;
+		Shader* waterShader;
 		Object cube;
+		Object water; //1x1 plane
+		unsigned int waterHeightMap;
+		unsigned int waterNormalMap;
 };

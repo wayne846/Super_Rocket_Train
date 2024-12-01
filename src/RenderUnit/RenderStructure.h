@@ -1,5 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <vector>
+#include <string>
 
 struct Material {
     glm::vec3 ambient;
@@ -50,7 +52,7 @@ struct Object {
     unsigned int element_amount;
 };
 
-namespace RanderDatabase {
+namespace RenderDatabase {
     extern const Material SLIVER_MATERIAL;
     extern const Material WHITE_PLASTIC_MATERIAL;
     extern const Material GREEN_PLASTIC_MATERIAL;
@@ -62,4 +64,7 @@ namespace RanderDatabase {
     extern const glm::vec3 GRAY_COLOR;
     extern const glm::vec3 DARK_COLOR;
     extern const glm::vec3 BLACK_COLOR;
+
+    unsigned int loadTexture(const std::string path);
+    unsigned int loadCubemap(const std::vector<std::string> faces);
 }

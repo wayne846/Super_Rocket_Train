@@ -9,12 +9,14 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/instanceObject.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/water.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/water.frag
 ) 
 
 set(SRC_RENDER_UNIT
     ${SRC_DIR}RenderUnit/Shader.h
-    ${SRC_DIR}RenderUnit/RanderStructure.h
-    ${SRC_DIR}RenderUnit/RanderStructure.cpp
+    ${SRC_DIR}RenderUnit/RenderStructure.h
+    ${SRC_DIR}RenderUnit/RenderStructure.cpp
     ${SRC_DIR}RenderUnit/InstanceDrawer.h
     ${SRC_DIR}RenderUnit/InstanceDrawer.cpp
 )
