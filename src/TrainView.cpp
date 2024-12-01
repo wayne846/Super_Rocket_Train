@@ -537,6 +537,8 @@ void TrainView::setShaders() {
 		}
 	}
 	
+	//set back to opengl fixed pipeline
+	glUseProgram(0);
 }
 
 //draw object by simple object shader
