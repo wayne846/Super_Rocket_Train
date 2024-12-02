@@ -49,8 +49,8 @@
 #define WATER_VERT_PATH "/assets/shaders/water.vert"
 #define WATER_FRAG_PATH "/assets/shaders/water.frag"
 
-#define WATER_HEIGHT_PATH "/assets/images/waterHeight/000.png"
-#define WATER_NORMAL_PATH "/assets/images/waterNormal/001normal.png"
+#define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
+#define WATER_NORMAL_PATH "/assets/images/waterNormal/"
 
 const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/right.jpg",
@@ -61,7 +61,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/back.jpg"
 };
 
-#define WATER_RESOLUTION 100
+#define WATER_RESOLUTION 120
 
 //************************************************************************
 //
@@ -190,7 +190,7 @@ int TrainView::handle(int event)
 	return Fl_Gl_Window::handle(event);
 }
 
-//need called under if(gladLoadGL())
+//init shader, texture, VAO. need called under if(gladLoadGL())
 void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
@@ -198,8 +198,18 @@ void TrainView::initRander() {
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 
 	//init texture
-	waterHeightMap = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH);
-	waterNormalMap = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH);
+	for (int i = 0; i < 200; i++) {
+		std::string zero = "00";
+		if (i >= 10 && i < 100) zero = "0";
+		if (i >= 100) zero = "";
+		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
+	}
+	for (int i = 0; i < 200; i++) {
+		std::string zero = "00";
+		if (i >= 10 && i < 100) zero = "0";
+		if (i >= 100) zero = "";
+		waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
+	}
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
 	//init VAO
@@ -702,10 +712,10 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	waterShader->setFloat("material.shininess", waterMaterial.shininess);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, waterHeightMap);
+	glBindTexture(GL_TEXTURE_2D, waterHeightMap[tw->clock_time % 200]);
 	waterShader->setInt("heightMap", 0);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, waterNormalMap);
+	glBindTexture(GL_TEXTURE_2D, waterNormalMap[tw->clock_time % 200]);
 	waterShader->setInt("normalMap", 1);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
@@ -761,7 +771,7 @@ void TrainView::drawStuff(bool doingShadows)
 	//drawTree(glm::vec3(0, 0, 0));
 
 	//draw the water
-	drawWater(glm::vec3(0, 1, 0), glm::vec3(40, 1, 40));
+	drawWater(glm::vec3(0, 1, 0), glm::vec3(50, 1, 50));
 
 	// draw the track, sleeper, train
 	Material trainMaterial = {

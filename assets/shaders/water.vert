@@ -17,7 +17,7 @@ out V_OUT {
 
 void main()
 {
-    const float heightMapStrength = 3;
+    const float heightMapStrength = 5;
 
     v_out.position = (model * vec4(position, 1)).xyz + vec3(0, 1, 0) * texture(heightMap, texCoords).r * heightMapStrength;
     v_out.texCoords = texCoords;

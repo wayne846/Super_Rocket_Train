@@ -74,8 +74,11 @@ void main()
         0.0f, 0.0f, -1.0f,
         0.0f, 1.0f, 0.0f
     );
-    vec3 norm = normalize(rotate * texture(normalMap, f_in.texCoords).xyz);
-    norm = normalize(mat3(normalMatrix) * norm);
+    vec3 norm = texture(normalMap, f_in.texCoords).xyz;
+    norm = normalize(norm * 2.0 - 1.0);
+    norm = normalize(rotate * norm);
+    //norm = normalize(mat3(normalMatrix) * norm);
+    
     vec3 eyeDir = normalize(eyePosition - f_in.position);
 
     // phase 1: Directional lighting

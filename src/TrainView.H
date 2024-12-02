@@ -127,7 +127,7 @@ class TrainView : public Fl_Gl_Window
 		Object water; //1x1 plane
 
 		//texture
-		unsigned int waterHeightMap;
-		unsigned int waterNormalMap;
+		unsigned int waterHeightMap[200];
+		unsigned int waterNormalMap[200];
 		unsigned int skybox;
 };
