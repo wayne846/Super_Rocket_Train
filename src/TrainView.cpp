@@ -411,32 +411,32 @@ void TrainView::setCylinder()
 	}
 
 	// side surface
-	for (int i = vn; i < vn*2; i++) {
-		int index = (i-vn) * 6;
+	for (int i = vn; i < vn * 2; i++) {
+		int index = (i - vn) * 6;
 		cylinderElement[index] = i;
-		cylinderElement[index+2] = vn + i;
-		cylinderElement[index+3] = vn+i;
-		if (i + 1 < 2*vn) {
+		cylinderElement[index + 2] = vn + i;
+		cylinderElement[index + 3] = vn + i;
+		if (i + 1 < 2 * vn) {
 			cylinderElement[index + 1] = i + 1;
 			cylinderElement[index + 4] = vn + i + 1;
 			cylinderElement[index + 5] = i + 1;
 		}
 		else {
 			cylinderElement[index + 1] = vn;
-			cylinderElement[index + 4] = vn*2;
+			cylinderElement[index + 4] = vn * 2;
 			cylinderElement[index + 5] = vn;
 		}
 	}
 	// top surface
 	for (int i = 0; i < vn - 2; i++) {
-		int index = (vn*2+i) * 3;
+		int index = (vn * 2 + i) * 3;
 		cylinderElement[index] = 0;
 		cylinderElement[index + 1] = i + 1;
 		cylinderElement[index + 2] = i + 2;
 	}
 	// buttom surface
 	for (int i = vn * 3; i < vn * 4 - 2; i++) {
-		int index = (vn * 3 + (i - vn*3) -2 ) * 3;
+		int index = (vn * 3 + (i - vn * 3) - 2) * 3;
 		cylinderElement[index] = vn * 3;
 		cylinderElement[index + 1] = i + 1;
 		cylinderElement[index + 2] = i + 2;
@@ -525,7 +525,7 @@ void TrainView::setCone()
 	// buttom surface
 	for (int i = vn * 2; i < vn * 3 - 2; i++) {
 		int index = (i - vn) * 3;
-		coneElement[index] = vn*2;
+		coneElement[index] = vn * 2;
 		coneElement[index + 1] = i + 1;
 		coneElement[index + 2] = i + 2;
 	}
@@ -1173,21 +1173,33 @@ void TrainView::drawStuff(bool doingShadows)
 
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer targetInstance(RenderDatabase::RUBY_MATERIAL);
 	collisionJudge();
 	updateEntity();
 	//draw rocket and target
 	for (int i = 0; i < rockets.size(); i++) {
-		glm::mat4 HeadModel = MathHelper::getTransformMatrix(
-			rockets[i].pos.glmvec3(), rockets[i].front.glmvec3(), rockets[i].up.glmvec3(),
-			glm::vec3(4, 4, 3));
-		glm::mat4 BodyModel = MathHelper::getTransformMatrix(
-			(rockets[i].pos + rockets[i].front * -5.5).glmvec3(), rockets[i].front.glmvec3(), rockets[i].up.glmvec3(),
-			glm::vec3(3.5, 3.5, 8));
-		rocketHeadInstance.addModelMatrix(HeadModel);
-		rocketBodyInstance.addModelMatrix(BodyModel);
+		if (rockets[i].state == 0) {
+			glm::mat4 HeadModel = MathHelper::getTransformMatrix(
+				rockets[i].pos.glmvec3(), rockets[i].front.glmvec3(), rockets[i].up.glmvec3(),
+				glm::vec3(4, 4, 3));
+			glm::mat4 BodyModel = MathHelper::getTransformMatrix(
+				(rockets[i].pos + rockets[i].front * -5.5).glmvec3(), rockets[i].front.glmvec3(), rockets[i].up.glmvec3(),
+				glm::vec3(3.5, 3.5, 8));
+			rocketHeadInstance.addModelMatrix(HeadModel);
+			rocketBodyInstance.addModelMatrix(BodyModel);
+		}
 	}
 	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone);
 	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
+	for (int i = 0; i < targets.size(); i++) {
+		if (targets[i].state == 0) {
+			glm::mat4 targetModel = MathHelper::getTransformMatrix(
+				targets[i].pos.glmvec3(), targets[i].front.glmvec3(), targets[i].up.glmvec3(),
+				glm::vec3(10, 10, 1));
+			targetInstance.addModelMatrix(targetModel);
+		}
+	}
+	targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
 
 	//draw axis
 	glLineWidth(5);
@@ -1278,6 +1290,42 @@ doPick()
 	printf("Selected Cube %d\n", selectedCube);
 }
 
+void TrainView::addTarget()
+{
+	using namespace std;
+	srand(static_cast<unsigned>(time(0)));
+	int range = 100;
+	int x = -range + (rand() % (2 * range));
+	int y = rand() % (range);
+	int z = -range + (rand() % (2 * range));
+
+	int a = -range + (rand() % (2 * range));
+	int b = -range + (rand() % (2 * range));
+	int c = -range + (rand() % (2 * range));
+	Pnt3f front(a / 100.0f, b / 100.0f, c / 100.0f);
+	front.normalize();
+	targets.push_back(Entity(Pnt3f(x, y, z), front, front * Pnt3f(1, 0, 0)));
+}
+
+void TrainView::addMoreTarget()
+{
+	using namespace std;
+	srand(static_cast<unsigned>(time(0)));
+	int range = 100;
+	for (int i = 0; i < 10; i++) {
+		int x = -range + (rand() % (2 * range));
+		int y = rand() % (range);
+		int z = -range + (rand() % (2 * range));
+
+		int a = -range + (rand() % (2 * range));
+		int b = -range + (rand() % (2 * range));
+		int c = -range + (rand() % (2 * range));
+		Pnt3f front(a / 100.0f, b / 100.0f, c / 100.0f);
+		front.normalize();
+		targets.push_back(Entity(Pnt3f(x, y, z), front, front * Pnt3f(1, 0, 0)));
+	}
+}
+
 // Today is Friday in California
 void TrainView::shoot()
 {
@@ -1292,8 +1340,10 @@ void TrainView::collisionJudge()
 	for (int targetID = 0; targetID < targets.size(); targetID++) {
 		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
 			if (targets[targetID].state == 0 && rockets[rocketID].state == 0) {
-				if (MathHelper::distance(targets[targetID].pos, rockets[rocketID].pos) < 2 ||
-					(MathHelper::distanceToPlane(targets[targetID].pos, targets[targetID].front, rockets[rocketID].pos) < 10)) {
+				// TODO: better collision judgement
+				if (MathHelper::distance(targets[targetID].pos, rockets[rocketID].pos) < 7 
+					//&&(MathHelper::distanceToPlane(targets[targetID].pos, targets[targetID].front, rockets[rocketID].pos) < 2)
+					) {
 					targets[targetID].state = 1;
 					rockets[rocketID].state = 1;
 				}
@@ -1316,7 +1366,7 @@ void TrainView::updateEntity() {
 			}
 		}
 		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
-			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len() > 3000) {
+			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len() > 1000) {
 				rockets.erase(rockets.begin() + rocketID);
 				rocketID--;
 				continue;

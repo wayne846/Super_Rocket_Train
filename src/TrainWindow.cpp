@@ -142,6 +142,13 @@ TrainWindow(const int x, const int y)
 
 		pty+=30;
 
+		Fl_Button* addTarget = new Fl_Button(605, pty, 80, 20, "add target");
+		addTarget->callback((Fl_Callback*)addTargetCB, this);
+		Fl_Button* addMoreTarget = new Fl_Button(690, pty, 110, 20, "MORE TARGET");
+		addMoreTarget->callback((Fl_Callback*)addMoreTargetCB, this);
+
+		pty += 30;
+
 		// TODO: add widgets for all of your fancier features here
 #ifdef EXAMPLE_SOLUTION
 		makeExampleWidgets(this,pty);

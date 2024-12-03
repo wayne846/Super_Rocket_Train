@@ -85,6 +85,10 @@ class TrainView : public Fl_Gl_Window
 
 		// pick a point (for when the mouse goes down)
 		void doPick();
+
+		// public them for call back
+		void addTarget();
+		void addMoreTarget();
 	private:
 		void initRander();
 		void initLight(); //init all light to dark(black)(0 ,0, 0)

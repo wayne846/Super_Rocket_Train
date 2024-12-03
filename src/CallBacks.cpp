@@ -248,3 +248,13 @@ void rmzCB(Fl_Widget*, TrainWindow* tw)
 	rollz(tw, -1);
 }
 
+void addTargetCB(Fl_Widget*, TrainWindow* tw)
+//===========================================================================
+{
+	tw->trainView->addTarget();
+}
+void addMoreTargetCB(Fl_Widget*, TrainWindow* tw)
+//===========================================================================
+{
+	tw->trainView->addMoreTarget();
+}
