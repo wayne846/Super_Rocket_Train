@@ -61,7 +61,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/back.jpg"
 };
 
-#define WATER_RESOLUTION 120
+#define WATER_RESOLUTION 100
 
 //************************************************************************
 //
@@ -90,6 +90,15 @@ resetArcball()
 	// a little trial and error goes a long way
 	arcball.setup(this, 40, 250, .2f, .4f, 0);
 }
+//************************************************************************
+//
+// * FlTk Event handler for the window
+//########################################################################
+// TODO: 
+//       if you want to make the train respond to other events 
+//       (like key presses), you might want to hack this.
+//########################################################################
+//========================================================================
 void TrainView::aim() {
 	float currentX, currentY;
 	arcball.getMouseNDC(currentX, currentY);
@@ -100,15 +109,6 @@ void TrainView::aim() {
 	lastX = currentX;
 	lastY = currentY;
 }
-//************************************************************************
-//
-// * FlTk Event handler for the window
-//########################################################################
-// TODO: 
-//       if you want to make the train respond to other events 
-//       (like key presses), you might want to hack this.
-//########################################################################
-//========================================================================
 int TrainView::handle(int event)
 {
 	// see if the ArcBall will handle the event - if it does, 
@@ -127,9 +127,14 @@ int TrainView::handle(int event)
 		last_push = Fl::event_button();
 		// if the left button be pushed is left mouse button
 		if (last_push == FL_LEFT_MOUSE) {
-			doPick();
-			damage(1);
-			return 1;
+			if (!tw->trainCam->value()) {
+				doPick();
+				damage(1);
+				return 1;
+			}
+			else {
+				shoot();
+			}
 		};
 		if (Fl::event_button() == FL_RIGHT_MOUSE && tw->trainCam->value() && Fl::event_clicks()) {
 			// reset train pov
@@ -222,13 +227,13 @@ void TrainView::initRander() {
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 
 	//init texture
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < -200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
 		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
 	}
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < -200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
@@ -236,7 +241,15 @@ void TrainView::initRander() {
 	}
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
-	//init VAO
+	setCube();
+	setCone();
+	setCylinder();
+	setWater();
+}
+
+// set the objects
+void TrainView::setCube()
+{
 	//------------------
 	//cube
 	GLfloat cubeVertices[] = {
@@ -343,7 +356,204 @@ void TrainView::initRander() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeElement), cubeElement, GL_STATIC_DRAW);
 	// Unbind VAO
 	glBindVertexArray(0);
+}
 
+void TrainView::setCylinder()
+{
+	// cylinder, (w,h,l) = (1,1,1), face(top) to -z
+	int vn = circleVerticesNumber;
+	GLfloat cylinderVertices[circleVerticesNumber * 12];
+	GLfloat cylinderNormal[circleVerticesNumber * 12];
+	GLuint cylinderElement[(circleVerticesNumber * 2 + (circleVerticesNumber - 2) * 2) * 3];
+	// TODO: add texture coordinates
+
+	float pi = 3.1415926535;
+	// top vertices * 2
+	for (int i = 0; i < vn * 2; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		cylinderVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
+		cylinderVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
+		cylinderVertices[index + 2] = -0.5;
+	}
+	// buttom vertices * 2
+	for (int i = vn * 2; i < vn * 4; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		cylinderVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
+		cylinderVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
+		cylinderVertices[index + 2] = 0.5;
+	}
+	// top normal
+	for (int i = 0; i < vn; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		cylinderNormal[index] = 0;
+		cylinderNormal[index + 1] = 0;
+		cylinderNormal[index + 2] = -1;
+	}
+
+	// bottom normal
+	for (int i = vn * 3; i < vn * 4; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		cylinderNormal[index] = 0;
+		cylinderNormal[index + 1] = 0;
+		cylinderNormal[index + 2] = 1;
+	}
+	// side normal
+	for (int i = vn * 1; i < vn * 3; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		cylinderNormal[index] = 1 * sin((float)unitAngle * (i % vn));
+		cylinderNormal[index + 1] = 1 * cos((float)unitAngle * (i % vn));
+		cylinderNormal[index + 2] = 0;
+	}
+
+	// side surface
+	for (int i = vn; i < vn*2; i++) {
+		int index = (i-vn) * 6;
+		cylinderElement[index] = i;
+		cylinderElement[index+2] = vn + i;
+		cylinderElement[index+3] = vn+i;
+		if (i + 1 < 2*vn) {
+			cylinderElement[index + 1] = i + 1;
+			cylinderElement[index + 4] = vn + i + 1;
+			cylinderElement[index + 5] = i + 1;
+		}
+		else {
+			cylinderElement[index + 1] = vn;
+			cylinderElement[index + 4] = vn*2;
+			cylinderElement[index + 5] = vn;
+		}
+	}
+	// top surface
+	for (int i = 0; i < vn - 2; i++) {
+		int index = (vn*2+i) * 3;
+		cylinderElement[index] = 0;
+		cylinderElement[index + 1] = i + 1;
+		cylinderElement[index + 2] = i + 2;
+	}
+	// buttom surface
+	for (int i = vn * 3; i < vn * 4 - 2; i++) {
+		int index = (vn * 3 + (i - vn*3) -2 ) * 3;
+		cylinderElement[index] = vn * 3;
+		cylinderElement[index + 1] = i + 1;
+		cylinderElement[index + 2] = i + 2;
+	}
+
+	glGenVertexArrays(1, &cylinder.VAO);
+	glGenBuffers(2, cylinder.VBO);
+	glGenBuffers(1, &cylinder.EBO);
+	glBindVertexArray(cylinder.VAO);
+	cylinder.element_amount = sizeof(cylinderElement) / sizeof(GLuint);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cylinder.VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cylinderVertices), cylinderVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Normal attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cylinder.VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cylinderNormal), cylinderNormal, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	//Element attribute
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cylinder.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cylinderElement), cylinderElement, GL_STATIC_DRAW);
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+
+void TrainView::setCone()
+{
+	// cone, (w,h,l) = (1,1,1), face(top) to -z
+	int vn = circleVerticesNumber;
+	GLfloat coneVertices[circleVerticesNumber * 9];
+	GLfloat coneNormal[circleVerticesNumber * 9];
+	GLuint coneElement[(circleVerticesNumber * 2 + (circleVerticesNumber - 2)) * 3];
+	float pi = 3.1415926535;
+	// top vertices
+	for (int i = 0; i < vn; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		coneVertices[index] = 0;
+		coneVertices[index + 1] = 0;
+		coneVertices[index + 2] = -0.5;
+	}
+	// buttom vertices * 2
+	for (int i = vn; i < vn * 3; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		coneVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
+		coneVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
+		coneVertices[index + 2] = 0.5;
+	}
+
+	// side normal
+	for (int i = 0; i < vn; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		coneNormal[index] = 0.866 * sin((float)unitAngle * i);
+		coneNormal[index + 1] = 0.866 * cos((float)unitAngle * i);
+		coneNormal[index + 2] = -0.5;
+	}
+	for (int i = vn; i < vn * 2; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		coneNormal[index] = 0.866 * sin((float)unitAngle * i);
+		coneNormal[index + 1] = 0.866 * cos((float)unitAngle * i);
+		coneNormal[index + 2] = -0.5;
+	}
+	// buttom normal
+	for (int i = vn * 2; i < vn * 3; i += 1) {
+		int index = i * 3;
+		coneNormal[index] = 0;
+		coneNormal[index + 1] = 0;
+		coneNormal[index + 2] = 1;
+	}
+
+	// side surface
+	for (int i = 0; i < vn; i++) {
+		int index = i * 3;
+		coneElement[index] = i;
+		coneElement[index + 1] = vn + i;
+		if (i + 1 < vn)
+			coneElement[index + 2] = vn + i + 1;
+		else
+			coneElement[index + 2] = vn;
+	}
+	// buttom surface
+	for (int i = vn * 2; i < vn * 3 - 2; i++) {
+		int index = (i - vn) * 3;
+		coneElement[index] = vn*2;
+		coneElement[index + 1] = i + 1;
+		coneElement[index + 2] = i + 2;
+	}
+
+	glGenVertexArrays(1, &cone.VAO);
+	glGenBuffers(2, cone.VBO);
+	glGenBuffers(1, &cone.EBO);
+	glBindVertexArray(cone.VAO);
+	cone.element_amount = sizeof(coneElement) / sizeof(GLuint);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cone.VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(coneVertices), coneVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Normal attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cone.VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(coneNormal), coneNormal, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	//Element attribute
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cone.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(coneElement), coneElement, GL_STATIC_DRAW);
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+
+void TrainView::setWater()
+{
 	//water
 	GLfloat  waterVertices[WATER_RESOLUTION * WATER_RESOLUTION * 3];
 	GLfloat  waterTexcoords[WATER_RESOLUTION * WATER_RESOLUTION * 2];
@@ -514,7 +724,7 @@ void TrainView::draw()
 	spotLights[0].specular = RenderDatabase::YELLOW_COLOR;
 	spotLights[0].cutOff = cos(MathHelper::degreeToRadians(30));
 	spotLights[0].outerCutOff = cos(MathHelper::degreeToRadians(35));
-	spotLights[0].linear = 0.007; 
+	spotLights[0].linear = 0.007;
 	spotLights[0].quadratic = 0.0002;
 
 	//*********************************************************************
@@ -596,13 +806,14 @@ setProjection()
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		Pnt3f trainRight = trainFront * trainUp;
-		Pnt3f tempFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
-		Pnt3f lookingFront = tempFront * cos(camRotateY) + trainUp * sin(camRotateY);
-		Pnt3f lookingUp = tempFront * -sin(camRotateY) + trainUp * cos(camRotateY);
-		gluLookAt(trainPos.x, trainPos.y, trainPos.z, 
+		Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
+		lookingFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
+		lookingUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+		gluLookAt(trainPos.x, trainPos.y, trainPos.z,
 			trainPos.x + lookingFront.x, trainPos.y + lookingFront.y, trainPos.z + lookingFront.z,
 			lookingUp.x, lookingUp.y, lookingUp.z);
 	}
+
 }
 
 //set shader uniform, like view, projection, lights...
@@ -653,17 +864,18 @@ void TrainView::setShaders() {
 			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].quadratic", spotLights[j].quadratic);
 		}
 	}
-	
+
 	//set back to opengl fixed pipeline
 	glUseProgram(0);
 }
+
 
 //draw object by simple object shader
 void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, const Material material) {
 	simpleObjectShader->use();
 
 	simpleObjectShader->setMat4("model", model);
-	simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));	
+	simpleObjectShader->setMat4("normalMatrix", glm::transpose(glm::inverse(model)));
 
 	// material properties
 	simpleObjectShader->setVec3("material.ambient", material.ambient);
@@ -761,6 +973,8 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	glUseProgram(0);
 }
 
+
+
 //************************************************************************
 // cp_pos_p0.x,cp_pos_p1.x,cp_pos_p2.x,cp_pos_p3.x };
 // * this draws all of the stuff in the world
@@ -813,13 +1027,14 @@ void TrainView::drawStuff(bool doingShadows)
 	InstanceDrawer trackInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer sleeperInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer trainInstance(trainMaterial);
+
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
 	int num_point = m_pTrack->points.size();
 
 	bool trainDrawed = false;
 	float presentArcLength = 0;
-	
+
 	for (int i = 0; i < num_point; ++i) {
 
 		// pos
@@ -832,7 +1047,7 @@ void TrainView::drawStuff(bool doingShadows)
 		Pnt3f cp_orient_p1 = m_pTrack->points[i].orient;
 		Pnt3f cp_orient_p2 = m_pTrack->points[(i + 1) % num_point].orient;
 		Pnt3f cp_orient_p3 = m_pTrack->points[(i + 2) % num_point].orient;
-		
+
 		float cp_pos_x[4] = { cp_pos_p0.x,cp_pos_p1.x,cp_pos_p2.x,cp_pos_p3.x };
 		float cp_pos_y[4] = { cp_pos_p0.y,cp_pos_p1.y,cp_pos_p2.y,cp_pos_p3.y };
 		float cp_pos_z[4] = { cp_pos_p0.z,cp_pos_p1.z,cp_pos_p2.z,cp_pos_p3.z };
@@ -887,7 +1102,7 @@ void TrainView::drawStuff(bool doingShadows)
 		float percent = 1.0f / DIVIDE_LINE;
 		float t = 0;
 		Pnt3f qt(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
-		
+
 		for (size_t j = 0; j < DIVIDE_LINE; j++) {
 			Pnt3f qt0 = qt;
 			t += percent;
@@ -924,7 +1139,7 @@ void TrainView::drawStuff(bool doingShadows)
 				if (t_time * m_pTrack->points.size() >= i + t && t_time * m_pTrack->points.size() <= i + t + percent)
 					needToDrawTrain = true;
 			}
-			else  {
+			else {
 				presentArcLength += (qt1 + (-1 * qt0)).len();
 				if (!trainDrawed && presentArcLength / totalArcLength >= t_time)
 					needToDrawTrain = true;
@@ -946,7 +1161,7 @@ void TrainView::drawStuff(bool doingShadows)
 					glmpos = glmpos + 4.5f * up;
 					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
 					trainInstance.addModelMatrix(model);
-				}	
+				}
 				trainDrawed = true;
 			}
 		}
@@ -955,6 +1170,24 @@ void TrainView::drawStuff(bool doingShadows)
 	trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
 	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube);
 	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
+
+	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
+	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
+	collisionJudge();
+	updateEntity();
+	//draw rocket and target
+	for (int i = 0; i < rockets.size(); i++) {
+		glm::mat4 HeadModel = MathHelper::getTransformMatrix(
+			rockets[i].pos.glmvec3(), rockets[i].front.glmvec3(), rockets[i].up.glmvec3(),
+			glm::vec3(4, 4, 3));
+		glm::mat4 BodyModel = MathHelper::getTransformMatrix(
+			(rockets[i].pos + rockets[i].front * -5.5).glmvec3(), rockets[i].front.glmvec3(), rockets[i].up.glmvec3(),
+			glm::vec3(3.5, 3.5, 8));
+		rocketHeadInstance.addModelMatrix(HeadModel);
+		rocketBodyInstance.addModelMatrix(BodyModel);
+	}
+	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone);
+	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
 
 	//draw axis
 	glLineWidth(5);
@@ -976,7 +1209,7 @@ void TrainView::drawStuff(bool doingShadows)
 	glVertex3f(0, 0, 20);
 	glEnd();
 	glLineWidth(1);
-	
+
 }
 
 // 
@@ -1043,4 +1276,59 @@ doPick()
 		selectedCube = -1;
 
 	printf("Selected Cube %d\n", selectedCube);
+}
+
+// Today is Friday in California
+void TrainView::shoot()
+{
+	lookingFront.normalize();
+	lookingUp.normalize();
+	rockets.push_back(Entity(trainPos + lookingFront * 10, lookingFront, lookingUp));
+}
+
+// judge the distance of target and rocket
+void TrainView::collisionJudge()
+{
+	for (int targetID = 0; targetID < targets.size(); targetID++) {
+		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
+			if (targets[targetID].state == 0 && rockets[rocketID].state == 0) {
+				if (MathHelper::distance(targets[targetID].pos, rockets[rocketID].pos) < 2 ||
+					(MathHelper::distanceToPlane(targets[targetID].pos, targets[targetID].front, rockets[rocketID].pos) < 10)) {
+					targets[targetID].state = 1;
+					rockets[rocketID].state = 1;
+				}
+			}
+		}
+	}
+}
+
+void TrainView::updateEntity() {
+	if (tw->runButton->value()) {
+		for (int targetID = 0; targetID < targets.size(); targetID++) {
+			if (targets[targetID].state > 1) {
+				targets.erase(targets.begin() + targetID);
+				targetID--;
+				continue;
+			}
+			else if (targets[targetID].state > 0) {
+				// TODO: EXPLOSION!
+				targets[targetID].state++;
+			}
+		}
+		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
+			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len() > 3000) {
+				rockets.erase(rockets.begin() + rocketID);
+				rocketID--;
+				continue;
+			}
+			else if (rockets[rocketID].state > 0) {
+				// TODO: EXPLOSION!
+				rockets[rocketID].state++;
+			}
+			else {
+				// move it
+				rockets[rocketID].pos = rockets[rocketID].pos + rockets[rocketID].front * 10;
+			}
+		}
+	}
 }

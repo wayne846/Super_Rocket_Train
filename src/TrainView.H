@@ -58,6 +58,8 @@ class CTrack;
 #include "RenderUnit/RenderStructure.h"
 #include "RenderUnit/InstanceDrawer.h"
 
+#include "EntityStructure.H"
+
 class TrainView : public Fl_Gl_Window
 {
 	public:
@@ -88,11 +90,20 @@ class TrainView : public Fl_Gl_Window
 		void initLight(); //init all light to dark(black)(0 ,0, 0)
 		void setShaders();
 
+		void setCube();
+		void setCylinder();
+		void setCone();
+		void setWater();
+
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
 		void drawTree(glm::vec3 pos, float rotateTheta = 0.0f, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
 
+		// some thing about the rocket launcher
 		void aim();
+		void shoot();
+		void collisionJudge();
+		void updateEntity();
 	public:
 		const float DIVIDE_LINE = 128; //how many segment are track divide
 		const int MATERIAL_SHAPE = 0;
@@ -114,9 +125,13 @@ class TrainView : public Fl_Gl_Window
 		Pnt3f trainUp;
 		Pnt3f trainRight;
 
-		// aiming
+		// some thing about the rocket launcher and aimer
 		float camRotateX = 0,camRotateY = 0;
 		float lastX=0, lastY=0;	// the mouse position
+		Pnt3f lookingFront;	// the orient of train pov
+		Pnt3f lookingUp;
+		std::vector<Entity> rockets;
+		std::vector<Entity> targets;
 
 		//all light in the scene
 		DirLight dirLight;
@@ -129,6 +144,9 @@ class TrainView : public Fl_Gl_Window
 		Shader* simpleInstanceObjectShader;
 		Shader* waterShader;
 		Object cube;
+		#define circleVerticesNumber 24	// the fineness of cylinder and cone
+		Object cylinder;
+		Object cone;
 		Object water; //1x1 plane
 
 		//texture

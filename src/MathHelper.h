@@ -68,4 +68,20 @@ namespace MathHelper {
 			}
 		}
 	}
+
+	float distanceToPlane(Pnt3f pointOnPlane, Pnt3f normalVector, const Pnt3f targetPoint) {
+		double a = normalVector.x;
+		double b = normalVector.y;
+		double c = normalVector.z;
+		double d = -(a * pointOnPlane.x + b * pointOnPlane.y + c * pointOnPlane.z);
+
+		double numerator = std::abs(a * targetPoint.x + b * targetPoint.y + c * targetPoint.z + d);
+		double denominator = std::sqrt(a * a + b * b + c * c);
+
+		return numerator / denominator;
+	}
+
+	float distance(Pnt3f point1, Pnt3f point2) {
+		return (point1 + (-1) * point2).len();
+	}
 }

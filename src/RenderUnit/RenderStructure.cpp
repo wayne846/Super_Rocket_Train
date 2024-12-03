@@ -24,6 +24,12 @@ namespace RenderDatabase {
         glm::vec3(0.45f, 0.55f, 0.45f),
         32.0f
     };
+    const Material RUBY_MATERIAL = {
+        glm::vec3(0.1745f, 0.01175f, 0.01175f),
+        glm::vec3(0.61424f, 0.04136f, 0.04136f),
+        glm::vec3(0.727811f, 0.626959f, 0.626959),
+        10.0f
+    };
 
     const glm::vec3 YELLOW_COLOR = glm::vec3(0.5f, 0.5f, .1f);
     const glm::vec3 BLUE_COLOR = glm::vec3(.1f, .1f, .3f);

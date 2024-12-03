@@ -56,6 +56,7 @@ namespace RenderDatabase {
     extern const Material SLIVER_MATERIAL;
     extern const Material WHITE_PLASTIC_MATERIAL;
     extern const Material GREEN_PLASTIC_MATERIAL;
+    extern const Material RUBY_MATERIAL;
 
     extern const glm::vec3 YELLOW_COLOR;
     extern const glm::vec3 BLUE_COLOR;
