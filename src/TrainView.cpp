@@ -75,7 +75,6 @@ TrainView(int x, int y, int w, int h, const char* l)
 	mode(FL_RGB | FL_ALPHA | FL_DOUBLE | FL_STENCIL);
 
 	resetArcball();
-	
 }
 
 //************************************************************************
@@ -91,7 +90,16 @@ resetArcball()
 	// a little trial and error goes a long way
 	arcball.setup(this, 40, 250, .2f, .4f, 0);
 }
-
+void TrainView::aim() {
+	float currentX, currentY;
+	arcball.getMouseNDC(currentX, currentY);
+	camRotateX += (currentX - lastX) * 2;
+	camRotateY += (currentY - lastY) * 2;
+	if (camRotateY >= 1.57) camRotateY = 1.57;
+	if (camRotateY <= -1.57) camRotateY = -1.57;
+	lastX = currentX;
+	lastY = currentY;
+}
 //************************************************************************
 //
 // * FlTk Event handler for the window
@@ -123,6 +131,11 @@ int TrainView::handle(int event)
 			damage(1);
 			return 1;
 		};
+		if (Fl::event_button() == FL_RIGHT_MOUSE && tw->trainCam->value() && Fl::event_clicks()) {
+			// reset train pov
+			camRotateX = 0;
+			camRotateY = 0;
+		}
 		break;
 
 		// Mouse button release event
@@ -133,26 +146,30 @@ int TrainView::handle(int event)
 
 		// Mouse button drag event
 	case FL_DRAG:
+		if (!tw->trainCam->value()) {
+			// Compute the new control point position
+			if ((last_push == FL_LEFT_MOUSE) && (selectedCube >= 0)) {
+				ControlPoint* cp = &m_pTrack->points[selectedCube];
 
-		// Compute the new control point position
-		if ((last_push == FL_LEFT_MOUSE) && (selectedCube >= 0)) {
-			ControlPoint* cp = &m_pTrack->points[selectedCube];
+				double r1x, r1y, r1z, r2x, r2y, r2z;
+				getMouseLine(r1x, r1y, r1z, r2x, r2y, r2z);
 
-			double r1x, r1y, r1z, r2x, r2y, r2z;
-			getMouseLine(r1x, r1y, r1z, r2x, r2y, r2z);
+				double rx, ry, rz;
+				mousePoleGo(r1x, r1y, r1z, r2x, r2y, r2z,
+					static_cast<double>(cp->pos.x),
+					static_cast<double>(cp->pos.y),
+					static_cast<double>(cp->pos.z),
+					rx, ry, rz,
+					(Fl::event_state() & FL_CTRL) != 0);
 
-			double rx, ry, rz;
-			mousePoleGo(r1x, r1y, r1z, r2x, r2y, r2z,
-				static_cast<double>(cp->pos.x),
-				static_cast<double>(cp->pos.y),
-				static_cast<double>(cp->pos.z),
-				rx, ry, rz,
-				(Fl::event_state() & FL_CTRL) != 0);
-
-			cp->pos.x = (float)rx;
-			cp->pos.y = (float)ry;
-			cp->pos.z = (float)rz;
-			damage(1);
+				cp->pos.x = (float)rx;
+				cp->pos.y = (float)ry;
+				cp->pos.z = (float)rz;
+				damage(1);
+			}
+		}
+		else {
+			aim();
 		}
 		break;
 
@@ -166,6 +183,7 @@ int TrainView::handle(int event)
 		break;
 
 	case FL_KEYBOARD:
+	{
 		int k = Fl::event_key();
 		int ks = Fl::event_state();
 		if (k == 'p') {
@@ -185,6 +203,12 @@ int TrainView::handle(int event)
 			return 1;
 		};
 		break;
+		// Aim with a rocket launcher
+	}
+	case FL_MOVE:
+		if (tw->trainCam->value()) {
+			aim();
+		}
 	}
 
 	return Fl_Gl_Window::handle(event);
@@ -571,7 +595,13 @@ setProjection()
 		gluPerspective(100, aspect, 0.01, 200);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		gluLookAt(trainPos.x, trainPos.y, trainPos.z, trainPos.x + trainFront.x, trainPos.y + trainFront.y, trainPos.z + trainFront.z, trainUp.x, trainUp.y, trainUp.z);
+		Pnt3f trainRight = trainFront * trainUp;
+		Pnt3f tempFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
+		Pnt3f lookingFront = tempFront * cos(camRotateY) + trainUp * sin(camRotateY);
+		Pnt3f lookingUp = tempFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+		gluLookAt(trainPos.x, trainPos.y, trainPos.z, 
+			trainPos.x + lookingFront.x, trainPos.y + lookingFront.y, trainPos.z + lookingFront.z,
+			lookingUp.x, lookingUp.y, lookingUp.z);
 	}
 }
 

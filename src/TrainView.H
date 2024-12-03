@@ -92,6 +92,7 @@ class TrainView : public Fl_Gl_Window
 		void drawTree(glm::vec3 pos, float rotateTheta = 0.0f, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
 
+		void aim();
 	public:
 		const float DIVIDE_LINE = 128; //how many segment are track divide
 		const int MATERIAL_SHAPE = 0;
@@ -112,6 +113,10 @@ class TrainView : public Fl_Gl_Window
 		Pnt3f trainFront;
 		Pnt3f trainUp;
 		Pnt3f trainRight;
+
+		// aiming
+		float camRotateX = 0,camRotateY = 0;
+		float lastX=0, lastY=0;	// the mouse position
 
 		//all light in the scene
 		DirLight dirLight;
