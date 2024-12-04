@@ -6,8 +6,8 @@ class Fl_Gl_Window;
 
 class FreeCamera{
 private:
-	const float Speed = 5.0f;
-	const float MouseSensitivity = 40.0f;
+	float Speed = 5.0f;
+	float MouseSensitivity = 40.0f;
 
 	glm::vec3 position;
 	glm::vec3 direction;
@@ -15,11 +15,11 @@ private:
 
 	float lastX;
 	float lastY;
-
+	
 	float Yaw;
 	float Pitch;
 
-	enum Mode {
+	enum class Mode {
 		None,
 		Pan,
 		Rotate

@@ -122,7 +122,6 @@ int FreeCamera::handle(int e) {
 				glm::vec3 WorldUp = glm::vec3(0, 1, 0);
 				glm::vec3 Right = glm::normalize(glm::cross(direction, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
 				up = glm::normalize(glm::cross(Right, direction));
-				printf("Dir: %f %f %f\n", direction.x, direction.y, direction.z);
 				
 				window->damage(1);
 				return 1;

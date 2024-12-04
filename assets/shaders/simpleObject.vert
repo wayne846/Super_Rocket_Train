@@ -4,8 +4,11 @@ layout (location = 1) in vec3 normal;
 
 uniform mat4 model;
 uniform mat4 normalMatrix;
-uniform mat4 view;
-uniform mat4 projection;
+
+layout (std140) uniform Matrices{
+    mat4 view;
+    mat4 projection;
+};
 
 out V_OUT
 {

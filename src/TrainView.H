@@ -150,6 +150,11 @@ class TrainView : public Fl_Gl_Window
 		Shader* simpleObjectShader;
 		Shader* simpleInstanceObjectShader;
 		Shader* waterShader;
+
+		//Uniform Buffer
+		unsigned int uboMatrices;
+
+		//Objects
 		Object cube;
 		#define circleVerticesNumber 24	// the fineness of cylinder and cone
 		Object cylinder;

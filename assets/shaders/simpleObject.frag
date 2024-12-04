@@ -57,6 +57,8 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 #define NR_SPOT_LIGHTS 4  
 uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 
+uniform float gamma;
+
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 position, vec3 eyeDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 position, vec3 eyeDir);
@@ -80,6 +82,7 @@ void main()
     }  
     
     f_color = vec4(result, 1.0);
+    f_color.rgb = pow(f_color.rgb, vec3(1.0/gamma));
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir)

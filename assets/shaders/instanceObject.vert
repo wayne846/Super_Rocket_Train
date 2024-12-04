@@ -4,8 +4,10 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in mat4 model;
 layout (location = 6) in mat4 normalMatrix;
 
-uniform mat4 view;
-uniform mat4 projection;
+layout (std140) uniform Matrices{
+    mat4 view;
+    mat4 projection;
+};
 
 out V_OUT
 {

@@ -62,6 +62,8 @@ uniform mat4 normalMatrix;
 
 uniform samplerCube skybox;
 
+uniform float gamma;
+
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 position, vec3 eyeDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 position, vec3 eyeDir);
@@ -99,6 +101,7 @@ void main()
     vec4 refractColor = vec4(texture(skybox, R).rgb, 1.0);
     
     f_color = mix(reflectColor, vec4(result, 1.0), 0.5);//vec4(result, 1.0);
+    f_color.rgb = pow(f_color.rgb, vec3(1.0/gamma));
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir)

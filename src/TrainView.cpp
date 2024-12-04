@@ -239,15 +239,32 @@ void TrainView::initRander() {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
-		//waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
+		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
 	}
 	for (int i = 0; i < 200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
-		//waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
+		waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
 	}
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
+
+	//init unifrom block index
+	//0 for view and project matrix
+	unsigned int uniformBlockIndex_simpleObject = glGetUniformBlockIndex(simpleObjectShader->ID, "Matrices");
+	unsigned int uniformBlockIndex_simpleInstanceObject = glGetUniformBlockIndex(simpleInstanceObjectShader->ID, "Matrices");
+	unsigned int uniformBlockIndex_water = glGetUniformBlockIndex(waterShader->ID, "Matrices");
+	glUniformBlockBinding(simpleObjectShader->ID, uniformBlockIndex_simpleObject, 0);
+	glUniformBlockBinding(simpleInstanceObjectShader->ID, uniformBlockIndex_simpleInstanceObject, 0);
+	glUniformBlockBinding(waterShader->ID, uniformBlockIndex_water, 0);
+
+	//set ubo
+	//0 for view and project matrix
+	glGenBuffers(1, &uboMatrices);
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
 
 	setCube();
 	setCone();
@@ -842,15 +859,19 @@ void TrainView::setShaders() {
 	glm::mat4 projection;
 	glGetFloatv(GL_PROJECTION_MATRIX, &projection[0][0]);
 
-	//set simpleObjectShader and simpleInstanceObjectShader
+	//set uniform buffer 0
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(view));
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	//set uniform
 	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader };
 	int size = sizeof(shaders) / sizeof(Shader*);
 	for (int i = 0; i < size; i++) {
 		shaders[i]->use();
 
 		//set the uniform
-		shaders[i]->setMat4("view", view);
-		shaders[i]->setMat4("projection", projection);
 
 		glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
 		shaders[i]->setVec3("eyePosition", eyepos);
@@ -881,6 +902,8 @@ void TrainView::setShaders() {
 			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].linear", spotLights[j].linear);
 			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].quadratic", spotLights[j].quadratic);
 		}
+
+		shaders[i]->setFloat("gamma", 2);
 	}
 
 	//set back to opengl fixed pipeline
