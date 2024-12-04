@@ -227,17 +227,17 @@ void TrainView::initRander() {
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 
 	//init texture
-	for (int i = 0; i < -200; i++) {
+	for (int i = 0; i < 200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
-		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
+		//waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
 	}
-	for (int i = 0; i < -200; i++) {
+	for (int i = 0; i < 200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
-		waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
+		//waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
 	}
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
@@ -1015,7 +1015,7 @@ void TrainView::drawStuff(bool doingShadows)
 	//drawTree(glm::vec3(0, 0, 0));
 
 	//draw the water
-	drawWater(glm::vec3(0, 1, 0), glm::vec3(50, 1, 50));
+	drawWater(glm::vec3(0, -120, 0), glm::vec3(1000, 1, 1000));
 
 	// draw the track, sleeper, train
 	Material trainMaterial = {

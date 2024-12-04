@@ -81,7 +81,7 @@ TrainWindow(const int x, const int y)
 		pty += 30;
 
 		// camera buttons - in a radio button group
-		Fl_Group* camGroup = new Fl_Group(600,pty,195,20);
+		Fl_Group* camGroup = new Fl_Group(600,pty,195,45);
 		camGroup->begin();
 		worldCam = new Fl_Button(605, pty, 60, 20, "World");
         worldCam->type(FL_RADIO_BUTTON);		// radio button
@@ -98,6 +98,12 @@ TrainWindow(const int x, const int y)
         topCam->value(0);
         topCam->selection_color((Fl_Color)3);
 		topCam->callback((Fl_Callback*)damageCB,this);
+		pty += 25;
+		freeCam = new Fl_Button(605, pty, 60, 20, "Free");
+		freeCam->type(FL_RADIO_BUTTON);
+		freeCam->value(0);
+		freeCam->selection_color((Fl_Color)3);
+		freeCam->callback((Fl_Callback*)damageCB, this);
 		camGroup->end();
 
 		pty += 30;

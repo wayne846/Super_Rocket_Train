@@ -10,25 +10,25 @@ namespace RenderDatabase {
         glm::vec3(0.19225f, 0.19225f, 0.19225f),
         glm::vec3(0.50754f, 0.50754f, 0.50754f),
         glm::vec3(0.508273f, 0.508273f, 0.508273f),
-        51.2f
+        102.4f
     };
     const Material WHITE_PLASTIC_MATERIAL = {
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.55f, 0.55f, 0.55f),
         glm::vec3(0.7f, 0.7f, 0.7f),
-        32.0f
+        64.0f
     };
     const Material GREEN_PLASTIC_MATERIAL = {
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.1f, 0.35f, 0.1f),
         glm::vec3(0.45f, 0.55f, 0.45f),
-        32.0f
+        64.0f
     };
     const Material RUBY_MATERIAL = {
         glm::vec3(0.1745f, 0.01175f, 0.01175f),
         glm::vec3(0.61424f, 0.04136f, 0.04136f),
         glm::vec3(0.727811f, 0.626959f, 0.626959),
-        10.0f
+        20.0f
     };
 
     const glm::vec3 YELLOW_COLOR = glm::vec3(0.5f, 0.5f, .1f);
