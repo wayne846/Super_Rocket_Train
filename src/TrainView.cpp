@@ -75,6 +75,7 @@ TrainView(int x, int y, int w, int h, const char* l)
 	mode(FL_RGB | FL_ALPHA | FL_DOUBLE | FL_STENCIL);
 
 	resetArcball();
+	freeCamera.setWindow(this);
 }
 
 //************************************************************************
@@ -117,6 +118,13 @@ int TrainView::handle(int event)
 	if (tw->worldCam->value())
 		if (arcball.handle(event))
 			return 1;
+
+	// free camera
+	if (tw->freeCam->value()) {
+		if (freeCamera.handle(event)) {
+			return 1;
+		}
+	}
 
 	// remember what button was used
 	static int last_push;
@@ -792,11 +800,6 @@ setProjection()
 		glLoadIdentity();
 		glRotatef(-90, 1, 0, 0);
 	}
-	// Or do the train view or other view here
-	//####################################################################
-	// TODO: 
-	// put code for train view projection here!	
-	//####################################################################
 	else if (tw->trainCam->value()) {
 		//glClear(GL_COLOR_BUFFER_BIT);
 
@@ -812,6 +815,21 @@ setProjection()
 		gluLookAt(trainPos.x, trainPos.y, trainPos.z,
 			trainPos.x + lookingFront.x, trainPos.y + lookingFront.y, trainPos.z + lookingFront.z,
 			lookingUp.x, lookingUp.y, lookingUp.z);
+	}
+	else if (tw->freeCam->value()) {
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(freeCamera.FOV_, aspect, freeCamera.NEAR_, freeCamera.FAR_);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glm::vec3 camPos = freeCamera.getPosition();
+		glm::vec3 camDir = freeCamera.getDirection();
+		glm::vec3 camUp = freeCamera.getUp();
+		gluLookAt(
+			camPos.x, camPos.y, camPos.z,
+			camPos.x + camDir.x, camPos.y + camDir.y, camPos.z + camDir.z,
+			camUp.x, camUp.y, camUp.z
+		);
 	}
 
 }

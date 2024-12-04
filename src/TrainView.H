@@ -60,6 +60,8 @@ class CTrack;
 
 #include "EntityStructure.H"
 
+#include "FreeCamera.h"
+
 class TrainView : public Fl_Gl_Window
 {
 	public:
@@ -115,6 +117,7 @@ class TrainView : public Fl_Gl_Window
 		const int MATERIAL_PLASTIC = 2;
 
 		ArcBallCam		arcball;			// keep an ArcBall for the UI
+		FreeCamera		freeCamera;
 		int				selectedCube;  // simple - just remember which cube is selected
 		float			t_time = 0;
 		

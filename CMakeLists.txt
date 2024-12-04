@@ -44,6 +44,8 @@ add_executable(RollerCoasters
     ${SRC_DIR}MathHelper.h
     ${SRC_DIR}EntityStructure.h
     ${SRC_DIR}EntityStructure.cpp
+    ${SRC_DIR}FreeCamera.h
+    ${SRC_DIR}FreeCamera.cpp
     ${INCLUDE_DIR}glad4.6/src/glad.c
 
     ${SRC_SHADER}
