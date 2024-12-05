@@ -22,4 +22,5 @@ public:
 	void setMaterial(const Material& m);
 	void setTexture(unsigned int id);
 	void drawByInstance(Shader* shader, Object &object);
+	void drawParticleByInstance(Shader* shader, glm::vec3 color, float size, std::vector<glm::vec3> pos);
 };

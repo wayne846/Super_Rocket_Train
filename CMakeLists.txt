@@ -19,6 +19,8 @@ set(SRC_RENDER_UNIT
     ${SRC_DIR}RenderUnit/RenderStructure.cpp
     ${SRC_DIR}RenderUnit/InstanceDrawer.h
     ${SRC_DIR}RenderUnit/InstanceDrawer.cpp
+    ${SRC_DIR}RenderUnit/ParticleSystem.h
+    ${SRC_DIR}RenderUnit/ParticleSystem.cpp
 )
 
 include_directories(${INCLUDE_DIR})
