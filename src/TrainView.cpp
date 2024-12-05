@@ -47,6 +47,8 @@
 #define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
 #define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
 #define INSTANCE_OBJECT_VERT_PATH "/assets/shaders/instanceObject.vert"
+#define POINT_VERT_PATH "/assets/shaders/smoke.vert"
+#define POINT_FRAG_PATH "/assets/shaders/smoke.frag"
 #define WATER_VERT_PATH "/assets/shaders/water.vert"
 #define WATER_FRAG_PATH "/assets/shaders/water.frag"
 
@@ -236,6 +238,7 @@ void TrainView::initRander() {
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
+	smokeShader = new Shader(PROJECT_DIR POINT_VERT_PATH, PROJECT_DIR POINT_FRAG_PATH);		
 
 	//init texture
 	for (int i = 0; i < -200; i++) {
@@ -260,9 +263,11 @@ void TrainView::initRander() {
 	unsigned int uniformBlockIndex_simpleObject = glGetUniformBlockIndex(simpleObjectShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_simpleInstanceObject = glGetUniformBlockIndex(simpleInstanceObjectShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_water = glGetUniformBlockIndex(waterShader->ID, "Matrices");
+	unsigned int uniformBlockIndex_smoke = glGetUniformBlockIndex(smokeShader->ID, "Matrices");
 	glUniformBlockBinding(simpleObjectShader->ID, uniformBlockIndex_simpleObject, 0);
 	glUniformBlockBinding(simpleInstanceObjectShader->ID, uniformBlockIndex_simpleInstanceObject, 0);
 	glUniformBlockBinding(waterShader->ID, uniformBlockIndex_water, 0);
+	glUniformBlockBinding(smokeShader->ID, uniformBlockIndex_smoke, 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -272,11 +277,15 @@ void TrainView::initRander() {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
 
+	// set some parameters
+	glEnable(GL_PROGRAM_POINT_SIZE);
+
 	setCube();
 	setCone();
 	setCylinder();
 	setSector();
 	setWater();
+	setSmoke();
 }
 
 
@@ -845,6 +854,19 @@ void TrainView::setWater()
 	glBindVertexArray(0);
 }
 
+void TrainView::setSmoke()
+{
+	glGenVertexArrays(1, &smoke.VAO);
+	glGenBuffers(1, smoke.VBO);
+	glBindVertexArray(smoke.VAO);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, smoke.VBO[0]);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+
 //set all light to dark
 void TrainView::initLight() {
 	const glm::vec3 ZERO = glm::vec3(0, 0, 0);
@@ -1078,14 +1100,20 @@ void TrainView::setShaders() {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	//set uniform
-	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader };
+	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader, smokeShader };
 	int size = sizeof(shaders) / sizeof(Shader*);
 	for (int i = 0; i < size; i++) {
 		shaders[i]->use();
 
 		//set the uniform
+		glm::vec3 eyepos;
+		if (tw->worldCam->value() || tw->topCam->value())
+			eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
+		else if (tw->freeCam->value())
+			eyepos = freeCamera.getPosition();
+		else
+			eyepos = trainPos.glmvec3();
 
-		glm::vec3 eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
 		shaders[i]->setVec3("eyePosition", eyepos);
 
 		// light properties
@@ -1238,6 +1266,23 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	glBindVertexArray(water.VAO);
 	glDrawElements(GL_TRIANGLES, water.element_amount, GL_UNSIGNED_INT, 0);
 
+	//unbind VAO
+	glBindVertexArray(0);
+
+	//unbind shader(switch to fixed pipeline)
+	glUseProgram(0);
+}
+
+void TrainView::drawSmoke(const std::vector<glm::vec4>& points)
+{
+	smokeShader->use();
+
+	// material properties
+	glBindVertexArray(smoke.VAO);
+	//std::cout << points.size() << " " << sizeof(glm::vec4) << " " << points.data() << " " << sizeof(points.data()) << std::endl;
+	glBindBuffer(GL_ARRAY_BUFFER, smoke.VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(glm::vec4), points.data(), GL_STATIC_DRAW);
+	glDrawArrays(GL_POINTS, 0, points.size());
 	//unbind VAO
 	glBindVertexArray(0);
 
@@ -1447,6 +1492,7 @@ void TrainView::drawStuff(bool doingShadows)
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer targetInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
 	InstanceDrawer targetFragInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
+	std::vector<glm::vec4> smoke;	// vec4 = (x, y, z, alpha)
 	targetInstance.setTexture(this->getObjectTexture("targetImage"));
 	targetFragInstance.setTexture(this->getObjectTexture("targetImage"));
 	updateEntity();
@@ -1462,10 +1508,21 @@ void TrainView::drawStuff(bool doingShadows)
 				glm::vec3(3.5, 3.5, 8));
 			rocketHeadInstance.addModelMatrix(HeadModel);
 			rocketBodyInstance.addModelMatrix(BodyModel);
+
+			// add smoke partical
+			for (int j = 0; j < 20; j++) {
+				for (int k = 0; k < 20; k++) {
+					Pnt3f smokePos = rockets[i].pos + rockets[i].front * -(10 + 3*j) + randUnitVector() * (0.5 * j);
+					smoke.push_back(glm::vec4(smokePos.x, smokePos.y, smokePos.z, (float)(j / 20.0)));
+				}
+			}
 		}
 	}
 	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone);
 	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
+	if(smoke.size()>0)
+		drawSmoke(smoke);
+
 	for (int i = 0; i < targets.size(); i++) {
 		if (targets[i].state == 0) {
 			glm::mat4 targetModel = MathHelper::getTransformMatrix(
@@ -1607,7 +1664,9 @@ void TrainView::shoot()
 {
 	lookingFront.normalize();
 	lookingUp.normalize();
-	rockets.push_back(Entity(trainPos + lookingFront * 10, lookingFront, lookingUp));
+	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
+	rocket.thrusterVelocity = lookingFront * 4;
+	rockets.push_back(rocket);
 }
 
 // judge the distance of target and rocket
@@ -1631,7 +1690,7 @@ void TrainView::collisionJudge()
 void TrainView::updateEntity() {
 	if (tw->runButton->value()) {
 		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
-			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len2() > 1000000) {
+			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len2() > 1000000 || rockets[rocketID].pos.y < -150) {
 				rockets.erase(rockets.begin() + rocketID);
 				rocketID--;
 				continue;
@@ -1642,16 +1701,16 @@ void TrainView::updateEntity() {
 			}
 			else {
 				// move it
-				rockets[rocketID].lastPos = rockets[rocketID].pos;
-				rockets[rocketID].pos = rockets[rocketID].pos + rockets[rocketID].front * 10;
+				rockets[rocketID].advance();
 			}
 		}
+
 		for (int targetID = 0; targetID < targets.size(); targetID++) {
 			if (targets[targetID].state > 0) {
 				// add its fragments
 				for (int i = 0; i < 3; i++) {
 					Pnt3f front = randUnitVector();
-					Entity frag(targets[targetID].pos + 2.5 * randUnitVector(), front, front * randUnitVector());
+					PhysicalEntity frag(targets[targetID].pos + 2.5 * randUnitVector(), front, front * randUnitVector());
 					frag.velocity = (frag.pos - targets[targetID].pos) * (0.5+(rand() % 30)/10.0);
 					frag.angularVelocity = randUnitVector() * (rand() % 10);
 					targetFrags.push_back(frag);
@@ -1663,7 +1722,7 @@ void TrainView::updateEntity() {
 			}
 		}
 		for (int fragID = 0; fragID < targetFrags.size(); fragID++) {
-			if (targetFrags[fragID].state < 10000 && targetFrags[fragID].pos.y>-5) {
+			if (targetFrags[fragID].state < 1000 && targetFrags[fragID].pos.y>-5) {
 				targetFrags[fragID].advance();
 				targetFrags[fragID].state++;
 			}

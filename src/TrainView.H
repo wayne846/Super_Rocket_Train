@@ -103,10 +103,12 @@ class TrainView : public Fl_Gl_Window
 		void setCone();
 		void setSector();
 		void setWater();
+		void setSmoke();
 
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
 		void drawTree(glm::vec3 pos, float rotateTheta = 0.0f, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
+		void drawSmoke(const std::vector<glm::vec4> &points);
 
 		// some thing about the rocket launcher
 		void aim();
@@ -141,9 +143,9 @@ class TrainView : public Fl_Gl_Window
 		float lastX=0, lastY=0;	// the mouse position
 		Pnt3f lookingFront;	// the orient of train pov
 		Pnt3f lookingUp;
-		std::vector<Entity> rockets;
+		std::vector<Rocket> rockets;
 		std::vector<Entity> targets;
-		std::vector<Entity> targetFrags;
+		std::vector<PhysicalEntity> targetFrags;
 
 		//all light in the scene
 		DirLight dirLight;
@@ -155,6 +157,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* simpleObjectShader;
 		Shader* simpleInstanceObjectShader;
 		Shader* waterShader;
+		Shader* smokeShader;
 
 		//Uniform Buffer
 		unsigned int uboMatrices;
@@ -166,6 +169,7 @@ class TrainView : public Fl_Gl_Window
 		Object cone;
 		Object sector;
 		Object water; //1x1 plane
+		Object smoke;
 
 		//texture
 		std::vector<std::pair<std::string,unsigned int>> objectTextures;
