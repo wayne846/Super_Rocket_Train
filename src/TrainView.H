@@ -95,10 +95,13 @@ class TrainView : public Fl_Gl_Window
 		void initRander();
 		void initLight(); //init all light to dark(black)(0 ,0, 0)
 		void setShaders();
+		void setObjectTexture(std::string name, std::string texturePath);
+		unsigned int getObjectTexture(std::string name);
 
 		void setCube();
 		void setCylinder();
 		void setCone();
+		void setSector();
 		void setWater();
 
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
@@ -159,9 +162,11 @@ class TrainView : public Fl_Gl_Window
 		#define circleVerticesNumber 24	// the fineness of cylinder and cone
 		Object cylinder;
 		Object cone;
+		Object sector;
 		Object water; //1x1 plane
 
 		//texture
+		std::vector<std::pair<std::string,unsigned int>> objectTextures;
 		unsigned int waterHeightMap[200];
 		unsigned int waterNormalMap[200];
 		unsigned int skybox;

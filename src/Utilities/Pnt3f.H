@@ -59,6 +59,8 @@ class Pnt3f {
 		void normalize();
 
 		float len();
+		// square of length
+		float len2();
 
 		glm::vec3 glmvec3();
 

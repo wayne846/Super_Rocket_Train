@@ -1,4 +1,5 @@
 #include "Pnt3f.H"
+#include "Pnt3f.H"
 /************************************************************************
      File:        Pnt3f.cpp
 
@@ -88,6 +89,11 @@ float Pnt3f::len()
 	float l = x * x + y * y + z * z;
 	l = sqrt(l);
 	return l;
+}
+
+float Pnt3f::len2()
+{
+	return x * x + y * y + z * z;
 }
 
 glm::vec3 Pnt3f::glmvec3() {

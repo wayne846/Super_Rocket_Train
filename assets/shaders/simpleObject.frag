@@ -47,6 +47,7 @@ in V_OUT
 {
    vec3 position;
    vec3 normal;
+   vec2 texCoord;
 } f_in;
 
 uniform vec3 eyePosition;
@@ -56,6 +57,9 @@ uniform DirLight dirLight;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 #define NR_SPOT_LIGHTS 4  
 uniform SpotLight spotLights[NR_SPOT_LIGHTS];
+
+uniform bool useImage;
+uniform sampler2D imageTexture;
 
 uniform float gamma;
 
@@ -79,9 +83,16 @@ void main()
     // phase 3: Spot light
     for(int i = 0; i < NR_SPOT_LIGHTS; i++){
         result += CalcSpotLight(spotLights[i], norm, f_in.position, eyeDir);
-    }  
+    }
+
+    // phase 4: imageTexture
+    if(useImage){
+        vec4 imageColor = texture(imageTexture, f_in.texCoord);
+        f_color = mix(vec4(result, 1.0),imageColor,0.4);
+    }else{
+        f_color = vec4(result, 1.0);
+    }
     
-    f_color = vec4(result, 1.0);
     f_color.rgb = pow(f_color.rgb, vec3(1.0/gamma));
 }
 

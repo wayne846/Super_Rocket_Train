@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <chrono>	// for random
 #include <Fl/fl.h>
 
 // we will need OpenGL, and OpenGL needs windows.h
@@ -51,6 +52,7 @@
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
+#define OBJECT_TEXTURE_PATH "/assets/images/objectTexture/"
 
 const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/right.jpg",
@@ -76,6 +78,7 @@ TrainView(int x, int y, int w, int h, const char* l)
 
 	resetArcball();
 	freeCamera.setWindow(this);
+	srand(static_cast<unsigned>(time(0)));
 }
 
 //************************************************************************
@@ -235,19 +238,22 @@ void TrainView::initRander() {
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 
 	//init texture
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < -200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
 		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
 	}
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < -200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
 		waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
 	}
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
+
+	//set object textures
+	setObjectTexture("targetImage", "targetImage.png");
 
 	//init unifrom block index
 	//0 for view and project matrix
@@ -389,8 +395,8 @@ void TrainView::setCylinder()
 	int vn = circleVerticesNumber;
 	GLfloat cylinderVertices[circleVerticesNumber * 12];
 	GLfloat cylinderNormal[circleVerticesNumber * 12];
+	GLfloat cylindertexCoord[circleVerticesNumber * 8];
 	GLuint cylinderElement[(circleVerticesNumber * 2 + (circleVerticesNumber - 2) * 2) * 3];
-	// TODO: add texture coordinates
 
 	float pi = 3.1415926535;
 	// top vertices * 2
@@ -435,6 +441,31 @@ void TrainView::setCylinder()
 		cylinderNormal[index + 2] = 0;
 	}
 
+	// top texCoord
+	for (int i = 0; i < vn; i += 1) {
+		int index = i * 2;
+		float unitAngle = (float)2 * pi / vn;
+		cylindertexCoord[index] = 0.25 + 0.25 * sin((float)unitAngle * (i % vn));
+		cylindertexCoord[index + 1] = 0.25 + 0.25 * -cos((float)unitAngle * (i % vn));
+	}
+
+	// bottom texCoord
+	for (int i = vn * 3; i < vn * 4; i += 1) {
+		int index = i * 2;
+		float unitAngle = (float)2 * pi / vn;
+		cylindertexCoord[index] = 0.75 + 0.25 * sin((float)unitAngle * (i % vn));
+		cylindertexCoord[index + 1] = 0.25 + 0.25 * -cos((float)unitAngle * (i % vn));
+	}
+	// side texCoord
+	for (int i = vn * 1; i < vn * 3; i += 1) {
+		int index = i * 2;
+		float unitLength = (float)1 / vn;
+		cylindertexCoord[index] = (float)unitLength * (i % vn);
+		if (i < vn * 2)	// upper side
+			cylindertexCoord[index + 1] = 0.5;
+		else            // lower side
+			cylindertexCoord[index + 1] = 1;
+	}
 	// side surface
 	for (int i = vn; i < vn * 2; i++) {
 		int index = (i - vn) * 6;
@@ -468,7 +499,7 @@ void TrainView::setCylinder()
 	}
 
 	glGenVertexArrays(1, &cylinder.VAO);
-	glGenBuffers(2, cylinder.VBO);
+	glGenBuffers(3, cylinder.VBO);
 	glGenBuffers(1, &cylinder.EBO);
 	glBindVertexArray(cylinder.VAO);
 	cylinder.element_amount = sizeof(cylinderElement) / sizeof(GLuint);
@@ -482,6 +513,11 @@ void TrainView::setCylinder()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cylinderNormal), cylinderNormal, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
+	// Image texture attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cylinder.VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cylindertexCoord), cylindertexCoord, GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(2);
 	//Element attribute
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cylinder.EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cylinderElement), cylinderElement, GL_STATIC_DRAW);
@@ -577,11 +613,117 @@ void TrainView::setCone()
 	glBindVertexArray(0);
 }
 
+void TrainView::setSector()
+{
+	// one-third sector, (w,h,l) = (1,1,1), face(top) to -z
+	int vn = circleVerticesNumber;
+	GLfloat sectorVertices[circleVerticesNumber * 12];
+	GLfloat sectorNormal[circleVerticesNumber * 12];
+	GLuint sectorElement[(circleVerticesNumber * 2 + (circleVerticesNumber - 2) * 2) * 3];
+	// TODO: add texture coordinates
+
+	float pi = 3.1415926535;
+	// top vertices * 2
+	for (int i = 0; i < vn * 2; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		sectorVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
+		sectorVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
+		sectorVertices[index + 2] = -0.5;
+	}
+	// buttom vertices * 2
+	for (int i = vn * 2; i < vn * 4; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		sectorVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
+		sectorVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
+		sectorVertices[index + 2] = 0.5;
+	}
+	// top normal
+	for (int i = 0; i < vn; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		sectorNormal[index] = 0;
+		sectorNormal[index + 1] = 0;
+		sectorNormal[index + 2] = -1;
+	}
+
+	// bottom normal
+	for (int i = vn * 3; i < vn * 4; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		sectorNormal[index] = 0;
+		sectorNormal[index + 1] = 0;
+		sectorNormal[index + 2] = 1;
+	}
+	// side normal
+	for (int i = vn * 1; i < vn * 3; i += 1) {
+		int index = i * 3;
+		float unitAngle = (float)2 * pi / vn;
+		sectorNormal[index] = 1 * sin((float)unitAngle * (i % vn));
+		sectorNormal[index + 1] = 1 * cos((float)unitAngle * (i % vn));
+		sectorNormal[index + 2] = 0;
+	}
+
+	// side surface
+	for (int i = vn; i < vn * 2; i++) {
+		int index = (i - vn) * 6;
+		sectorElement[index] = i;
+		sectorElement[index + 2] = vn + i;
+		sectorElement[index + 3] = vn + i;
+		if (i + 1 < 2 * vn) {
+			sectorElement[index + 1] = i + 1;
+			sectorElement[index + 4] = vn + i + 1;
+			sectorElement[index + 5] = i + 1;
+		}
+		else {
+			sectorElement[index + 1] = vn;
+			sectorElement[index + 4] = vn * 2;
+			sectorElement[index + 5] = vn;
+		}
+	}
+	// top surface
+	for (int i = 0; i < vn - 2; i++) {
+		int index = (vn * 2 + i) * 3;
+		sectorElement[index] = 0;
+		sectorElement[index + 1] = i + 1;
+		sectorElement[index + 2] = i + 2;
+	}
+	// buttom surface
+	for (int i = vn * 3; i < vn * 4 - 2; i++) {
+		int index = (vn * 3 + (i - vn * 3) - 2) * 3;
+		sectorElement[index] = vn * 3;
+		sectorElement[index + 1] = i + 1;
+		sectorElement[index + 2] = i + 2;
+	}
+
+	glGenVertexArrays(1, &sector.VAO);
+	glGenBuffers(2, sector.VBO);
+	glGenBuffers(1, &sector.EBO);
+	glBindVertexArray(sector.VAO);
+	sector.element_amount = sizeof(sectorElement) / sizeof(GLuint);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, sector.VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(sectorVertices), sectorVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Normal attribute
+	glBindBuffer(GL_ARRAY_BUFFER, sector.VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(sectorNormal), sectorNormal, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	//Element attribute
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sector.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(sectorElement), sectorElement, GL_STATIC_DRAW);
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+
 void TrainView::setWater()
 {
 	//water
 	GLfloat  waterVertices[WATER_RESOLUTION * WATER_RESOLUTION * 3];
-	GLfloat  waterTexcoords[WATER_RESOLUTION * WATER_RESOLUTION * 2];
+	GLfloat  watertexCoords[WATER_RESOLUTION * WATER_RESOLUTION * 2];
 	GLuint waterElement[(WATER_RESOLUTION - 1) * (WATER_RESOLUTION - 1) * 6];
 	for (int i = 0; i < WATER_RESOLUTION; i++) {
 		for (int j = 0; j < WATER_RESOLUTION; j++) {
@@ -594,8 +736,8 @@ void TrainView::setWater()
 	for (int i = 0; i < WATER_RESOLUTION; i++) {
 		for (int j = 0; j < WATER_RESOLUTION; j++) {
 			int t = (i * WATER_RESOLUTION + j) * 2;
-			waterTexcoords[t] = j / (float)(WATER_RESOLUTION - 1);
-			waterTexcoords[t + 1] = i / (float)(WATER_RESOLUTION - 1);
+			watertexCoords[t] = j / (float)(WATER_RESOLUTION - 1);
+			watertexCoords[t + 1] = i / (float)(WATER_RESOLUTION - 1);
 		}
 	}
 	for (int i = 0; i < WATER_RESOLUTION; i++) {
@@ -621,9 +763,9 @@ void TrainView::setWater()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(waterVertices), waterVertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
-	// Texcoords attribute
+	// texCoords attribute
 	glBindBuffer(GL_ARRAY_BUFFER, water.VBO[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(waterTexcoords), waterTexcoords, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(watertexCoords), watertexCoords, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
 	//Element attribute
@@ -908,6 +1050,25 @@ void TrainView::setShaders() {
 
 	//set back to opengl fixed pipeline
 	glUseProgram(0);
+}
+
+void TrainView::setObjectTexture(std::string name, std::string texturePath)
+{
+	unsigned int id = getObjectTexture(name);
+	if (id == -1) {
+		objectTextures.push_back(std::make_pair(
+			name, RenderDatabase::loadTexture(PROJECT_DIR OBJECT_TEXTURE_PATH + texturePath)
+		));
+	}
+}
+
+unsigned int TrainView::getObjectTexture(std::string name)
+{
+	for (int i = 0; i < objectTextures.size(); i++) {
+		if (objectTextures[i].first == name)
+			return objectTextures[i].second;
+	}
+	return -1;
 }
 
 
@@ -1214,9 +1375,10 @@ void TrainView::drawStuff(bool doingShadows)
 
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
-	InstanceDrawer targetInstance(RenderDatabase::RUBY_MATERIAL);
-	collisionJudge();
+	InstanceDrawer targetInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
+	targetInstance.setTexture(this->getObjectTexture("targetImage"));
 	updateEntity();
+	collisionJudge();
 	//draw rocket and target
 	for (int i = 0; i < rockets.size(); i++) {
 		if (rockets[i].state == 0) {
@@ -1344,14 +1506,14 @@ void TrainView::addTarget()
 	int b = -range + (rand() % (2 * range));
 	int c = -range + (rand() % (2 * range));
 	Pnt3f front(a / 100.0f, b / 100.0f, c / 100.0f);
+	front = Pnt3f(0, 0, -1);	// Fixed orientation for testing
 	front.normalize();
-	targets.push_back(Entity(Pnt3f(x, y, z), front, front * Pnt3f(1, 0, 0)));
+	targets.push_back(Entity(Pnt3f(x, y, z), front, Pnt3f(0, 1, 0)));
 }
 
 void TrainView::addMoreTarget()
 {
 	using namespace std;
-	srand(static_cast<unsigned>(time(0)));
 	int range = 100;
 	for (int i = 0; i < 10; i++) {
 		int x = -range + (rand() % (2 * range));
@@ -1381,10 +1543,10 @@ void TrainView::collisionJudge()
 	for (int targetID = 0; targetID < targets.size(); targetID++) {
 		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
 			if (targets[targetID].state == 0 && rockets[rocketID].state == 0) {
-				// TODO: better collision judgement
-				if (MathHelper::distance(targets[targetID].pos, rockets[rocketID].pos) < 7 
-					//&&(MathHelper::distanceToPlane(targets[targetID].pos, targets[targetID].front, rockets[rocketID].pos) < 2)
-					) {
+				if (MathHelper::segmentIntersectCircle(
+					rockets[rocketID].pos, rockets[rocketID].lastPos,
+					targets[targetID].pos, targets[targetID].front, 5)) {
+
 					targets[targetID].state = 1;
 					rockets[rocketID].state = 1;
 				}
@@ -1407,7 +1569,7 @@ void TrainView::updateEntity() {
 			}
 		}
 		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
-			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len() > 1000) {
+			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len2() > 1000000) {
 				rockets.erase(rockets.begin() + rocketID);
 				rocketID--;
 				continue;
@@ -1418,6 +1580,7 @@ void TrainView::updateEntity() {
 			}
 			else {
 				// move it
+				rockets[rocketID].lastPos = rockets[rocketID].pos;
 				rockets[rocketID].pos = rockets[rocketID].pos + rockets[rocketID].front * 10;
 			}
 		}

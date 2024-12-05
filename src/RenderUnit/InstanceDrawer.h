@@ -10,6 +10,7 @@ private:
 	std::vector<glm::mat4> modelMatrices;
 	std::vector<glm::mat4> normalMatrices;
 	Material material;
+	unsigned int textureId=-1;
 
 	GLuint instanceVBO[2];
 public:
@@ -19,5 +20,6 @@ public:
 
 	void addModelMatrix(glm::mat4 modelMatrix);
 	void setMaterial(const Material& m);
+	void setTexture(unsigned int id);
 	void drawByInstance(Shader* shader, Object &object);
 };

@@ -5,6 +5,7 @@
 InstanceDrawer::InstanceDrawer() {
 	this->instanceVBO[0] = 0;
 	this->instanceVBO[1] = 0;
+	this->textureId = -1;
 }
 
 InstanceDrawer::~InstanceDrawer() {
@@ -30,6 +31,11 @@ void InstanceDrawer::setMaterial(const Material& m) {
 	material = m;
 }
 
+void InstanceDrawer::setTexture(unsigned int id)
+{
+	textureId = id;
+}
+
 //draw the object by all model matrix, the model ande normal matrix will be clear after drawed
 void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 {
@@ -45,6 +51,17 @@ void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 	shader->setVec3("material.specular", material.specular);
 	shader->setFloat("material.shininess", material.shininess);
 
+	// set texture
+	if (this->textureId != -1) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureId);
+		shader->setBool("useImage", true);
+		shader->setInt("imageTexture", 0);
+	}
+	else {
+		shader->setBool("useImage", false);
+	}	
+
 	//-------------------
 	// set instance VBO
 	//-------------------
@@ -52,7 +69,7 @@ void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO[0]);
 	glBufferData(GL_ARRAY_BUFFER, modelMatrices.size() * sizeof(glm::mat4), modelMatrices.data(), GL_STATIC_DRAW);
 	for (int j = 0; j < 4; j++) {
-		int location = 2 + j;
+		int location = 3 + j;
 		glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(j * sizeof(glm::vec4)));
 		glEnableVertexAttribArray(location);
 		glVertexAttribDivisor(location, 1);
@@ -62,7 +79,7 @@ void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO[1]);
 	glBufferData(GL_ARRAY_BUFFER, normalMatrices.size() * sizeof(glm::mat4), normalMatrices.data(), GL_STATIC_DRAW);
 	for (int j = 0; j < 4; j++) {
-		int location = 6 + j;
+		int location = 7 + j;
 		glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(j * sizeof(glm::vec4)));
 		glEnableVertexAttribArray(location);
 		glVertexAttribDivisor(location, 1);
@@ -71,6 +88,8 @@ void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 	glDrawElementsInstanced(GL_TRIANGLES, object.element_amount, GL_UNSIGNED_INT, 0, modelMatrices.size());
 	//unbind VAO
 	glBindVertexArray(0);
+	//unbind Texture
+	glBindTexture(GL_TEXTURE_2D, 0);
 	//unbind shader(switch to fixed pipeline)
 	glUseProgram(0);
 

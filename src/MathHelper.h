@@ -14,6 +14,10 @@ namespace MathHelper {
 		return degree * PI / 180.0;
 	}
 
+	float dot(Pnt3f P1, Pnt3f P2) {
+		return P1.x * P2.x + P1.y * P2.y + P1.z * P2.z;
+	}
+
 	//we assume front is -z in model space
 	glm::mat4 getTransformMatrix(glm::vec3 position, glm::vec3 front, glm::vec3 up, glm::vec3 scale) {
 		glm::mat4 transform(1.0f);
@@ -83,5 +87,31 @@ namespace MathHelper {
 
 	float distance(Pnt3f point1, Pnt3f point2) {
 		return (point1 + (-1) * point2).len();
+	}
+
+	bool segmentIntersectCircle(
+		const Pnt3f P1, const Pnt3f& P2,
+		const Pnt3f& center, const Pnt3f& normal, float radius)
+	{
+		Pnt3f lineDir = P2 - P1;
+		float denom = dot(lineDir, normal);
+
+		// Step 1: Check if line is parallel to the plane
+		if (abs(denom) < 1e-6) {
+			return false; // Line is parallel to the plane, no intersection
+		}
+
+		// Step 2: Find intersection point
+		float t = dot(center - P1, normal) * (1/denom);
+
+		// Check if the intersection is within the segment
+		if (t < 0.0f || t > 1.0f) {
+			return false; // Intersection is outside the segment
+		}
+
+		Pnt3f intersectPoint = P1 + t * lineDir;
+
+		// Step 3: Check if intersection is inside the circle
+		return (intersectPoint - center).len2() <= radius * radius;
 	}
 }
