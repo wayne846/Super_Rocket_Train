@@ -44,17 +44,25 @@
 
 #include "MathHelper.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
 #define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
 #define INSTANCE_OBJECT_VERT_PATH "/assets/shaders/instanceObject.vert"
-#define POINT_VERT_PATH "/assets/shaders/smoke.vert"
-#define POINT_FRAG_PATH "/assets/shaders/smoke.frag"
+#define SMOKE_VERT_PATH "/assets/shaders/smoke.vert"
+#define SMOKE_FRAG_PATH "/assets/shaders/smoke.frag"
 #define WATER_VERT_PATH "/assets/shaders/water.vert"
 #define WATER_FRAG_PATH "/assets/shaders/water.frag"
+#define MODEL_VERT_PATH "/assets/shaders/model_loading.vert"
+#define MODEL_FRAG_PATH "/assets/shaders/model_loading.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
 #define OBJECT_TEXTURE_PATH "/assets/images/objectTexture/"
+#define BACKPACK_PATH "/assets/model/backpack/backpack.obj"
+#define ISLAND_PATH "/assets/model/island/floating_island.obj"
 
 const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/right.jpg",
@@ -66,6 +74,8 @@ const std::vector<std::string> SKYBOX_PATH = {
 };
 
 #define WATER_RESOLUTION 100
+
+Assimp::Importer importer;
 
 //************************************************************************
 //
@@ -238,7 +248,8 @@ void TrainView::initRander() {
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
-	smokeShader = new Shader(PROJECT_DIR POINT_VERT_PATH, PROJECT_DIR POINT_FRAG_PATH);		
+	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
+	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
 
 	//init texture
 	for (int i = 0; i < -200; i++) {
@@ -264,10 +275,12 @@ void TrainView::initRander() {
 	unsigned int uniformBlockIndex_simpleInstanceObject = glGetUniformBlockIndex(simpleInstanceObjectShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_water = glGetUniformBlockIndex(waterShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_smoke = glGetUniformBlockIndex(smokeShader->ID, "Matrices");
+	unsigned int uniformBlockIndex_model = glGetUniformBlockIndex(modelShader->ID, "Matrices");
 	glUniformBlockBinding(simpleObjectShader->ID, uniformBlockIndex_simpleObject, 0);
 	glUniformBlockBinding(simpleInstanceObjectShader->ID, uniformBlockIndex_simpleInstanceObject, 0);
 	glUniformBlockBinding(waterShader->ID, uniformBlockIndex_water, 0);
 	glUniformBlockBinding(smokeShader->ID, uniformBlockIndex_smoke, 0);
+	glUniformBlockBinding(modelShader->ID, uniformBlockIndex_model, 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -286,6 +299,10 @@ void TrainView::initRander() {
 	setSector();
 	setWater();
 	setSmoke();
+
+	// set Model
+	backpack = new Model(PROJECT_DIR BACKPACK_PATH);
+	island = new Model(PROJECT_DIR ISLAND_PATH);
 }
 
 
@@ -1326,7 +1343,7 @@ void TrainView::drawStuff(bool doingShadows)
 
 	//draw the floor
 	glm::mat4 floorModel = MathHelper::getTransformMatrix(glm::vec3(0, -0.5, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(200, 1, 200));
-	drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
+	//drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
 
 	//draw the tree
 	//drawTree(glm::vec3(0, 0, 0));
@@ -1539,6 +1556,15 @@ void TrainView::drawStuff(bool doingShadows)
 		targetFragInstance.addModelMatrix(targetFragModel);
 	}
 	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector);
+
+	//draw backpack
+	modelShader->use();
+	glm::mat4 backpackModel = MathHelper::getTransformMatrix(glm::vec3(0, -270, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
+	modelShader->setMat4("model", backpackModel);
+	island->Draw(modelShader);
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glUseProgram(0);
 
 	//draw axis
 	glLineWidth(5);

@@ -158,6 +158,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* simpleInstanceObjectShader;
 		Shader* waterShader;
 		Shader* smokeShader;
+		Shader* modelShader;
 
 		//Uniform Buffer
 		unsigned int uboMatrices;
@@ -170,6 +171,10 @@ class TrainView : public Fl_Gl_Window
 		Object sector;
 		Object water; //1x1 plane
 		Object smoke;
+
+		//Model
+		Model* backpack;
+		Model* island;
 
 		//texture
 		std::vector<std::pair<std::string,unsigned int>> objectTextures;

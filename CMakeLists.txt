@@ -13,6 +13,8 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/smoke.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/water.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/water.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/model_loading.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/model_loading.frag
 ) 
 
 set(SRC_RENDER_UNIT
@@ -74,7 +76,8 @@ target_link_libraries(RollerCoasters
     debug ${LIB_DIR}Debug/fltk_jpegd.lib       optimized ${LIB_DIR}Release/fltk_jpeg.lib
     debug ${LIB_DIR}Debug/fltk_pngd.lib        optimized ${LIB_DIR}Release/fltk_png.lib
     debug ${LIB_DIR}Debug/fltk_zd.lib          optimized ${LIB_DIR}Release/fltk_z.lib
-    debug ${LIB_DIR}Debug/fltkd.lib            optimized ${LIB_DIR}Release/fltk.lib)
+    debug ${LIB_DIR}Debug/fltkd.lib            optimized ${LIB_DIR}Release/fltk.lib
+    debug ${LIB_DIR}Debug/assimp-vc142-mtd.lib           optimized ${LIB_DIR}Release/assimp-vc142-mtd.lib)
 
 target_link_libraries(RollerCoasters 
     ${LIB_DIR}OpenGL32.lib

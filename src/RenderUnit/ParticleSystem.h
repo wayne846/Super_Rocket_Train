@@ -26,7 +26,7 @@ private:
 		Particle(glm::vec3 position, glm::vec3 velocity, int life);
 	};
 
-	bool isDead(const Particle& p);
+	static bool isDead(const Particle& p);
 
 public:
 	glm::vec3 position;
@@ -44,6 +44,6 @@ public:
 
 	ParticleGenerator(glm::vec3 position, int life, float generateRate, glm::vec3 particleColor, int particleLife, float gravity, Shader* shader);
 	void update();
-	void draw();
+	//void draw();
 };
 
