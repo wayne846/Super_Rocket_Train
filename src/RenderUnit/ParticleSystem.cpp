@@ -27,12 +27,13 @@ void ParticleGenerator::update() {
 
 		p.lifeCount--;
 	}
-	particles.remove_if(isDead);
+	particles.remove_if(ParticleGenerator::isDead);
 }
 
+/*
 void ParticleGenerator::draw {
 	
-}
+}*/
 
 bool ParticleGenerator::isDead(const Particle& p) {
 	if (p.lifeCount <= 0) {
