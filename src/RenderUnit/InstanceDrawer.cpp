@@ -97,3 +97,7 @@ void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 	normalMatrices.clear();
 }
 
+void InstanceDrawer::drawParticleByInstance(Shader* shader, glm::vec3 color, float size, std::vector<glm::vec3> pos) {
+
+}
+
