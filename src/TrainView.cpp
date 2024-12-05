@@ -238,13 +238,13 @@ void TrainView::initRander() {
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 
 	//init texture
-	for (int i = 0; i < -200; i++) {
+	for (int i = 0; i < 200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
 		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
 	}
-	for (int i = 0; i < -200; i++) {
+	for (int i = 0; i < 200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
@@ -446,7 +446,7 @@ void TrainView::setCylinder()
 		int index = i * 2;
 		float unitAngle = (float)2 * pi / vn;
 		cylindertexCoord[index] = 0.25 + 0.25 * sin((float)unitAngle * (i % vn));
-		cylindertexCoord[index + 1] = 0.25 + 0.25 * -cos((float)unitAngle * (i % vn));
+		cylindertexCoord[index + 1] = 0.75 + 0.25 * -cos((float)unitAngle * (i % vn));
 	}
 
 	// bottom texCoord
@@ -454,7 +454,7 @@ void TrainView::setCylinder()
 		int index = i * 2;
 		float unitAngle = (float)2 * pi / vn;
 		cylindertexCoord[index] = 0.75 + 0.25 * sin((float)unitAngle * (i % vn));
-		cylindertexCoord[index + 1] = 0.25 + 0.25 * -cos((float)unitAngle * (i % vn));
+		cylindertexCoord[index + 1] = 0.75 + 0.25 * -cos((float)unitAngle * (i % vn));
 	}
 	// side texCoord
 	for (int i = vn * 1; i < vn * 3; i += 1) {
@@ -464,7 +464,7 @@ void TrainView::setCylinder()
 		if (i < vn * 2)	// upper side
 			cylindertexCoord[index + 1] = 0.5;
 		else            // lower side
-			cylindertexCoord[index + 1] = 1;
+			cylindertexCoord[index + 1] = 0;
 	}
 	// side surface
 	for (int i = vn; i < vn * 2; i++) {
@@ -1496,36 +1496,23 @@ doPick()
 void TrainView::addTarget()
 {
 	using namespace std;
-	srand(static_cast<unsigned>(time(0)));
 	int range = 100;
 	int x = -range + (rand() % (2 * range));
-	int y = rand() % (range);
+	int y = 5 + rand() % (range);
 	int z = -range + (rand() % (2 * range));
 
 	int a = -range + (rand() % (2 * range));
 	int b = -range + (rand() % (2 * range));
 	int c = -range + (rand() % (2 * range));
 	Pnt3f front(a / 100.0f, b / 100.0f, c / 100.0f);
-	front = Pnt3f(0, 0, -1);	// Fixed orientation for testing
 	front.normalize();
-	targets.push_back(Entity(Pnt3f(x, y, z), front, Pnt3f(0, 1, 0)));
+	targets.push_back(Entity(Pnt3f(x, y, z), front, front * Pnt3f(1, 0, 0)));
 }
 
 void TrainView::addMoreTarget()
 {
-	using namespace std;
-	int range = 100;
 	for (int i = 0; i < 10; i++) {
-		int x = -range + (rand() % (2 * range));
-		int y = rand() % (range);
-		int z = -range + (rand() % (2 * range));
-
-		int a = -range + (rand() % (2 * range));
-		int b = -range + (rand() % (2 * range));
-		int c = -range + (rand() % (2 * range));
-		Pnt3f front(a / 100.0f, b / 100.0f, c / 100.0f);
-		front.normalize();
-		targets.push_back(Entity(Pnt3f(x, y, z), front, front * Pnt3f(1, 0, 0)));
+		addTarget();
 	}
 }
 
