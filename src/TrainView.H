@@ -113,6 +113,7 @@ class TrainView : public Fl_Gl_Window
 		void shoot();
 		void collisionJudge();
 		void updateEntity();
+		Pnt3f randUnitVector();
 	public:
 		const float DIVIDE_LINE = 128; //how many segment are track divide
 		const int MATERIAL_SHAPE = 0;
@@ -142,6 +143,7 @@ class TrainView : public Fl_Gl_Window
 		Pnt3f lookingUp;
 		std::vector<Entity> rockets;
 		std::vector<Entity> targets;
+		std::vector<Entity> targetFrags;
 
 		//all light in the scene
 		DirLight dirLight;

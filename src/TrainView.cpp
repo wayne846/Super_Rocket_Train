@@ -238,13 +238,13 @@ void TrainView::initRander() {
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 
 	//init texture
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < -200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
 		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
 	}
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < -200; i++) {
 		std::string zero = "00";
 		if (i >= 10 && i < 100) zero = "0";
 		if (i >= 100) zero = "";
@@ -275,14 +275,14 @@ void TrainView::initRander() {
 	setCube();
 	setCone();
 	setCylinder();
+	setSector();
 	setWater();
 }
 
-// set the objects
+
+//cube
 void TrainView::setCube()
 {
-	//------------------
-	//cube
 	GLfloat cubeVertices[] = {
 		//down
 		0.5f, -0.5f, 0.5f,
@@ -389,9 +389,9 @@ void TrainView::setCube()
 	glBindVertexArray(0);
 }
 
+// cylinder, (w,h,l) = (1,1,1), face(top) to -z
 void TrainView::setCylinder()
 {
-	// cylinder, (w,h,l) = (1,1,1), face(top) to -z
 	int vn = circleVerticesNumber;
 	GLfloat cylinderVertices[circleVerticesNumber * 12];
 	GLfloat cylinderNormal[circleVerticesNumber * 12];
@@ -525,9 +525,9 @@ void TrainView::setCylinder()
 	glBindVertexArray(0);
 }
 
+// cone, (w,h,l) = (1,1,1), face(top) to -z
 void TrainView::setCone()
 {
-	// cone, (w,h,l) = (1,1,1), face(top) to -z
 	int vn = circleVerticesNumber;
 	GLfloat coneVertices[circleVerticesNumber * 9];
 	GLfloat coneNormal[circleVerticesNumber * 9];
@@ -613,31 +613,49 @@ void TrainView::setCone()
 	glBindVertexArray(0);
 }
 
+// one-third sector, the angle is not fixed, (w,h,l) = (?,0.5,1), face to -z
+// this is so unfixed that its use is not recommended
 void TrainView::setSector()
 {
-	// one-third sector, (w,h,l) = (1,1,1), face(top) to -z
-	int vn = circleVerticesNumber;
-	GLfloat sectorVertices[circleVerticesNumber * 12];
-	GLfloat sectorNormal[circleVerticesNumber * 12];
-	GLuint sectorElement[(circleVerticesNumber * 2 + (circleVerticesNumber - 2) * 2) * 3];
-	// TODO: add texture coordinates
+	const int vn = circleVerticesNumber / 3 + 1;
+	GLfloat sectorVertices[vn * 12];
+	GLfloat sectorNormal[vn * 12];
+	GLfloat sectortexCoord[vn * 8];
+	GLuint sectorElement[(vn * 2 + (vn - 2) * 2) * 3];
 
 	float pi = 3.1415926535;
 	// top vertices * 2
 	for (int i = 0; i < vn * 2; i += 1) {
 		int index = i * 3;
-		float unitAngle = (float)2 * pi / vn;
-		sectorVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
-		sectorVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
-		sectorVertices[index + 2] = -0.5;
+		if (i % vn == 0) {
+			// center
+			sectorVertices[index] = 0;
+			sectorVertices[index + 1] = 0;
+			sectorVertices[index + 2] = -0.5;
+		}
+		else {
+			// arc
+			float unitAngle = (float)2 * pi / circleVerticesNumber;
+			sectorVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
+			sectorVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
+			sectorVertices[index + 2] = -0.5;
+		}
 	}
 	// buttom vertices * 2
 	for (int i = vn * 2; i < vn * 4; i += 1) {
 		int index = i * 3;
-		float unitAngle = (float)2 * pi / vn;
-		sectorVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
-		sectorVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
-		sectorVertices[index + 2] = 0.5;
+		if (i % vn == 0) {
+			// center
+			sectorVertices[index] = 0;
+			sectorVertices[index + 1] = 0;
+			sectorVertices[index + 2] = 0.5;
+		}
+		else {
+			float unitAngle = (float)2 * pi / circleVerticesNumber;
+			sectorVertices[index] = 0.5 * sin((float)unitAngle * (i % vn));
+			sectorVertices[index + 1] = 0.5 * cos((float)unitAngle * (i % vn));
+			sectorVertices[index + 2] = 0.5;
+		}
 	}
 	// top normal
 	for (int i = 0; i < vn; i += 1) {
@@ -659,12 +677,59 @@ void TrainView::setSector()
 	// side normal
 	for (int i = vn * 1; i < vn * 3; i += 1) {
 		int index = i * 3;
-		float unitAngle = (float)2 * pi / vn;
-		sectorNormal[index] = 1 * sin((float)unitAngle * (i % vn));
-		sectorNormal[index + 1] = 1 * cos((float)unitAngle * (i % vn));
-		sectorNormal[index + 2] = 0;
+		if (i % vn == 0) {
+			// I'm not sure about this but I guess no one will find it wrong
+			sectorNormal[index] = 0.707;
+			sectorNormal[index + 1] = -0.707;
+			sectorNormal[index + 2] = 0;
+		}
+		else {
+			float unitAngle = (float)2 * pi / circleVerticesNumber;
+			sectorNormal[index] = 1 * sin((float)unitAngle * (i % vn));
+			sectorNormal[index + 1] = 1 * cos((float)unitAngle * (i % vn));
+			sectorNormal[index + 2] = 0;
+		}
 	}
 
+	// top texCoord
+	for (int i = 0; i < vn; i += 1) {
+		int index = i * 2;
+		if (i % vn == 0) {
+			sectortexCoord[index] = 0.25;
+			sectortexCoord[index + 1] = 0.75;
+			sectortexCoord[index + 2] = 0;
+		}
+		else {
+			float unitAngle = (float)2 * pi / circleVerticesNumber;
+			sectortexCoord[index] = 0.25 + 0.25 * sin((float)unitAngle * (i % vn));
+			sectortexCoord[index + 1] = 0.75 + 0.25 * -cos((float)unitAngle * (i % vn));
+		}
+	}
+
+	// bottom texCoord
+	for (int i = vn * 3; i < vn * 4; i += 1) {
+		int index = i * 2;
+		if (i % vn == 0) {
+			sectortexCoord[index] = 0.75;
+			sectortexCoord[index + 1] = 0.75;
+			sectortexCoord[index + 2] = 0;
+		}
+		else {
+			float unitAngle = (float)2 * pi / circleVerticesNumber;
+			sectortexCoord[index] = 0.75 + 0.25 * sin((float)unitAngle * (i % vn));
+			sectortexCoord[index + 1] = 0.75 + 0.25 * -cos((float)unitAngle * (i % vn));
+		}
+	}
+	// side texCoord
+	for (int i = vn * 1; i < vn * 3; i += 1) {
+		int index = i * 2;
+		float unitLength = (float)1 / vn;
+		sectortexCoord[index] = (float)unitLength * (i % circleVerticesNumber);
+		if (i < vn * 2)	// upper side
+			sectortexCoord[index + 1] = 0.5;
+		else            // lower side
+			sectortexCoord[index + 1] = 0;
+	}
 	// side surface
 	for (int i = vn; i < vn * 2; i++) {
 		int index = (i - vn) * 6;
@@ -698,7 +763,7 @@ void TrainView::setSector()
 	}
 
 	glGenVertexArrays(1, &sector.VAO);
-	glGenBuffers(2, sector.VBO);
+	glGenBuffers(3, sector.VBO);
 	glGenBuffers(1, &sector.EBO);
 	glBindVertexArray(sector.VAO);
 	sector.element_amount = sizeof(sectorElement) / sizeof(GLuint);
@@ -712,6 +777,11 @@ void TrainView::setSector()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(sectorNormal), sectorNormal, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
+	// Image texture attribute
+	glBindBuffer(GL_ARRAY_BUFFER, sector.VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(sectortexCoord), sectortexCoord, GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(2);
 	//Element attribute
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sector.EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(sectorElement), sectorElement, GL_STATIC_DRAW);
@@ -1376,7 +1446,9 @@ void TrainView::drawStuff(bool doingShadows)
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer targetInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
+	InstanceDrawer targetFragInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
 	targetInstance.setTexture(this->getObjectTexture("targetImage"));
+	targetFragInstance.setTexture(this->getObjectTexture("targetImage"));
 	updateEntity();
 	collisionJudge();
 	//draw rocket and target
@@ -1403,6 +1475,13 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 	}
 	targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
+	for (int i = 0; i < targetFrags.size(); i++) {
+		glm::mat4 targetFragModel = MathHelper::getTransformMatrix(
+			targetFrags[i].pos.glmvec3(), targetFrags[i].front.glmvec3(), targetFrags[i].up.glmvec3(),
+			glm::vec3(10, 10, 1));
+		targetFragInstance.addModelMatrix(targetFragModel);
+	}
+	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector);
 
 	//draw axis
 	glLineWidth(5);
@@ -1493,6 +1572,16 @@ doPick()
 	printf("Selected Cube %d\n", selectedCube);
 }
 
+Pnt3f TrainView::randUnitVector() {
+	int range = 100;
+	int a = -range + (rand() % (2 * range));
+	int b = -range + (rand() % (2 * range));
+	int c = -range + (rand() % (2 * range));
+	Pnt3f v(a / 100.0f, b / 100.0f, c / 100.0f);
+	v.normalize();
+	return v;
+}
+
 void TrainView::addTarget()
 {
 	using namespace std;
@@ -1501,10 +1590,7 @@ void TrainView::addTarget()
 	int y = 5 + rand() % (range);
 	int z = -range + (rand() % (2 * range));
 
-	int a = -range + (rand() % (2 * range));
-	int b = -range + (rand() % (2 * range));
-	int c = -range + (rand() % (2 * range));
-	Pnt3f front(a / 100.0f, b / 100.0f, c / 100.0f);
+	Pnt3f front = randUnitVector();
 	front.normalize();
 	targets.push_back(Entity(Pnt3f(x, y, z), front, front * Pnt3f(1, 0, 0)));
 }
@@ -1544,17 +1630,6 @@ void TrainView::collisionJudge()
 
 void TrainView::updateEntity() {
 	if (tw->runButton->value()) {
-		for (int targetID = 0; targetID < targets.size(); targetID++) {
-			if (targets[targetID].state > 1) {
-				targets.erase(targets.begin() + targetID);
-				targetID--;
-				continue;
-			}
-			else if (targets[targetID].state > 0) {
-				// TODO: EXPLOSION!
-				targets[targetID].state++;
-			}
-		}
 		for (int rocketID = 0; rocketID < rockets.size(); rocketID++) {
 			if (rockets[rocketID].state > 1 || rockets[rocketID].pos.len2() > 1000000) {
 				rockets.erase(rockets.begin() + rocketID);
@@ -1569,6 +1644,34 @@ void TrainView::updateEntity() {
 				// move it
 				rockets[rocketID].lastPos = rockets[rocketID].pos;
 				rockets[rocketID].pos = rockets[rocketID].pos + rockets[rocketID].front * 10;
+			}
+		}
+		for (int targetID = 0; targetID < targets.size(); targetID++) {
+			if (targets[targetID].state > 0) {
+				// add its fragments
+				for (int i = 0; i < 3; i++) {
+					Pnt3f front = randUnitVector();
+					Entity frag(targets[targetID].pos + 2.5 * randUnitVector(), front, front * randUnitVector());
+					frag.velocity = (frag.pos - targets[targetID].pos) * (0.5+(rand() % 30)/10.0);
+					frag.angularVelocity = randUnitVector() * (rand() % 10);
+					targetFrags.push_back(frag);
+				}
+				// delete this
+				targets.erase(targets.begin() + targetID);
+				targetID--;
+				continue;
+			}
+		}
+		for (int fragID = 0; fragID < targetFrags.size(); fragID++) {
+			if (targetFrags[fragID].state < 10000 && targetFrags[fragID].pos.y>-5) {
+				targetFrags[fragID].advance();
+				targetFrags[fragID].state++;
+			}
+			else {
+				// delete
+				targetFrags.erase(targetFrags.begin() + fragID);
+				fragID--;
+				continue;
 			}
 		}
 	}
