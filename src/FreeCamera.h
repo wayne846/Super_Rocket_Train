@@ -6,7 +6,9 @@ class Fl_Gl_Window;
 
 class FreeCamera{
 private:
+	float InitSpeed = 5.0f;
 	float Speed = 5.0f;
+	float InitMouseSensitivity = 40.0f;
 	float MouseSensitivity = 40.0f;
 
 	glm::vec3 position;

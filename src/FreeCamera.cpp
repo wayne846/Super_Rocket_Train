@@ -39,6 +39,15 @@ void FreeCamera::reset() {
 }
 
 int FreeCamera::handle(int e) {
+	if (Fl::event_ctrl()) {
+		MouseSensitivity = InitMouseSensitivity / 10.0f;
+		Speed = InitSpeed / 10.0f;
+	}
+	else {
+		MouseSensitivity = InitMouseSensitivity;
+		Speed = InitSpeed;
+	}
+
 	switch (e) {
 		case FL_PUSH:
 			// right mouse button down
