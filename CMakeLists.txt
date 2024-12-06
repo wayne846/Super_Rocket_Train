@@ -15,6 +15,8 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/water.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/model_loading.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/model_loading.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/particle.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/particle.frag
 ) 
 
 set(SRC_RENDER_UNIT
@@ -48,6 +50,7 @@ add_executable(RollerCoasters
     ${SRC_DIR}TrainWindow.h
     ${SRC_DIR}TrainWindow.cpp
     ${SRC_DIR}MathHelper.h
+    ${SRC_DIR}MathHelper.cpp
     ${SRC_DIR}EntityStructure.h
     ${SRC_DIR}EntityStructure.cpp
     ${SRC_DIR}FreeCamera.h

@@ -57,6 +57,7 @@ class CTrack;
 #include "RenderUnit/Shader.h"
 #include "RenderUnit/RenderStructure.h"
 #include "RenderUnit/InstanceDrawer.h"
+#include "RenderUnit/ParticleSystem.h"
 
 #include "EntityStructure.H"
 
@@ -91,6 +92,9 @@ class TrainView : public Fl_Gl_Window
 		// public them for call back
 		void addTarget();
 		void addMoreTarget();
+
+		void updateParticleSystem();
+
 	private:
 		void initRander();
 		void initLight(); //init all light to dark(black)(0 ,0, 0)
@@ -159,6 +163,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* waterShader;
 		Shader* smokeShader;
 		Shader* modelShader;
+		Shader* particleShader;
 
 		//Uniform Buffer
 		unsigned int uboMatrices;
@@ -171,6 +176,7 @@ class TrainView : public Fl_Gl_Window
 		Object sector;
 		Object water; //1x1 plane
 		Object smoke;
+		unsigned int particle; //just VAO
 
 		//Model
 		Model* backpack;
@@ -181,4 +187,7 @@ class TrainView : public Fl_Gl_Window
 		unsigned int waterHeightMap[200];
 		unsigned int waterNormalMap[200];
 		unsigned int skybox;
+
+		//particle system
+		ParticleSystem particleSystem;
 };

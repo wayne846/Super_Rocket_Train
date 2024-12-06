@@ -2,48 +2,94 @@
 #include <glm/glm.hpp>
 #include <list>
 #include "Shader.h"
+#include "RenderStructure.h"
+#include "InstanceDrawer.h"
 
 class ParticleGenerator;
 
 class ParticleSystem{
 private:
+	std::list<ParticleGenerator> particleGenerators;
+	unsigned int particleVAO;
+
+	static bool isDead(const ParticleGenerator& p);
 
 public:
 
-	std::list<ParticleGenerator> particleGenerators;
+	ParticleSystem();
+	ParticleSystem(unsigned int particleVAO);
 
-	void addParticleGenerator();
+	void setParticleVAO(unsigned int p);
+
+	//return the reference of added particle generator, you can use seter function to set the attribute
+	ParticleGenerator& addParticleGenerator(Shader* shader);
+
+	void update();
+	void draw();
 };
 
 class ParticleGenerator {
 private:
-	class Particle {
+
+	class ParticleEntity {
 	public:
-		glm::vec3 position;
+		Particle attribute; //pos, color, size
+
 		glm::vec3 velocity;
 		int lifeCount;
 
-		Particle(glm::vec3 position, glm::vec3 velocity, int life);
+		ParticleEntity();
+		ParticleEntity(glm::vec3 position, glm::vec3 color, float size, glm::vec3 velocity, int life);
 	};
 
-	static bool isDead(const Particle& p);
+	// generator self attribute
+	glm::vec3 position;
+	float particleGenerateCounter;
+	
+	// particle attribute
+	float generateRate;
+	glm::vec3 direction;
+	float angle;
+	float particleSize;
+	float particleVelocity;
+	int particleLife;
+	float gravity;
+	float friction;
+	glm::vec3 color1;
+	glm::vec3 color2;
+	glm::vec3 color3;
+	float colorTransitionPoint;
+
+	// for render
+	Shader* shader;
+	InstanceDrawer instanceDrawer;
+	unsigned int particleVAO;
+
+	std::list<ParticleEntity> particles;
+
+	static bool isDead(const ParticleEntity& p);
 
 public:
-	glm::vec3 position;
+
 	int lifeCount;
+	
+	ParticleGenerator(Shader* shader, unsigned int particleVAO);
 
-	float generateRate;
-	glm::vec3 particleColor;
-	int particleLife;
-	float particleSize;
-	float gravity;
-
-	Shader* shader;
-
-	std::list<Particle> particles;
-
-	ParticleGenerator(glm::vec3 position, int life, float generateRate, glm::vec3 particleColor, int particleLife, float gravity, Shader* shader);
 	void update();
-	//void draw();
+	void draw();
+
+	bool isParticlesEmpty() const;
+
+	void setPosition(glm::vec3 pos);
+	void setLife(int life);
+	void setGenerateRate(float rate);
+	void setDirection(glm::vec3 dir);
+	void setAngle(float a);
+	void setParticleSize(float size);
+	void setParticleVelocity(float velocity);
+	void setParticleLife(float life);
+	void setGravity(float g);
+	void setFriction(float f);
+	void setColor(glm::vec3 c1, glm::vec3 c2, glm::vec3 c3, float transitionPoint);
 };
 

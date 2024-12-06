@@ -10,7 +10,7 @@ InstanceDrawer::InstanceDrawer() {
 
 InstanceDrawer::~InstanceDrawer() {
 	if (instanceVBO[0] != 0 || instanceVBO[1] != 0) {
-		glDeleteBuffers(2, this->instanceVBO);
+		glDeleteBuffers(3, this->instanceVBO);
 	}
 }
 
@@ -97,7 +97,46 @@ void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 	normalMatrices.clear();
 }
 
-void InstanceDrawer::drawParticleByInstance(Shader* shader, glm::vec3 color, float size, std::vector<glm::vec3> pos) {
+void InstanceDrawer::addParticleAttribute(Particle attribute) {
+	particlAttributes.push_back(attribute);
+}
 
+void InstanceDrawer::drawParticleByInstance(Shader* shader, const unsigned int particleVAO) {
+	if (instanceVBO[0] == 0) {
+		glGenBuffers(1, this->instanceVBO);
+	}
+	glBindVertexArray(particleVAO);
+	shader->use();
+
+	//-------------------
+	// set instance VBO
+	//-------------------
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, particlAttributes.size() * sizeof(Particle), particlAttributes.data(), GL_DYNAMIC_DRAW);
+
+	// 配置粒子屬性：位置
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)offsetof(Particle, position));
+	glEnableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 1); // 每個實例使用一個位置數據
+
+	// 配置粒子屬性：顏色
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)offsetof(Particle, color));
+	glEnableVertexAttribArray(1);
+	glVertexAttribDivisor(1, 1);
+
+	// 配置粒子屬性：大小
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)offsetof(Particle, size));
+	glEnableVertexAttribArray(2);
+	glVertexAttribDivisor(2, 1);
+
+	glDrawArraysInstanced(GL_POINTS, 0, 1, particlAttributes.size());
+
+	//unbind VAO
+	glBindVertexArray(0);
+
+	//unbind shader(switch to fixed pipeline)
+	glUseProgram(0);
+
+	particlAttributes.clear();
 }
 

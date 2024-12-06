@@ -227,6 +227,7 @@ advanceTrain(float dir)
 	else if(trainView->t_time<0)
 		trainView->t_time += 1;
 
+	trainView->updateParticleSystem();
 	clock_time++;
 	//printf("%f\n", m_Track.trainU);
 

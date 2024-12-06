@@ -57,6 +57,8 @@
 #define WATER_FRAG_PATH "/assets/shaders/water.frag"
 #define MODEL_VERT_PATH "/assets/shaders/model_loading.vert"
 #define MODEL_FRAG_PATH "/assets/shaders/model_loading.frag"
+#define PARTICLE_VERT_PATH "/assets/shaders/particle.vert"
+#define PARTICLE_FRAG_PATH "/assets/shaders/particle.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
@@ -125,6 +127,7 @@ void TrainView::aim() {
 	lastX = currentX;
 	lastY = currentY;
 }
+
 int TrainView::handle(int event)
 {
 	// see if the ArcBall will handle the event - if it does, 
@@ -242,7 +245,7 @@ int TrainView::handle(int event)
 	return Fl_Gl_Window::handle(event);
 }
 
-//init shader, texture, VAO. need called under if(gladLoadGL())
+//init shader, texture, model, VAO. need called under if(gladLoadGL())
 void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
@@ -250,6 +253,7 @@ void TrainView::initRander() {
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
 	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
+	particleShader = new Shader(PROJECT_DIR PARTICLE_VERT_PATH, PROJECT_DIR PARTICLE_FRAG_PATH);
 
 	//init texture
 	for (int i = 0; i < -200; i++) {
@@ -276,11 +280,13 @@ void TrainView::initRander() {
 	unsigned int uniformBlockIndex_water = glGetUniformBlockIndex(waterShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_smoke = glGetUniformBlockIndex(smokeShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_model = glGetUniformBlockIndex(modelShader->ID, "Matrices");
+	unsigned int uniformBlockIndex_particle = glGetUniformBlockIndex(particleShader->ID, "Matrices");
 	glUniformBlockBinding(simpleObjectShader->ID, uniformBlockIndex_simpleObject, 0);
 	glUniformBlockBinding(simpleInstanceObjectShader->ID, uniformBlockIndex_simpleInstanceObject, 0);
 	glUniformBlockBinding(waterShader->ID, uniformBlockIndex_water, 0);
 	glUniformBlockBinding(smokeShader->ID, uniformBlockIndex_smoke, 0);
 	glUniformBlockBinding(modelShader->ID, uniformBlockIndex_model, 0);
+	glUniformBlockBinding(particleShader->ID, uniformBlockIndex_particle, 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -293,18 +299,37 @@ void TrainView::initRander() {
 	// set some parameters
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
+	// set VAO and VBO
 	setCube();
 	setCone();
 	setCylinder();
 	setSector();
 	setWater();
 	setSmoke();
+	glGenVertexArrays(1, &particle);
 
 	// set Model
-	backpack = new Model(PROJECT_DIR BACKPACK_PATH);
-	island = new Model(PROJECT_DIR ISLAND_PATH);
-}
+	//backpack = new Model(PROJECT_DIR BACKPACK_PATH);
+	//island = new Model(PROJECT_DIR ISLAND_PATH);
 
+	//init particle system, need call after generate particle VAO
+	particleSystem.setParticleVAO(particle);
+
+	ParticleGenerator& g = particleSystem.addParticleGenerator(particleShader);
+	g.setColor(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1), 0.5);
+	g.setAngle(30);
+	g.setPosition(glm::vec3(0, 20, 0));
+	g.setParticleLife(60);
+	g.setGravity(0.04);
+
+	ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
+	g2.setPosition(glm::vec3(0, 40, 0));
+	g2.setLife(5);
+	g2.setParticleVelocity(2);
+	g2.setParticleLife(400);
+	g2.setGenerateRate(30);
+	g2.setGravity(0.04);
+}
 
 //cube
 void TrainView::setCube()
@@ -1023,6 +1048,9 @@ void TrainView::draw()
 
 	drawStuff();
 
+	//draw particle
+	particleSystem.draw();
+
 	// this time drawing is for shadows (except for top view)
 	/*
 	if (!tw->topCam->value()) {
@@ -1186,7 +1214,6 @@ unsigned int TrainView::getObjectTexture(std::string name)
 	return -1;
 }
 
-
 //draw object by simple object shader
 void TrainView::drawSimpleObject(const Object& object, const glm::mat4 model, const Material material) {
 	simpleObjectShader->use();
@@ -1343,7 +1370,17 @@ void TrainView::drawStuff(bool doingShadows)
 
 	//draw the floor
 	glm::mat4 floorModel = MathHelper::getTransformMatrix(glm::vec3(0, -0.5, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(200, 1, 200));
-	//drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
+	drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
+
+	//draw island
+	/*
+	modelShader->use();
+	glm::mat4 backpackModel = MathHelper::getTransformMatrix(glm::vec3(0, -270, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
+	modelShader->setMat4("model", backpackModel);
+	island->Draw(modelShader);
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glUseProgram(0);*/
 
 	//draw the tree
 	//drawTree(glm::vec3(0, 0, 0));
@@ -1557,15 +1594,6 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector);
 
-	//draw backpack
-	modelShader->use();
-	glm::mat4 backpackModel = MathHelper::getTransformMatrix(glm::vec3(0, -270, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
-	modelShader->setMat4("model", backpackModel);
-	island->Draw(modelShader);
-	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUseProgram(0);
-
 	//draw axis
 	glLineWidth(5);
 	glBegin(GL_LINES);
@@ -1760,4 +1788,9 @@ void TrainView::updateEntity() {
 			}
 		}
 	}
+}
+
+//call by trainWindow every clock
+void TrainView::updateParticleSystem() {
+	particleSystem.update();
 }

@@ -59,6 +59,13 @@ struct Object {
     unsigned int element_amount;
 };
 
+//particle's attribute, can send into shader
+struct Particle {
+    glm::vec3 position;
+    glm::vec3 color;
+    float size;
+};
+
 struct Vertex {
     // position
     glm::vec3 Position;
