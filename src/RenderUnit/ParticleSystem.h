@@ -40,7 +40,7 @@ private:
 		Particle attribute; //pos, color, size
 
 		glm::vec3 velocity;
-		int lifeCount;
+		float lifeCount;
 
 		ParticleEntity();
 		ParticleEntity(glm::vec3 position, glm::vec3 color, float size, glm::vec3 velocity, int life);
@@ -74,8 +74,11 @@ private:
 	static bool isDead(const ParticleEntity& p);
 
 public:
+	
+	static const float PERMANENT_LIFE; //if you want a permanent particle generator, you can set life to this
+	static const float PERMANENT_LIFE_THRESHOLD; //any life below or equal this value are permanent
 
-	int lifeCount;
+	float lifeCount;
 	
 	ParticleGenerator(Shader* shader, unsigned int particleVAO);
 

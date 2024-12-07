@@ -39,6 +39,11 @@ namespace RenderDatabase {
     const glm::vec3 DARK_COLOR = glm::vec3(.1f, .1f, .1f);
     const glm::vec3 BLACK_COLOR = glm::vec3(0.0f, 0.0f, 0.0f);
 
+    const float INIT_TIME_SCALE = 1.0f;
+    const float BULLET_TIME_SCALE = 1.0f / 20.0f;
+    //for the time scale, need multiple by every position calculate
+    extern float timeScale = INIT_TIME_SCALE;
+
     unsigned int loadTexture(const std::string path){
         unsigned int textureID;
         glGenTextures(1, &textureID);

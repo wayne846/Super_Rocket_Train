@@ -222,7 +222,7 @@ advanceTrain(float dir)
 	// TODO: make this work for your train
 	//#####################################################################
 
-	trainView->t_time += (dir / m_Track.points.size() / (trainView->DIVIDE_LINE / 40))/ cycle_time();
+	trainView->t_time += (dir / m_Track.points.size() / (trainView->DIVIDE_LINE / 40))/ cycle_time() * RenderDatabase::timeScale;
 	if (trainView->t_time > 1)
 		trainView->t_time -= 1;
 	else if(trainView->t_time<0)

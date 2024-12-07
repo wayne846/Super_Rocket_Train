@@ -103,6 +103,11 @@ namespace RenderDatabase {
     extern const glm::vec3 DARK_COLOR;
     extern const glm::vec3 BLACK_COLOR;
 
+    extern const float INIT_TIME_SCALE;
+    extern const float BULLET_TIME_SCALE;
+    //for the time scale, need multiple by every position calculate
+    extern float timeScale;
+
     unsigned int loadTexture(const std::string path);
     unsigned int loadCubemap(const std::vector<std::string> faces);
 }

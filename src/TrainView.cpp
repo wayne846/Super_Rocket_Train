@@ -169,12 +169,19 @@ int TrainView::handle(int event)
 			camRotateX = 0;
 			camRotateY = 0;
 		}
-		break;
+		if (Fl::event_button() == FL_RIGHT_MOUSE && tw->trainCam->value()) {
+			RenderDatabase::timeScale = RenderDatabase::BULLET_TIME_SCALE;
+		}
+		//break;
 
 		// Mouse button release event
 	case FL_RELEASE: // button release
 		damage(1);
 		last_push = 0;
+
+		if (Fl::event_button() == FL_RIGHT_MOUSE && tw->trainCam->value() && event != FL_PUSH) {
+			RenderDatabase::timeScale = RenderDatabase::INIT_TIME_SCALE;
+		}
 		return 1;
 
 		// Mouse button drag event
@@ -202,6 +209,7 @@ int TrainView::handle(int event)
 			}
 		}
 		else {
+			
 			aim();
 		}
 		break;
@@ -1837,7 +1845,8 @@ void TrainView::collisionJudge()
 					ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
 					g2.setPosition(targets[targetID].pos.glmvec3());
 					g2.setLife(5);
-					g2.setParticleVelocity(2);
+					g2.setParticleVelocity(3);
+					g2.setFriction(0.95);
 					g2.setParticleLife(400);
 					g2.setGenerateRate(30);
 					g2.setGravity(0.04);

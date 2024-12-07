@@ -1,6 +1,7 @@
 #include "ParticleSystem.h"
 #include "InstanceDrawer.h"
 #include "../MathHelper.h"
+#include <cmath>
 
 //---------------Particle System-----------------
 
@@ -40,7 +41,7 @@ void ParticleSystem::update() {
 	for (auto &p : particleGenerators) {
 		p.update();
 		if (p.lifeCount > 0) {
-			p.lifeCount--;
+			p.lifeCount -= RenderDatabase::timeScale;
 		}
 	}
 	particleGenerators.remove_if(ParticleSystem::isDead);
@@ -53,7 +54,7 @@ void ParticleSystem::draw() {
 }
 
 bool ParticleSystem::isDead(const ParticleGenerator& p) {
-	if (p.lifeCount == 0 && p.isParticlesEmpty()) {
+	if (p.lifeCount <= 0 && p.lifeCount > ParticleGenerator::PERMANENT_LIFE_THRESHOLD && p.isParticlesEmpty()) {
 		return true;
 	}
 	else {
@@ -63,6 +64,9 @@ bool ParticleSystem::isDead(const ParticleGenerator& p) {
 
 
 //---------------Particle Generator-----------------
+
+const float ParticleGenerator::PERMANENT_LIFE = -30.0f;
+const float ParticleGenerator::PERMANENT_LIFE_THRESHOLD = -15.0f;
 
 ParticleGenerator::ParticleEntity::ParticleEntity() {
 	this->attribute.position = glm::vec3(0, 0, 0);
@@ -85,7 +89,7 @@ ParticleGenerator::ParticleGenerator(Shader* shader, unsigned int particleVAO){
 	this->particleVAO = particleVAO;
 
 	this->position = glm::vec3(0, 0, 0);
-	this->lifeCount = -1;
+	this->lifeCount = PERMANENT_LIFE;
 	this->generateRate = 5;
 	this->particleGenerateCounter = 0;
 	this->direction = glm::vec3(0, 1, 0);
@@ -103,8 +107,8 @@ ParticleGenerator::ParticleGenerator(Shader* shader, unsigned int particleVAO){
 
 void ParticleGenerator::update() {
 	//generate new particle
-	if (lifeCount != 0) {
-		particleGenerateCounter += generateRate;
+	if (lifeCount > 0 || lifeCount <= ParticleGenerator::PERMANENT_LIFE_THRESHOLD) { //still alive
+		particleGenerateCounter += generateRate * RenderDatabase::timeScale;
 		while (particleGenerateCounter >= 1) {
 			ParticleEntity newParticle;
 			newParticle.attribute.position = position;
@@ -122,14 +126,14 @@ void ParticleGenerator::update() {
 	//update all particle
 	for (auto& p : particles) {
 		//update velocity
-		p.velocity += glm::vec3(0, -1, 0) * gravity;
-		p.velocity = p.velocity * friction;
+		p.velocity += glm::vec3(0, -1, 0) * gravity * RenderDatabase::timeScale;
+		p.velocity = p.velocity * std::pow(friction, RenderDatabase::timeScale);
 
 		//update position
-		p.attribute.position += p.velocity * particleVelocity;
+		p.attribute.position += p.velocity * particleVelocity * RenderDatabase::timeScale;
 
 		p.attribute.color = MathHelper::gradientColor(color1, color2, color3, colorTransitionPoint, (float)(particleLife - p.lifeCount) / particleLife);
-		p.lifeCount--;
+		p.lifeCount -= RenderDatabase::timeScale;
 	}
 	particles.remove_if(ParticleGenerator::isDead);
 }
