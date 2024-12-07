@@ -198,6 +198,10 @@ class TrainView : public Fl_Gl_Window
 		//Model
 		Model* backpack;
 		Model* island;
+		Model* stonePillar;
+		Model* stonePillarSection;
+		Model* arrow_red;
+		Model* arrow_blue;
 
 		//texture
 		std::vector<std::pair<std::string,unsigned int>> objectTextures;
