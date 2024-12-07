@@ -24,10 +24,10 @@ Rocket(Pnt3f pos, Pnt3f front, Pnt3f up): Entity(pos, front, up) {
 	Pnt3f gravityVelocity;
 	Pnt3f lastPos;
 	void advance() {
-		pos = pos + thrusterVelocity + gravityVelocity;
+		pos = pos + (thrusterVelocity + gravityVelocity) * RenderDatabase::timeScale;
 		if(thrusterVelocity.len2()<100)
 			thrusterVelocity = thrusterVelocity * 1.05;	// accelerate
-		gravityVelocity.y -= 0.2;	// g
+		gravityVelocity.y -= 0.2 * RenderDatabase::timeScale;	// g
 		front = thrusterVelocity + gravityVelocity;
 		Pnt3f right = front * up;
 		up = right * front;
