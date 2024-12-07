@@ -317,6 +317,7 @@ void TrainView::initRander() {
 
 	ParticleGenerator& g = particleSystem.addParticleGenerator(particleShader);
 	g.setColor(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1), 0.5);
+	g.setParticleSize(0.5);
 	g.setAngle(30);
 	g.setPosition(glm::vec3(0, 20, 0));
 	g.setParticleLife(60);
@@ -329,6 +330,8 @@ void TrainView::initRander() {
 	g2.setParticleLife(400);
 	g2.setGenerateRate(30);
 	g2.setGravity(0.04);
+
+	trainParticle = particleSystem.addParticleGenerator_pointer(particleShader);
 }
 
 //cube
@@ -1049,6 +1052,10 @@ void TrainView::draw()
 	drawStuff();
 
 	//draw particle
+	trainParticle->setPosition(trainPos.glmvec3() - trainFront.glmvec3() * 2.0f);
+	trainParticle->setDirection(-trainFront.glmvec3());
+	trainParticle->setAngle(45);
+	trainParticle->setParticleSize(0.5);
 	particleSystem.draw();
 
 	// this time drawing is for shadows (except for top view)
@@ -1101,7 +1108,7 @@ setProjection()
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(100, aspect, 0.01, 200);
+		gluPerspective(100, aspect, 0.01, 1000);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		Pnt3f trainRight = trainFront * trainUp;
@@ -1735,6 +1742,14 @@ void TrainView::collisionJudge()
 
 					targets[targetID].state = 1;
 					rockets[rocketID].state = 1;
+
+					ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
+					g2.setPosition(targets[targetID].pos.glmvec3());
+					g2.setLife(5);
+					g2.setParticleVelocity(2);
+					g2.setParticleLife(400);
+					g2.setGenerateRate(30);
+					g2.setGravity(0.04);
 				}
 			}
 		}

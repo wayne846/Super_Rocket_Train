@@ -190,4 +190,5 @@ class TrainView : public Fl_Gl_Window
 
 		//particle system
 		ParticleSystem particleSystem;
+		ParticleGenerator* trainParticle;
 };

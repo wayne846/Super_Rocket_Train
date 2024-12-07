@@ -21,6 +21,20 @@ ParticleGenerator& ParticleSystem::addParticleGenerator(Shader* shader) {
 	return particleGenerators.back();
 }
 
+ParticleGenerator* ParticleSystem::addParticleGenerator_pointer(Shader* shader) {
+	particleGenerators.push_back(ParticleGenerator(shader, particleVAO));
+	return &particleGenerators.back();
+}
+
+void ParticleSystem::deleteParticleGenerator(ParticleGenerator* generator) {
+	for (auto p = particleGenerators.begin(); p != particleGenerators.end(); p++) {
+		if (&(*p) == generator) {
+			particleGenerators.erase(p);
+			return;
+		}
+	}
+}
+
 //draw and update all particle generator
 void ParticleSystem::update() {
 	for (auto &p : particleGenerators) {

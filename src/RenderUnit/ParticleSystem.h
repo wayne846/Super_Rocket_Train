@@ -24,6 +24,10 @@ public:
 	//return the reference of added particle generator, you can use seter function to set the attribute
 	ParticleGenerator& addParticleGenerator(Shader* shader);
 
+	//return the pointer of added particle generator, you can use seter function to set the attribute
+	ParticleGenerator* addParticleGenerator_pointer(Shader* shader);
+	void deleteParticleGenerator(ParticleGenerator* generator);
+
 	void update();
 	void draw();
 };
