@@ -59,6 +59,8 @@
 #define MODEL_FRAG_PATH "/assets/shaders/model_loading.frag"
 #define PARTICLE_VERT_PATH "/assets/shaders/particle.vert"
 #define PARTICLE_FRAG_PATH "/assets/shaders/particle.frag"
+#define FRAME_VERT_PATH "/assets/shaders/frame.vert"
+#define FRAME_FRAG_PATH "/assets/shaders/frame.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
@@ -254,6 +256,7 @@ void TrainView::initRander() {
 	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
 	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
 	particleShader = new Shader(PROJECT_DIR PARTICLE_VERT_PATH, PROJECT_DIR PARTICLE_FRAG_PATH);
+	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
 
 	//init texture
 	for (int i = 0; i < -200; i++) {
@@ -306,6 +309,7 @@ void TrainView::initRander() {
 	setSector();
 	setWater();
 	setSmoke();
+	setFrame();
 	glGenVertexArrays(1, &particle);
 
 	// set Model
@@ -912,6 +916,67 @@ void TrainView::setSmoke()
 	glBindVertexArray(0);
 }
 
+void TrainView::setFrame() {
+	glGenFramebuffers(1, &frameBuffer);
+	glGenTextures(1, &frameTexture);
+	glGenTextures(1, &depthTexture);
+	glGenRenderbuffers(1, &rbo);
+
+	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f
+	};
+	
+	glGenVertexArrays(1, &frameVAO);
+	glGenBuffers(1, &frameVBO);
+	glBindVertexArray(frameVAO);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, frameVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	// Unbind VAO
+	glBindVertexArray(0);
+
+	frameShader->use();
+	frameShader->setInt("screenTexture", 0);
+	glUseProgram(0);
+}
+
+void TrainView::setFrameBufferTexture()
+{
+	glActiveTexture(GL_TEXTURE0);
+	
+	glBindTexture(GL_TEXTURE_2D, frameTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w(), h(), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture, 0);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	//glBindTexture(GL_TEXTURE_2D, depthTexture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w(), h(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "Framebuffer is not complete!" << std::endl;
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+	
+}
+
 //set all light to dark
 void TrainView::initLight() {
 	const glm::vec3 ZERO = glm::vec3(0, 0, 0);
@@ -972,6 +1037,10 @@ void TrainView::draw()
 	}
 	else
 		throw std::runtime_error("Could not initialize GLAD!");
+
+	// draw on our frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	setFrameBufferTexture();
 
 	// Set up the view port
 	glViewport(0, 0, w(), h());
@@ -1065,6 +1134,9 @@ void TrainView::draw()
 		drawStuff(true);
 		unsetupShadows();
 	}*/
+
+	// final step, do the post-process
+	drawFrame();
 }
 
 //************************************************************************
@@ -1163,7 +1235,7 @@ void TrainView::setShaders() {
 			eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
 		else if (tw->freeCam->value())
 			eyepos = freeCamera.getPosition();
-		else
+		else if (tw->trainCam->value())
 			eyepos = trainPos.glmvec3();
 
 		shaders[i]->setVec3("eyePosition", eyepos);
@@ -1338,6 +1410,25 @@ void TrainView::drawSmoke(const std::vector<glm::vec4>& points)
 	glBindVertexArray(0);
 
 	//unbind shader(switch to fixed pipeline)
+	glUseProgram(0);
+}
+
+void TrainView::drawFrame()
+{
+	// draw on the default frame
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDisable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glActiveTexture(GL_TEXTURE0);
+	frameShader->use();
+	frameShader->setInt("screenTexture", 0);
+	glBindVertexArray(frameVAO);
+	
+	glBindTexture(GL_TEXTURE_2D, frameTexture);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glActiveTexture(0);
+	//glEnable(GL_DEPTH_TEST);
 	glUseProgram(0);
 }
 

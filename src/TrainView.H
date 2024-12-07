@@ -108,11 +108,15 @@ class TrainView : public Fl_Gl_Window
 		void setSector();
 		void setWater();
 		void setSmoke();
+		void setFrame();
 
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
 		void drawTree(glm::vec3 pos, float rotateTheta = 0.0f, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
 		void drawSmoke(const std::vector<glm::vec4> &points);
+		// do the post-process
+		void setFrameBufferTexture();
+		void drawFrame();
 
 		// some thing about the rocket launcher
 		void aim();
@@ -164,6 +168,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* smokeShader;
 		Shader* modelShader;
 		Shader* particleShader;
+		Shader* frameShader;
 
 		//Uniform Buffer
 		unsigned int uboMatrices;
@@ -177,6 +182,13 @@ class TrainView : public Fl_Gl_Window
 		Object water; //1x1 plane
 		Object smoke;
 		unsigned int particle; //just VAO
+		unsigned int frameVAO;
+		unsigned int frameVBO;
+		unsigned int frameBuffer;
+		unsigned int frameTexture;
+		unsigned int depthTexture;
+		unsigned int rbo;
+		
 
 		//Model
 		Model* backpack;

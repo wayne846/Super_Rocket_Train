@@ -17,6 +17,8 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/model_loading.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/particle.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/particle.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/frame.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/frame.frag
 ) 
 
 set(SRC_RENDER_UNIT
