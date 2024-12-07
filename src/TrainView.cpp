@@ -68,6 +68,10 @@
 #define TOPLEVEL_TEXTURE_PATH "/assets/images/topLevelTexture/"
 #define BACKPACK_PATH "/assets/model/backpack/backpack.obj"
 #define ISLAND_PATH "/assets/model/island/floating_island.obj"
+#define STONE_PILLAR_PATH "/assets/model/stone_pillar/stone_pillar.obj"
+#define STONE_PILLAR_SECTION_PATH "/assets/model/stone_pillar_section/stone_pillar_section.obj"
+#define ARROW_RED_PATH "/assets/model/arrow_red/arrow_boi.obj"
+#define ARROW_BLUE_PATH "/assets/model/arrow_blue/arrow_boi.obj"
 
 const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/right.jpg",
@@ -79,6 +83,8 @@ const std::vector<std::string> SKYBOX_PATH = {
 };
 
 #define WATER_RESOLUTION 100
+
+#define USE_MODEL true
 
 Assimp::Importer importer;
 
@@ -325,22 +331,42 @@ void TrainView::initRander() {
 	glGenVertexArrays(1, &particle);
 
 	// set Model
-	//backpack = new Model(PROJECT_DIR BACKPACK_PATH);
-	//island = new Model(PROJECT_DIR ISLAND_PATH);
+	if (USE_MODEL) {
+		backpack = new Model(PROJECT_DIR BACKPACK_PATH);
+		island = new Model(PROJECT_DIR ISLAND_PATH);
+		stonePillar = new Model(PROJECT_DIR STONE_PILLAR_PATH);
+		stonePillarSection = new Model(PROJECT_DIR STONE_PILLAR_SECTION_PATH);
+		arrow_red = new Model(PROJECT_DIR ARROW_RED_PATH);
+		arrow_blue = new Model(PROJECT_DIR ARROW_BLUE_PATH);
+	}
 
 	//init particle system, need call after generate particle VAO
 	particleSystem.setParticleVAO(particle);
 
+	//color axiz spring
 	ParticleGenerator& g = particleSystem.addParticleGenerator(particleShader);
 	g.setColor(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1), 0.5);
 	g.setParticleSize(0.5);
 	g.setAngle(30);
-	g.setPosition(glm::vec3(0, 20, 0));
-	g.setParticleLife(60);
+	if (USE_MODEL) {
+		g.setPosition(glm::vec3(0, 60, 0));
+		g.setParticleLife(90);
+		g.setGenerateRate(20);
+	}
+	else {
+		g.setPosition(glm::vec3(0, 20, 0));
+		g.setParticleLife(60);
+	}
+	
 	g.setGravity(0.04);
 
 	ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
-	g2.setPosition(glm::vec3(0, 40, 0));
+	if (USE_MODEL) {
+		g2.setPosition(glm::vec3(0, 65, 0));
+	}
+	else {
+		g2.setPosition(glm::vec3(0, 40, 0));
+	}
 	g2.setLife(5);
 	g2.setParticleVelocity(2);
 	g2.setParticleLife(400);
@@ -1479,18 +1505,52 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 
 	//draw the floor
-	glm::mat4 floorModel = MathHelper::getTransformMatrix(glm::vec3(0, -0.5, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(200, 1, 200));
-	drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
+	if (!USE_MODEL) {
+		glm::mat4 floorModel = MathHelper::getTransformMatrix(glm::vec3(0, -0.5, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(200, 1, 200));
+		drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
+	}
+	
 
-	//draw island
-	/*
-	modelShader->use();
-	glm::mat4 backpackModel = MathHelper::getTransformMatrix(glm::vec3(0, -270, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
-	modelShader->setMat4("model", backpackModel);
-	island->Draw(modelShader);
-	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUseProgram(0);*/
+	//draw modle
+	if (USE_MODEL) {
+		modelShader->use();
+
+		//draw island
+		glm::mat4 islandModel = MathHelper::getTransformMatrix(glm::vec3(-150, -280, 170), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
+		modelShader->setMat4("model", islandModel);
+		island->Draw(modelShader);
+
+		//draw pillar
+		glm::mat4 pillarModel = MathHelper::getTransformMatrix(glm::vec3(0, -2, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.2, 0.2, 0.2));
+		modelShader->setMat4("model", pillarModel);
+		stonePillar->Draw(modelShader);
+		
+		//draw pillar section
+		glm::mat4 pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(20, -8, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
+		modelShader->setMat4("model", pillarSectionModel);
+		stonePillarSection->Draw(modelShader);
+		//another pillar section
+		pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(0, -8, 20), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
+		modelShader->setMat4("model", pillarSectionModel);
+		stonePillarSection->Draw(modelShader);
+
+		//draw red arrow
+		glm::mat4 arrowModel = MathHelper::getTransformMatrix(glm::vec3(20, 14.5, 0), glm::vec3(0, 0, -1), glm::vec3(1, 0, 0), glm::vec3(1.5, 1.5, 1.5));
+		modelShader->setMat4("model", arrowModel);
+		arrow_red->Draw(modelShader);
+
+		//draw blue arrow
+		arrowModel = MathHelper::getTransformMatrix(glm::vec3(0, 14.5, 20), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1), glm::vec3(1.5, 1.5, 1.5));
+		modelShader->setMat4("model", arrowModel);
+		arrow_blue->Draw(modelShader);
+
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+	}
+
+	
+
 
 	//draw the tree
 	//drawTree(glm::vec3(0, 0, 0));
@@ -1705,26 +1765,28 @@ void TrainView::drawStuff(bool doingShadows)
 	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector);
 
 	//draw axis
-	glLineWidth(5);
-	glBegin(GL_LINES);
-	if (!doingShadows) {
-		glColor3f(1, 0, 0);
+	if (!USE_MODEL) {
+		glLineWidth(5);
+		glBegin(GL_LINES);
+		if (!doingShadows) {
+			glColor3f(1, 0, 0);
+		}
+		glVertex3f(0, 0, 0);
+		glVertex3f(20, 0, 0);
+		if (!doingShadows) {
+			glColor3f(0, 1, 0);
+		}
+		glVertex3f(0, 0, 0);
+		glVertex3f(0, 20, 0);
+		if (!doingShadows) {
+			glColor3f(0, 0, 1);
+		}
+		glVertex3f(0, 0, 0);
+		glVertex3f(0, 0, 20);
+		glEnd();
+		glLineWidth(1);
 	}
-	glVertex3f(0, 0, 0);
-	glVertex3f(20, 0, 0);
-	if (!doingShadows) {
-		glColor3f(0, 1, 0);
-	}
-	glVertex3f(0, 0, 0);
-	glVertex3f(0, 20, 0);
-	if (!doingShadows) {
-		glColor3f(0, 0, 1);
-	}
-	glVertex3f(0, 0, 0);
-	glVertex3f(0, 0, 20);
-	glEnd();
-	glLineWidth(1);
-
+	
 }
 
 // 
