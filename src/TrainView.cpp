@@ -65,6 +65,7 @@
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
 #define OBJECT_TEXTURE_PATH "/assets/images/objectTexture/"
+#define TOPLEVEL_TEXTURE_PATH "/assets/images/topLevelTexture/"
 #define BACKPACK_PATH "/assets/model/backpack/backpack.obj"
 #define ISLAND_PATH "/assets/model/island/floating_island.obj"
 
@@ -281,8 +282,11 @@ void TrainView::initRander() {
 	}
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
-	//set object textures
+	// set object textures
 	setObjectTexture("targetImage", "targetImage.png");
+
+	// set top level textures
+
 
 	//init unifrom block index
 	//0 for view and project matrix

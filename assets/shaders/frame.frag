@@ -18,5 +18,5 @@ void main()
         PixelCoords.y = 0.005;
     if(PixelCoords.y == 1.0)
         PixelCoords.y = 0.995;
-    FragColor = texture(screenTexture, PixelCoords);
+    FragColor = texture(screenTexture, TexCoords);
 }
