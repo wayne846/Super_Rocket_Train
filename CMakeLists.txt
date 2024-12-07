@@ -19,6 +19,8 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/particle.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/frame.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/frame.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/whiteLine.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/whiteLine.vert
 ) 
 
 set(SRC_RENDER_UNIT

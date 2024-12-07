@@ -61,11 +61,12 @@
 #define PARTICLE_FRAG_PATH "/assets/shaders/particle.frag"
 #define FRAME_VERT_PATH "/assets/shaders/frame.vert"
 #define FRAME_FRAG_PATH "/assets/shaders/frame.frag"
+#define WHITELINE_VERT_PATH "/assets/shaders/whiteLine.vert"
+#define WHITELINE_FRAG_PATH "/assets/shaders/whiteLine.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
 #define OBJECT_TEXTURE_PATH "/assets/images/objectTexture/"
-#define TOPLEVEL_TEXTURE_PATH "/assets/images/topLevelTexture/"
 #define BACKPACK_PATH "/assets/model/backpack/backpack.obj"
 #define ISLAND_PATH "/assets/model/island/floating_island.obj"
 
@@ -261,6 +262,7 @@ void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
+	whiteLineShader = new Shader(PROJECT_DIR WHITELINE_VERT_PATH, PROJECT_DIR WHITELINE_FRAG_PATH);
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
 	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
@@ -284,20 +286,20 @@ void TrainView::initRander() {
 
 	// set object textures
 	setObjectTexture("targetImage", "targetImage.png");
-
-	// set top level textures
-
+	setObjectTexture("crosshair", "crosshair.png"); 
 
 	//init unifrom block index
 	//0 for view and project matrix
 	unsigned int uniformBlockIndex_simpleObject = glGetUniformBlockIndex(simpleObjectShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_simpleInstanceObject = glGetUniformBlockIndex(simpleInstanceObjectShader->ID, "Matrices");
+	unsigned int uniformBlockIndex_whiteLine = glGetUniformBlockIndex(whiteLineShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_water = glGetUniformBlockIndex(waterShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_smoke = glGetUniformBlockIndex(smokeShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_model = glGetUniformBlockIndex(modelShader->ID, "Matrices");
 	unsigned int uniformBlockIndex_particle = glGetUniformBlockIndex(particleShader->ID, "Matrices");
 	glUniformBlockBinding(simpleObjectShader->ID, uniformBlockIndex_simpleObject, 0);
 	glUniformBlockBinding(simpleInstanceObjectShader->ID, uniformBlockIndex_simpleInstanceObject, 0);
+	glUniformBlockBinding(whiteLineShader->ID, uniformBlockIndex_whiteLine, 0);
 	glUniformBlockBinding(waterShader->ID, uniformBlockIndex_water, 0);
 	glUniformBlockBinding(smokeShader->ID, uniformBlockIndex_smoke, 0);
 	glUniformBlockBinding(modelShader->ID, uniformBlockIndex_model, 0);
@@ -930,9 +932,12 @@ void TrainView::setSmoke()
 
 void TrainView::setFrame() {
 	glGenFramebuffers(1, &frameBuffer);
+	glGenFramebuffers(1, &whiteLineFrameBuffer);
 	glGenTextures(1, &frameTexture);
+	glGenTextures(1, &whiteLineFrameTexture);
 	glGenTextures(1, &depthTexture);
 	glGenRenderbuffers(1, &rbo);
+	glGenRenderbuffers(1, &whiteLineRBO);
 
 	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
 		// positions   // texCoords
@@ -944,7 +949,7 @@ void TrainView::setFrame() {
 		 1.0f, -1.0f,  1.0f, 0.0f,
 		 1.0f,  1.0f,  1.0f, 1.0f
 	};
-	
+	unsigned int frameVBO;
 	glGenVertexArrays(1, &frameVAO);
 	glGenBuffers(1, &frameVBO);
 	glBindVertexArray(frameVAO);
@@ -960,6 +965,8 @@ void TrainView::setFrame() {
 
 	frameShader->use();
 	frameShader->setInt("screenTexture", 0);
+	frameShader->setInt("crosshairTexture", 1);
+	frameShader->setInt("whiteLineTexture", 2);
 	glUseProgram(0);
 }
 
@@ -974,7 +981,7 @@ void TrainView::setFrameBufferTexture()
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture, 0);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w(), h());
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
@@ -1122,7 +1129,6 @@ void TrainView::draw()
 	//glDisable(GL_LIGHTING);
 	//drawFloor(200, 200);
 
-
 	//*********************************************************************
 	// now draw the object and we need to do it twice
 	// once for real, and then once for shadows
@@ -1147,8 +1153,13 @@ void TrainView::draw()
 		unsetupShadows();
 	}*/
 
+	if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE)
+		drawWhiteLine();
+
 	// final step, do the post-process
 	drawFrame();
+
+
 }
 
 //************************************************************************
@@ -1192,7 +1203,7 @@ setProjection()
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(100, aspect, 0.01, 1000);
+		gluPerspective(60, aspect, 0.01, 1000);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		Pnt3f trainRight = trainFront * trainUp;
@@ -1424,23 +1435,83 @@ void TrainView::drawSmoke(const std::vector<glm::vec4>& points)
 	//unbind shader(switch to fixed pipeline)
 	glUseProgram(0);
 }
+void TrainView::drawWhiteLine()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, whiteLineFrameBuffer);
 
+	glViewport(0, 0, w(), h());
+	glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+
+	glBindTexture(GL_TEXTURE_2D, whiteLineFrameTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w(), h(), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, whiteLineFrameTexture, 0);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, whiteLineRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w(), h());
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, whiteLineRBO);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "Framebuffer is not complete!" << std::endl;
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	InstanceDrawer targetInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
+	targetInstance.setTexture(getObjectTexture("targetImage"));
+	for (int i = 0; i < targets.size(); i++) {
+		if (targets[i].state == 0) {
+			glm::mat4 targetModel = MathHelper::getTransformMatrix(
+				targets[i].pos.glmvec3(), targets[i].front.glmvec3(), targets[i].up.glmvec3(),
+				glm::vec3(10, 10, 1));
+			targetInstance.addModelMatrix(targetModel);
+		}
+	}
+	targetInstance.drawByInstance(whiteLineShader, cylinder);
+}
 void TrainView::drawFrame()
 {
 	// draw on the default frame
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, w(), h());
 	glDisable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glActiveTexture(GL_TEXTURE0);
 	frameShader->use();
-	frameShader->setInt("screenTexture", 0);
 	glBindVertexArray(frameVAO);
-	
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, frameTexture);
+
+	if (tw->trainCam->value()) {
+		frameShader->setBool("useCrosshair", true);
+		frameShader->setFloat("screenAspectRatio",(float)w() / (float)h());
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, getObjectTexture("crosshair"));
+	}
+	else {
+		frameShader->setBool("useCrosshair", false);
+	}
+	if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE) {
+		frameShader->setBool("bulletTime", true);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, whiteLineFrameTexture);
+	}
+	else {
+		frameShader->setBool("bulletTime", false);
+	}
+	
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glActiveTexture(0);
-	//glEnable(GL_DEPTH_TEST);
+
+	
+	glEnable(GL_DEPTH_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	//glDepthFunc(GL_LESS);
 	glUseProgram(0);
 }
 
@@ -1854,6 +1925,7 @@ void TrainView::collisionJudge()
 					g2.setParticleLife(400);
 					g2.setGenerateRate(30);
 					g2.setGravity(0.04);
+					g2.setParticleSize(0.2);
 				}
 			}
 		}

@@ -115,8 +115,10 @@ class TrainView : public Fl_Gl_Window
 		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
 		void drawSmoke(const std::vector<glm::vec4> &points);
 		// do the post-process
+		void drawWhiteLine();
 		void setFrameBufferTexture();
 		void drawFrame();
+		
 
 		// some thing about the rocket launcher
 		void aim();
@@ -125,7 +127,7 @@ class TrainView : public Fl_Gl_Window
 		void updateEntity();
 		Pnt3f randUnitVector();
 	public:
-		const float DIVIDE_LINE = 128; //how many segment are track divide
+		float DIVIDE_LINE = 256; //how many segment are track divide
 		const int MATERIAL_SHAPE = 0;
 		const int MATERIAL_METAL = 1;
 		const int MATERIAL_PLASTIC = 2;
@@ -164,6 +166,7 @@ class TrainView : public Fl_Gl_Window
 		bool hasInitRander = false;
 		Shader* simpleObjectShader;
 		Shader* simpleInstanceObjectShader;
+		Shader* whiteLineShader;
 		Shader* waterShader;
 		Shader* smokeShader;
 		Shader* modelShader;
@@ -183,11 +186,13 @@ class TrainView : public Fl_Gl_Window
 		Object smoke;
 		unsigned int particle; //just VAO
 		unsigned int frameVAO;
-		unsigned int frameVBO;
 		unsigned int frameBuffer;
+		unsigned int whiteLineFrameBuffer;
 		unsigned int frameTexture;
 		unsigned int depthTexture;
+		unsigned int whiteLineFrameTexture;
 		unsigned int rbo;
+		unsigned int whiteLineRBO;
 		
 
 		//Model

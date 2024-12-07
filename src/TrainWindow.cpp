@@ -73,7 +73,7 @@ TrainWindow(const int x, const int y)
   
 		pty+=25;
 		speed = new Fl_Value_Slider(655,pty,140,20,"speed");
-		speed->range(0,5);
+		speed->range(0,10);
 		speed->value(1);
 		speed->precision(2);
 		speed->align(FL_ALIGN_LEFT);
@@ -222,7 +222,7 @@ advanceTrain(float dir)
 	// TODO: make this work for your train
 	//#####################################################################
 
-	trainView->t_time += (dir / m_Track.points.size() / (trainView->DIVIDE_LINE / 40))/ cycle_time() * RenderDatabase::timeScale;
+	trainView->t_time += (dir / 50.0f)/ cycle_time() * RenderDatabase::timeScale;
 	if (trainView->t_time > 1)
 		trainView->t_time -= 1;
 	else if(trainView->t_time<0)
