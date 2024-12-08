@@ -56,7 +56,9 @@ private:
 	float angle;
 	float particleSize;
 	float particleVelocity;
+	float particleVelocityRandomOffset;
 	int particleLife;
+	int particleLifeRandomOffset;
 	float gravity;
 	float friction;
 	glm::vec3 color1;
@@ -94,7 +96,9 @@ public:
 	void setAngle(float a);
 	void setParticleSize(float size);
 	void setParticleVelocity(float velocity);
+	void setParticleVelocityRandomOffset(float offset);
 	void setParticleLife(float life);
+	void setParticleLifeRandomOffset(int offset);
 	void setGravity(float g);
 	void setFriction(float f);
 	void setColor(glm::vec3 c1, glm::vec3 c2, glm::vec3 c3, float transitionPoint);

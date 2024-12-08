@@ -1990,15 +1990,45 @@ void TrainView::collisionJudge()
 					targets[targetID].state = 1;
 					rockets[rocketID].state = 1;
 
+					//target explode paricle effect
+					//smoke
+					ParticleGenerator& g1 = particleSystem.addParticleGenerator(particleShader);
+					g1.setPosition(targets[targetID].pos.glmvec3());
+					g1.setLife(2);
+					g1.setColor(glm::vec3(0.078f, 0.078f, 0.078f), glm::vec3(0.273f, 0.273f, 0.273f), glm::vec3(0.273f, 0.273f, 0.273f), 0.7);
+					g1.setParticleVelocity(3);
+					g1.setParticleVelocityRandomOffset(1);
+					g1.setFriction(0.85);
+					g1.setParticleLife(65);
+					g1.setParticleLifeRandomOffset(15);
+					g1.setGenerateRate(80);
+					g1.setGravity(-0.07);
+					g1.setParticleSize(0.5);
+					//outer fire
 					ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
 					g2.setPosition(targets[targetID].pos.glmvec3());
-					g2.setLife(5);
-					g2.setParticleVelocity(3);
+					g2.setLife(2);
+					g2.setColor(glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), 0.5);
+					g2.setParticleVelocity(10);
+					g2.setParticleVelocityRandomOffset(2);
 					g2.setFriction(0.95);
-					g2.setParticleLife(400);
-					g2.setGenerateRate(30);
-					g2.setGravity(0.04);
-					g2.setParticleSize(0.2);
+					g2.setParticleLife(100);
+					g2.setGenerateRate(80);
+					g2.setGravity(0.15);
+					g2.setParticleSize(0.3);
+					//inner fire
+					ParticleGenerator& g3 = particleSystem.addParticleGenerator(particleShader);
+					g3.setPosition(targets[targetID].pos.glmvec3());
+					g3.setLife(2);
+					g3.setColor(glm::vec3(1.0f, 0.105f, 0.039f), glm::vec3(1.0f, 0.621f, 0.0195f), glm::vec3(1.0f, 0.914f, 0.0195f), 0.7);
+					g3.setParticleVelocity(3);
+					g3.setParticleVelocityRandomOffset(1);
+					g3.setFriction(0.85);
+					g3.setParticleLife(40);
+					g3.setParticleLifeRandomOffset(10);
+					g3.setGenerateRate(80);
+					g3.setGravity(0);
+					g3.setParticleSize(0.7);
 				}
 			}
 		}

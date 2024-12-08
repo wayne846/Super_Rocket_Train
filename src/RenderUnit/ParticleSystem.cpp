@@ -96,7 +96,9 @@ ParticleGenerator::ParticleGenerator(Shader* shader, unsigned int particleVAO){
 	this->angle = 180;
 	this->particleSize = 1;
 	this->particleVelocity = 1;
+	this->particleVelocityRandomOffset = 0;
 	this->particleLife = 20;
+	this->particleLifeRandomOffset = 0;
 	this->gravity = 0;
 	this->friction = 1;
 	this->color1 = glm::vec3(1, 1, 1);
@@ -114,8 +116,10 @@ void ParticleGenerator::update() {
 			newParticle.attribute.position = position;
 			newParticle.attribute.color = MathHelper::gradientColor(color1, color2, color3, colorTransitionPoint, 0);
 			newParticle.attribute.size = particleSize;
-			newParticle.velocity = MathHelper::randomDirectionInCone(direction, angle);
-			newParticle.lifeCount = particleLife;
+			float particleInitVelocity = particleVelocity + (MathHelper::randomFloat() * 2 - 1.0f) * particleVelocityRandomOffset;
+			newParticle.velocity = MathHelper::randomDirectionInCone(direction, angle) * particleInitVelocity;
+			int life = std::roundf(particleLife + (MathHelper::randomFloat() * 2 - 1.0f) * particleLifeRandomOffset);
+			newParticle.lifeCount = life;
 			particles.push_back(newParticle);
 
 			particleGenerateCounter -= 1.0f;
@@ -130,7 +134,7 @@ void ParticleGenerator::update() {
 		p.velocity = p.velocity * std::pow(friction, RenderDatabase::timeScale);
 
 		//update position
-		p.attribute.position += p.velocity * particleVelocity * RenderDatabase::timeScale;
+		p.attribute.position += p.velocity * RenderDatabase::timeScale;
 
 		p.attribute.color = MathHelper::gradientColor(color1, color2, color3, colorTransitionPoint, (float)(particleLife - p.lifeCount) / particleLife);
 		p.lifeCount -= RenderDatabase::timeScale;
@@ -186,8 +190,16 @@ void ParticleGenerator::setParticleVelocity(float velocity) {
 	particleVelocity = velocity;
 }
 
+void ParticleGenerator::setParticleVelocityRandomOffset(float offset) {
+	particleVelocityRandomOffset = offset;
+}
+
 void ParticleGenerator::setParticleLife(float life) {
 	particleLife = life;
+}
+
+void ParticleGenerator::setParticleLifeRandomOffset(int offset) {
+	particleLifeRandomOffset = offset;
 }
 
 void ParticleGenerator::setGravity(float g) {
