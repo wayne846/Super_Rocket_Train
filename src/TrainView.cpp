@@ -86,6 +86,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 #define WATER_RESOLUTION 100
 
 #define USE_MODEL true
+#define USE_WATER_ANIMATION true
 
 Assimp::Importer importer;
 
@@ -276,18 +277,21 @@ void TrainView::initRander() {
 	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
 
 	//init texture
-	for (int i = 0; i < -200; i++) {
-		std::string zero = "00";
-		if (i >= 10 && i < 100) zero = "0";
-		if (i >= 100) zero = "";
-		waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
+	if (USE_WATER_ANIMATION) {
+		for (int i = 0; i < 200; i++) {
+			std::string zero = "00";
+			if (i >= 10 && i < 100) zero = "0";
+			if (i >= 100) zero = "";
+			waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
+		}
+		for (int i = 0; i < 200; i++) {
+			std::string zero = "00";
+			if (i >= 10 && i < 100) zero = "0";
+			if (i >= 100) zero = "";
+			waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
+		}
 	}
-	for (int i = 0; i < -200; i++) {
-		std::string zero = "00";
-		if (i >= 10 && i < 100) zero = "0";
-		if (i >= 100) zero = "";
-		waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
-	}
+	
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
 	// set object textures
@@ -1425,11 +1429,13 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	waterShader->setVec3("material.specular", waterMaterial.specular);
 	waterShader->setFloat("material.shininess", waterMaterial.shininess);
 
+	int frameNum = (int)tw->clock_time;
+
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, waterHeightMap[tw->clock_time % 200]);
+	glBindTexture(GL_TEXTURE_2D, waterHeightMap[frameNum % 200]);
 	waterShader->setInt("heightMap", 0);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, waterNormalMap[tw->clock_time % 200]);
+	glBindTexture(GL_TEXTURE_2D, waterNormalMap[frameNum % 200]);
 	waterShader->setInt("normalMap", 1);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
@@ -1476,7 +1482,7 @@ void TrainView::drawWhiteLine()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, whiteLineFrameTexture, 0);
-
+	
 	glBindRenderbuffer(GL_RENDERBUFFER, whiteLineRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w(), h());
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1488,7 +1494,7 @@ void TrainView::drawWhiteLine()
 	}
 
 	InstanceDrawer targetInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
-	targetInstance.setTexture(getObjectTexture("targetImage"));
+	//targetInstance.setTexture(getObjectTexture("targetImage"));
 	for (int i = 0; i < targets.size(); i++) {
 		if (targets[i].state == 0) {
 			glm::mat4 targetModel = MathHelper::getTransformMatrix(
@@ -1497,6 +1503,10 @@ void TrainView::drawWhiteLine()
 			targetInstance.addModelMatrix(targetModel);
 		}
 	}
+	//I don't know why, but it need clear again.
+	glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	targetInstance.drawByInstance(whiteLineShader, cylinder);
 }
 void TrainView::drawFrame()
@@ -1523,6 +1533,7 @@ void TrainView::drawFrame()
 	}
 	if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE) {
 		frameShader->setBool("bulletTime", true);
+		frameShader->setInt("whiteLineTexture", 2);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, whiteLineFrameTexture);
 	}

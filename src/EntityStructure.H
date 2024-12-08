@@ -1,6 +1,7 @@
 #pragma once
 #include "Utilities/Pnt3f.H"
 #include <string>
+#include <cmath>
 class Entity {
 public:
 	Entity(Pnt3f pos, Pnt3f front, Pnt3f up) {
@@ -26,7 +27,7 @@ Rocket(Pnt3f pos, Pnt3f front, Pnt3f up): Entity(pos, front, up) {
 	void advance() {
 		pos = pos + (thrusterVelocity + gravityVelocity) * RenderDatabase::timeScale;
 		if(thrusterVelocity.len2()<100)
-			thrusterVelocity = thrusterVelocity * 1.05;	// accelerate
+			thrusterVelocity = thrusterVelocity * std::pow(1.15, RenderDatabase::timeScale);	// accelerate
 		gravityVelocity.y -= 0.2 * RenderDatabase::timeScale;	// g
 		front = thrusterVelocity + gravityVelocity;
 		Pnt3f right = front * up;

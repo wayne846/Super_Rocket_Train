@@ -40,13 +40,12 @@ void main()
 
     if (bulletTime){
         color =reduceSaturation(color,0.8);
-
+        
         float r = abs((TexCoords.x-0.5)*(TexCoords.x-0.5)*4+(TexCoords.y-0.5)*(TexCoords.y-0.5)*4);
         color = mix(color,black,(r-0.5)*0.5);
-        if(texture(whiteLineTexture, vec2(TexCoords.x+0.001111,TexCoords.y))!=texture(whiteLineTexture, vec2(TexCoords.x,TexCoords.y+0.001111)))
+        if(texture(whiteLineTexture, vec2(TexCoords.x+0.0017f,TexCoords.y))!=texture(whiteLineTexture, vec2(TexCoords.x,TexCoords.y+0.0017f)))
             color = white;
     }
-
     FragColor = color;
 }
 

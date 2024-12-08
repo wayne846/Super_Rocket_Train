@@ -229,7 +229,7 @@ advanceTrain(float dir)
 		trainView->t_time += 1;
 
 	trainView->updateParticleSystem();
-	clock_time++;
+	clock_time += RenderDatabase::timeScale;
 	//printf("%f\n", m_Track.trainU);
 
 #ifdef EXAMPLE_SOLUTION
