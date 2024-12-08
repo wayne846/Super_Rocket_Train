@@ -99,6 +99,7 @@ namespace RenderDatabase {
     extern const glm::vec3 BLUE_COLOR;
     extern const glm::vec3 WHITE_COLOR;
     extern const glm::vec3 LIGHT_GRAY_COLOR;
+    extern const glm::vec3 MIDDLE_GRAY_COLOR;
     extern const glm::vec3 GRAY_COLOR;
     extern const glm::vec3 DARK_COLOR;
     extern const glm::vec3 BLACK_COLOR;

@@ -35,6 +35,7 @@ namespace RenderDatabase {
     const glm::vec3 BLUE_COLOR = glm::vec3(.1f, .1f, .3f);
     const glm::vec3 WHITE_COLOR = glm::vec3(1.0f, 1.0f, 1.0f);
     const glm::vec3 LIGHT_GRAY_COLOR = glm::vec3(0.7f, 0.7f, 0.7f);
+    const glm::vec3 MIDDLE_GRAY_COLOR = glm::vec3(0.5f, 0.5f, 0.5f);
     const glm::vec3 GRAY_COLOR = glm::vec3(.3f, .3f, .3f);
     const glm::vec3 DARK_COLOR = glm::vec3(.1f, .1f, .1f);
     const glm::vec3 BLACK_COLOR = glm::vec3(0.0f, 0.0f, 0.0f);

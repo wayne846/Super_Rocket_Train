@@ -1127,8 +1127,8 @@ void TrainView::draw()
 	//**********************************************************************
 	initLight();
 	//point light 0, main light
-	pointLights[0].position = glm::vec3(200.0f, 200.0f, 100.0f);
-	pointLights[0].ambient = RenderDatabase::GRAY_COLOR;
+	pointLights[0].position = glm::vec3(200.0f, 500.0f, 100.0f);
+	pointLights[0].ambient = RenderDatabase::MIDDLE_GRAY_COLOR;
 	pointLights[0].diffuse = RenderDatabase::LIGHT_GRAY_COLOR;
 	pointLights[0].specular = RenderDatabase::WHITE_COLOR;
 	//point light 1, first controlpoint light
@@ -1277,7 +1277,7 @@ void TrainView::setShaders() {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	//set uniform
-	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader, smokeShader };
+	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader, smokeShader, modelShader };
 	int size = sizeof(shaders) / sizeof(Shader*);
 	for (int i = 0; i < size; i++) {
 		shaders[i]->use();
