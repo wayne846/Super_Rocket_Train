@@ -1,18 +1,18 @@
 #version 430 core
 in vec2 TexCoords;
+in vec2 screen_dir;
 
 out vec4 FragColor;
 
 uniform sampler2D bg;
-
-uniform float rotation = -3.14*0.3;
 uniform float t;
-
-
 
 void main()
 { 
-    vec2 pos = vec2((TexCoords*2-vec2(1,1)).x*cos(rotation)+(TexCoords*2-vec2(1,1)).y*sin(rotation),
-                    (TexCoords*2-vec2(1,1)).x*-sin(rotation)+(TexCoords*2-vec2(1,1)).y*cos(rotation));
-    FragColor = texture(bg, vec2(((pos/2+0.5).x+0.6*t)*0.01,(pos/2+0.5).y));
+    //vec2 screen_dir=vec2 (0,1);
+    vec2 standardCoords = TexCoords*2-vec2(1,1);
+    vec2 rotateStandardCoords = vec2(standardCoords.x*screen_dir.x-standardCoords.y*screen_dir.y,
+                                     standardCoords.x*screen_dir.y+standardCoords.y*screen_dir.x);
+    vec2 realCoords = rotateStandardCoords/2+0.5;
+    FragColor = texture(bg, vec2((realCoords.x+0.6*t)*0.01,realCoords.y));
 }

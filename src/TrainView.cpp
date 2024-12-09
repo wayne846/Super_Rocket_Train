@@ -316,6 +316,7 @@ void TrainView::initRander() {
 	smokeShader->setBlock("Matrices", 0);
 	modelShader->setBlock("Matrices", 0);
 	particleShader->setBlock("Matrices", 0);
+	speedBgShader->setBlock("Matrices", 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -1566,7 +1567,11 @@ void TrainView::drawSpeedBg()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 	speedBgShader->setInt("bg", 0);
 	speedBgShader->setFloat("t", animationFrame-keyFrame[8]);
-
+	static glm::vec3 drill_dir;
+	if (animationFrame < keyFrame[10]) {
+		drill_dir = trainFront.glmvec3();
+	}
+	speedBgShader->setVec3("drill_dir", drill_dir);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	glDepthFunc(GL_LESS);
