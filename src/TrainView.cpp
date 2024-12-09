@@ -65,6 +65,8 @@
 #define WHITELINE_FRAG_PATH "/assets/shaders/whiteLine.frag"
 #define DRILL_VERT_PATH "/assets/shaders/drill.vert"
 #define DRILL_FRAG_PATH "/assets/shaders/drill.frag"
+#define SPEEDBG_VERT_PATH "/assets/shaders/speedBg.vert"
+#define SPEEDBG_FRAG_PATH "/assets/shaders/speedBg.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
@@ -290,6 +292,7 @@ void TrainView::initRander() {
 	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
 	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
 	particleShader = new Shader(PROJECT_DIR PARTICLE_VERT_PATH, PROJECT_DIR PARTICLE_FRAG_PATH);
+	speedBgShader = new Shader(PROJECT_DIR SPEEDBG_VERT_PATH, PROJECT_DIR SPEEDBG_FRAG_PATH);
 	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
 
 	//init texture
@@ -314,6 +317,7 @@ void TrainView::initRander() {
 	setObjectTexture("targetImage", "targetImage.png");
 	setObjectTexture("drillImage", "drillImage2.png");
 	setObjectTexture("crosshair", "crosshair.png");
+	setObjectTexture("speedBg", "speed_bg.png");
 
 	//init unifrom block index
 	//0 for view and project matrix
@@ -325,6 +329,7 @@ void TrainView::initRander() {
 	smokeShader->setBlock("Matrices", 0);
 	modelShader->setBlock("Matrices", 0);
 	particleShader->setBlock("Matrices", 0);
+	speedBgShader->setBlock("Matrices", 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -1218,6 +1223,9 @@ void TrainView::draw()
 		drawStuff(true);
 		unsetupShadows();
 	}*/
+	if (animationFrame >= keyFrame[8]) {
+		drawSpeedBg();
+	}
 
 	if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE)
 		drawWhiteLine();
@@ -1272,7 +1280,7 @@ setProjection()
 		gluPerspective(60, aspect, 0.01, 1000);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		if (af == 0) {	// default
+		if (animationFrame == 0) {	// default
 			Pnt3f trainRight = trainFront * trainUp;
 			Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
 			lookingFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
@@ -1306,7 +1314,7 @@ setProjection()
 			static Pnt3f startCamPos;
 			static Pnt3f finalCamPos;
 			static float startTime = -999;
-			if (af == 1) {
+			if (animationFrame == 1) {
 				Pnt3f trainRight = trainFront * trainUp;
 				trainRight.normalize();
 				Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
@@ -1321,9 +1329,11 @@ setProjection()
 				startCamPos = trainPos + trainFront * 80 + trainRight * -20 + Pnt3f(0, 0, 0);
 				startTime = tw->clock_time;
 			}
-			if (af <= 25) {
-				float t = (tw->clock_time - startTime)/25;
-				Pnt3f tempCamPos = MathHelper::lerpVec3(startCamPos,finalCamPos,MathHelper::sigmoid(t,10));
+			if (animationFrame <= keyFrame[1]) {
+				float t = (animationFrame - keyFrame[0])/ (keyFrame[1]- keyFrame[0]);
+				if (t < 0) t = 0;
+				float t2 = MathHelper::sigmoid(t, 10);
+				Pnt3f tempCamPos = startCamPos*cos(t2 * 3.14159 / 2)+finalCamPos*sin(t2*3.14159/2);
 				gluLookAt(tempCamPos.x, tempCamPos.y, tempCamPos.z,
 					trainPos.x + trainFront.x * 30, trainPos.y + trainFront.y * 30, trainPos.z + trainFront.z * 30,
 					0, 1, 0);
@@ -1381,7 +1391,7 @@ void TrainView::setShaders() {
 			eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
 		else if (tw->freeCam->value())
 			eyepos = freeCamera.getPosition();
-		else if (tw->trainCam->value() && af==0)
+		else if (tw->trainCam->value() && animationFrame==0)
 			eyepos = trainPos.glmvec3();
 
 		shaders[i]->setVec3("eyePosition", eyepos);
@@ -1560,6 +1570,27 @@ void TrainView::drawSmoke(const std::vector<glm::vec4>& points)
 	//unbind shader(switch to fixed pipeline)
 	glUseProgram(0);
 }
+void TrainView::drawSpeedBg()
+{
+	glDepthFunc(GL_LEQUAL);
+	speedBgShader->use();
+	glBindVertexArray(frameVAO);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, getObjectTexture("speedBg"));
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	speedBgShader->setInt("bg", 0);
+	speedBgShader->setFloat("t", animationFrame-keyFrame[8]);
+	static glm::vec3 drill_dir;
+	if (animationFrame < keyFrame[10]) {
+		drill_dir = trainFront.glmvec3();
+	}
+	speedBgShader->setVec3("drill_dir", drill_dir);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glDepthFunc(GL_LESS);
+	glUseProgram(0);
+}
 void TrainView::drawWhiteLine()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, whiteLineFrameBuffer);
@@ -1617,14 +1648,13 @@ void TrainView::drawFrame()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, w(), h());
 	glDisable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
 	glClear(GL_COLOR_BUFFER_BIT);
 	frameShader->use();
 	glBindVertexArray(frameVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, frameTexture);
 
-	if (tw->trainCam->value() && af == 0) {
+	if (tw->trainCam->value() && animationFrame == 0) {
 		frameShader->setBool("useCrosshair", true);
 		frameShader->setFloat("screenAspectRatio", (float)w() / (float)h());
 		glActiveTexture(GL_TEXTURE1);
@@ -1650,7 +1680,6 @@ void TrainView::drawFrame()
 
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	//glDepthFunc(GL_LESS);
 	glUseProgram(0);
 }
 
@@ -1892,7 +1921,7 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 	}
 	totalArcLength = presentArcLength;
-	if (af > 0) {
+	if (animationFrame > 0) {
 		gigaDrillBreak();
 	}
 	trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
@@ -2087,6 +2116,16 @@ void TrainView::shoot()
 	}*/
 
 	soundSource_RPGshot->Play(RPGshot);
+	//lastShootTime = tw->clock_time;
+	//lookingFront.normalize();
+	//lookingUp.normalize();
+	//Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
+	//rocket.thrusterVelocity = lookingFront * 4;
+	//rockets.push_back(rocket);
+
+	if (animationFrame == 0) {
+		animationFrame = 1;
+	}
 }
 
 // judge the distance of target and rocket
@@ -2205,15 +2244,7 @@ void TrainView::gigaDrillBreak()
 {
 	using namespace MathHelper;
 
-	const float kf[]{	// use float to lerp
-	 //	start	end
-		10.0,	25.0,	// turn horizontally
-		35.0,	50.0,	// turn vertically
-		60.0,	65.0,	// elongation
-		90.0,	95.0,	// widen
-		120.0,	125.0,	// rotate
-		180.0,	330		// fly
-	};
+
 	Material trainMaterial = {
 		glm::vec3(0.89225f, 0.19225f, 0.19225f),
 		glm::vec3(0.80754f, 0.50754f, 0.50754f),
@@ -2231,7 +2262,7 @@ void TrainView::gigaDrillBreak()
 	static Pnt3f targetFront;
 	static Pnt3f targetUp;
 
-	if (af == 1) {
+	if (animationFrame == 1) {
 		Pnt3f trainRight = trainFront * trainUp;
 		originalUp = trainUp;
 		originalFront = trainFront;
@@ -2240,9 +2271,9 @@ void TrainView::gigaDrillBreak()
 		targetFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
 		targetUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
 	}
-	else if (af <= kf[1]) {
+	else if (animationFrame <= keyFrame[1]) {
 		// turn horizontally
-		float t = (af - kf[0]) / (kf[1]-kf[0]);
+		float t = (animationFrame - keyFrame[0]) / (keyFrame[1]-keyFrame[0]);
 		if (t < 0)
 			t = 0;
 		glm::vec3 front = lerpVec3(originalFront.glmvec3(), horizontalFront.glmvec3(), t);
@@ -2252,9 +2283,9 @@ void TrainView::gigaDrillBreak()
 		trainFront.normalize();
 		trainUp.normalize();
 	}
-	else if (af <= kf[3]) {
+	else if (animationFrame <= keyFrame[3]) {
 		// turn to the sky
-		float t = (af-kf[2]) / (kf[3]-kf[2]);
+		float t = (animationFrame-keyFrame[2]) / (keyFrame[3]-keyFrame[2]);
 		if (t < 0)
 			t = 0;
 		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
@@ -2269,16 +2300,16 @@ void TrainView::gigaDrillBreak()
 	else {
 		trainUp = Pnt3f(targetUp);
 		trainFront = Pnt3f(targetFront);
-		if (af > kf[10]) {
-			float f = af - kf[10];
+		if (animationFrame > keyFrame[10]) {
+			float f = animationFrame - keyFrame[10];
 			trainPos = trainPos + trainFront * f * 10;
 		}
 		trainInstance.addModelMatrix(getTransformMatrix(
 			trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(6, 8, 10)));
 	}
 
-	if (af < kf[5]) {
-		float t = (af - kf[4]) / (kf[5] - kf[4]);
+	if (animationFrame < keyFrame[5]) {
+		float t = (animationFrame - keyFrame[4]) / (keyFrame[5] - keyFrame[4]);
 		if (t < 0)
 			t = 0;
 		else {
@@ -2288,8 +2319,8 @@ void TrainView::gigaDrillBreak()
 			drillInstance.addModelMatrix(drillModel);
 		}
 	}
-	else if (af < kf[7]) {
-		float t = (af - kf[6]) / (kf[7] - kf[6]);
+	else if (animationFrame < keyFrame[7]) {
+		float t = (animationFrame - keyFrame[6]) / (keyFrame[7] - keyFrame[6]);
 		if (t < 0)
 			t = 0;
 		// yeah, it is not a circle, so it will tramble when rotating!
@@ -2298,8 +2329,8 @@ void TrainView::gigaDrillBreak()
 			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 50));
 		drillInstance.addModelMatrix(drillModel);
 	}
-	else if (af < kf[11]) {
-		float t = (af - kf[8]);
+	else if (animationFrame < keyFrame[11]) {
+		float t = (animationFrame - keyFrame[8]);
 		if (t < 0)
 			t = 0;
 		Pnt3f trainRight = trainFront * trainUp;
@@ -2311,7 +2342,7 @@ void TrainView::gigaDrillBreak()
 			glm::vec3(38, 37, 50));
 		drillInstance.addModelMatrix(drillModel);
 
-		if (af > kf[9]) {
+		if (animationFrame > keyFrame[9]) {
 			drillShader->use();
 			drillShader->setFloat("z_rotation", t * 6.28 * 0.072);
 			if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE)
@@ -2321,10 +2352,10 @@ void TrainView::gigaDrillBreak()
 			blackLineInstance.addModelMatrix(drillModel);
 		}
 	}
-	else if (af < kf[11]) {
+	else if (animationFrame < keyFrame[11]) {
 	}
 	else {
-		af = 0;
+		animationFrame = 0;
 	}
 	
 	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
