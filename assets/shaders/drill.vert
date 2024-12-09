@@ -15,10 +15,6 @@ layout (std140) uniform Matrices{
 out DRILL_OUT
 {
    vec3 position_original;
-   vec3 position;
-   vec3 position_bigger;
-   vec3 normal;
-   vec2 texCoord;
    float seed;
 } v_out;
 
@@ -29,19 +25,9 @@ float hash(float n) {
 void main()
 {
     mat4 bigger_model = model;
-    bigger_model[3].x *= 0.9;
-    bigger_model[3].y *= 0.9;
-    bigger_model[3].z *= 0.9;
-    bigger_model[3].w *= 0.9;
+    bigger_model[3] *= 0.9;
     v_out.seed = bigger_model[0].x;
     gl_Position = projection * view * bigger_model * vec4(position, 1);
-    v_out.position = (model * vec4(position, 1)).xyz;
-    v_out.position_bigger = (bigger_model * vec4(position, 1)).xyz;
+
     v_out.position_original = position;
-    v_out.normal = mat3(normalMatrix) * normal;
-    vec2 texCoord = vec2(0,0);
-    if(useImage){
-        texCoord = texCoordIn;
-    }
-    v_out.texCoord = texCoord;
 }

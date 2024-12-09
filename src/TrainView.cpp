@@ -1264,8 +1264,13 @@ setProjection()
 			Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
 			lookingFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
 			lookingUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+			Pnt3f cameraShake (0, 0, 0);
+			float t = tw->clock_time - lastShootTime;
+			if (t < 50) {
+				cameraShake = lookingUp * sin(6.28*t*0.3) * (0.08 / t);
+			}
 			gluLookAt(trainPos.x, trainPos.y, trainPos.z,
-				trainPos.x + lookingFront.x, trainPos.y + lookingFront.y, trainPos.z + lookingFront.z,
+				trainPos.x + lookingFront.x + cameraShake.x, trainPos.y + lookingFront.y + cameraShake.y, trainPos.z + lookingFront.z + cameraShake.z,
 				lookingUp.x, lookingUp.y, lookingUp.z);
 		}
 		else {	// when giga drill breaking, look at the train
@@ -1530,7 +1535,6 @@ void TrainView::drawWhiteLine()
 	}
 
 	InstanceDrawer targetInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
-	//targetInstance.setTexture(getObjectTexture("targetImage"));
 	for (int i = 0; i < targets.size(); i++) {
 		if (targets[i].state == 0) {
 			glm::mat4 targetModel = MathHelper::getTransformMatrix(
@@ -1539,11 +1543,21 @@ void TrainView::drawWhiteLine()
 			targetInstance.addModelMatrix(targetModel);
 		}
 	}
+	InstanceDrawer targetFragInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
+	for (int i = 0; i < targetFrags.size(); i++) {
+		glm::mat4 targetFragModel = MathHelper::getTransformMatrix(
+			targetFrags[i].pos.glmvec3(), targetFrags[i].front.glmvec3(), targetFrags[i].up.glmvec3(),
+			glm::vec3(10, 10, 1));
+		targetFragInstance.addModelMatrix(targetFragModel);
+	}
+
+
 	//I don't know why, but it need clear again.
 	glClearColor(1, 1, 1, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	targetInstance.drawByInstance(whiteLineShader, cylinder);
+	targetFragInstance.drawByInstance(whiteLineShader, sector);
 }
 void TrainView::drawFrame()
 {
@@ -2009,15 +2023,16 @@ void TrainView::addMoreTarget()
 // Today is Friday in California
 void TrainView::shoot()
 {
-	//lookingFront.normalize();
-	//lookingUp.normalize();
-	//Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
-	//rocket.thrusterVelocity = lookingFront * 4;
-	//rockets.push_back(rocket);
+	lastShootTime = tw->clock_time;
+	lookingFront.normalize();
+	lookingUp.normalize();
+	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
+	rocket.thrusterVelocity = lookingFront * 4;
+	rockets.push_back(rocket);
 
-	if (af == 0) {
-		af = 1;
-	}
+	//if (af == 0) {
+	//	af = 1;
+	//}
 }
 
 // judge the distance of target and rocket
@@ -2198,7 +2213,7 @@ void TrainView::gigaDrillBreak()
 		// yeah, it is not a circle, so it will tramble when rotating!
 		glm::mat4 drillModel = getTransformMatrix(
 			(trainPos + trainFront * 35).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
-			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 33, t), 50));
+			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 50));
 		drillInstance.addModelMatrix(drillModel);
 	}
 	else if (af < kf[7]) {
@@ -2207,11 +2222,11 @@ void TrainView::gigaDrillBreak()
 			t = 0;
 		trainRight = trainFront * trainUp;
 		trainRight.normalize();
-		Pnt3f rotatingUp = trainUp * cos(t * 6.28 * 0.072) + trainRight * sin(t * 6.28 * 0.072);
+		Pnt3f rotatingUp = trainUp * cos(t * 6.28 * 0.072*4) + trainRight * sin(t * 6.28 * 0.072*4);
 		rotatingUp.normalize();
 		glm::mat4 drillModel = getTransformMatrix(
 			(trainPos + trainFront * 35).glmvec3(), trainFront.glmvec3(), rotatingUp.glmvec3(),
-			glm::vec3(38, 38, 50));
+			glm::vec3(38, 37, 50));
 		drillInstance.addModelMatrix(drillModel);
 
 		if (af > kf[5]) {

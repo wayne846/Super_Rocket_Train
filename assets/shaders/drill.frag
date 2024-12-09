@@ -4,10 +4,6 @@ out vec4 f_color;
 in DRILL_OUT
 {
    vec3 position_original;
-   vec3 position;
-   vec3 position_bigger;
-   vec3 normal;
-   vec2 texCoord;
    float seed;
 } f_in;
 
@@ -19,7 +15,6 @@ float hash(float n) {
 }
 
 float EllipsoidDis2(vec3 center, vec3 point) {
-    //return (point.x*point.x)/(center.x*center.x)+(point.y*point.y)/(center.y*center.y)+(point.z*point.z)/(center.z*center.z);
     return (center.x-point.x)*(center.x-point.x)+(center.y-point.y)*(center.y-point.y)+2500*(center.z-point.z)*(center.z-point.z);
 }
 

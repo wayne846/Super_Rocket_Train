@@ -45,9 +45,9 @@ public:
 	Pnt3f velocity;
 	Pnt3f angularVelocity;
 	void advance() {
-		pos = pos + velocity;
-		velocity = velocity * 0.995;
-		velocity.y -= 0.1;	// g
+		pos = pos + velocity * RenderDatabase::timeScale;
+		velocity = velocity * (1-(std::pow(0.005, 1/RenderDatabase::timeScale)));
+		velocity.y -= 0.1 * RenderDatabase::timeScale;	// g
 		// Todo: rotate it
 	}
 };
