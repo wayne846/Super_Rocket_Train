@@ -114,6 +114,10 @@ class TrainView : public Fl_Gl_Window
 		void drawTree(glm::vec3 pos, float rotateTheta = 0.0f, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
 		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
 		void drawSmoke(const std::vector<glm::vec4> &points);
+
+		// background
+		void drawSpeedBg();
+
 		// do the post-process
 		void drawWhiteLine();
 		void setFrameBufferTexture();
@@ -143,7 +147,7 @@ class TrainView : public Fl_Gl_Window
 		CTrack*			m_pTrack;		// The track of the entire scene
 
 		float totalArcLength = 0;
-		float af = 0; // use float to lerp
+		float animationFrame = 0; // use float to lerp
 
 	private:
 		std::vector<float> arcLength;
@@ -180,6 +184,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* smokeShader;
 		Shader* modelShader;
 		Shader* particleShader;
+		Shader* speedBgShader;
 		Shader* frameShader;
 
 		//Uniform Buffer
@@ -221,4 +226,15 @@ class TrainView : public Fl_Gl_Window
 		//particle system
 		ParticleSystem particleSystem;
 		ParticleGenerator* trainParticle;
+
+		// animation
+		const float keyFrame[12]{	// use float to lerp
+		 //	start	end
+			10.0,	25.0,	// turn horizontally
+			35.0,	50.0,	// turn vertically
+			60.0,	65.0,	// elongation
+			90.0,	95.0,	// widen
+			120.0,	125.0,	// rotate
+			180.0,	330		// fly
+		};
 };
