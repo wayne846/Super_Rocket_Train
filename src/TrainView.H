@@ -63,6 +63,10 @@ class CTrack;
 
 #include "FreeCamera.h"
 
+#include "SoundDevice.h"
+#include "SoundBuffer.h"
+#include "SoundSource.h"
+
 class TrainView : public Fl_Gl_Window
 {
 	public:
@@ -221,4 +225,15 @@ class TrainView : public Fl_Gl_Window
 		//particle system
 		ParticleSystem particleSystem;
 		ParticleGenerator* trainParticle;
+
+		//sound
+		SoundDevice* soundDevice;
+		SoundSource* soundSource_RPGshot;
+		SoundSource* soundSource_slowMotionStart;
+		SoundSource* soundSource_slowMotionEnd;
+		SoundSource* soundSource_targetExplosion;
+		ALuint RPGshot;
+		ALuint slowMotionStart;
+		ALuint slowMotionEnd;
+		ALuint targetExplosion;
 };

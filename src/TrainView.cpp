@@ -106,6 +106,17 @@ TrainView(int x, int y, int w, int h, const char* l)
 	resetArcball();
 	freeCamera.setWindow(this);
 	srand(static_cast<unsigned>(time(0)));
+
+	//sound
+	soundDevice = SoundDevice::get();
+	RPGshot = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/RPGExplosion.wav");
+	slowMotionStart = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/slowMotionStart.wav");
+	slowMotionEnd = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/slowMotionEnd.wav");
+	targetExplosion = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/MetalPipeFalling.wav");
+	soundSource_RPGshot = new SoundSource();
+	soundSource_slowMotionStart = new SoundSource();
+	soundSource_slowMotionEnd = new SoundSource();
+	soundSource_targetExplosion = new SoundSource();
 }
 
 //************************************************************************
@@ -182,6 +193,7 @@ int TrainView::handle(int event)
 		}
 		if (Fl::event_button() == FL_RIGHT_MOUSE && tw->trainCam->value()) {
 			RenderDatabase::timeScale = RenderDatabase::BULLET_TIME_SCALE;
+			soundSource_slowMotionStart->Play(slowMotionStart);
 		}
 		//break;
 
@@ -192,6 +204,7 @@ int TrainView::handle(int event)
 
 		if (Fl::event_button() == FL_RIGHT_MOUSE && tw->trainCam->value() && event != FL_PUSH) {
 			RenderDatabase::timeScale = RenderDatabase::INIT_TIME_SCALE;
+			soundSource_slowMotionEnd->Play(slowMotionEnd);
 		}
 		return 1;
 
@@ -1304,7 +1317,7 @@ setProjection()
 				aimRight.y = 0;
 				aimFront.normalize();
 				aimRight.normalize();
-				finalCamPos = trainPos + aimFront * 80 + aimRight * -20 + Pnt3f(0, 0, 0);
+				finalCamPos = trainPos + aimFront * 130 + aimRight * -20 + Pnt3f(0, 0, 0);
 				startCamPos = trainPos + trainFront * 80 + trainRight * -20 + Pnt3f(0, 0, 0);
 				startTime = tw->clock_time;
 			}
@@ -1317,6 +1330,7 @@ setProjection()
 				eyepos = tempCamPos.glmvec3();
 			}
 			else {
+				
 				gluLookAt(finalCamPos.x, finalCamPos.y, finalCamPos.z,
 					trainPos.x + trainFront.x * 30, trainPos.y + trainFront.y * 30, trainPos.z + trainFront.z * 30,
 					0, 1, 0);
@@ -2061,16 +2075,18 @@ void TrainView::addMoreTarget()
 // Today is Friday in California
 void TrainView::shoot()
 {
-	//lastShootTime = tw->clock_time;
-	//lookingFront.normalize();
-	//lookingUp.normalize();
-	//Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
-	//rocket.thrusterVelocity = lookingFront * 4;
-	//rockets.push_back(rocket);
+	lastShootTime = tw->clock_time;
+	lookingFront.normalize();
+	lookingUp.normalize();
+	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
+	rocket.thrusterVelocity = lookingFront * 4;
+	rockets.push_back(rocket);
 
-	if (af == 0) {
+	/*if (af == 0) {
 		af = 1;
-	}
+	}*/
+
+	soundSource_RPGshot->Play(RPGshot);
 }
 
 // judge the distance of target and rocket
@@ -2128,6 +2144,8 @@ void TrainView::collisionJudge()
 					g3.setGenerateRate(80);
 					g3.setGravity(0);
 					g3.setParticleSize(0.7);
+
+					soundSource_targetExplosion->Play(targetExplosion);
 				}
 			}
 		}
