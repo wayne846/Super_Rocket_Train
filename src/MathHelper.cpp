@@ -10,11 +10,18 @@ namespace MathHelper {
 	glm::vec3 lerpVec3(glm::vec3 a, glm::vec3 b, float t) {
 		return a + (b - a) * t;
 	}
+	Pnt3f lerpVec3(Pnt3f a, Pnt3f b, float t) {
+		return a + (b - a) * t;
+	}
 
 	float clamp(float value, float min, float max) {
 		if (value < min) return min;
 		if (value > max) return max;
 		return value;
+	}
+
+	float sigmoid(float x, float k = 10) {
+		return 1 / (1 + pow(2.71828182846, -k * (x - 0.5)));
 	}
 
 	//get the gradient color in [colorA, colorB, color C], g is colorB position in gradient line

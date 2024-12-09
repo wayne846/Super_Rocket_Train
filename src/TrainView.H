@@ -150,7 +150,8 @@ class TrainView : public Fl_Gl_Window
 		Pnt3f trainPos;
 		Pnt3f trainFront;
 		Pnt3f trainUp;
-		Pnt3f trainRight;
+
+		glm::vec3 eyepos;
 
 		// some thing about the rocket launcher and aimer
 		float camRotateX = 0,camRotateY = 0;

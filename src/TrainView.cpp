@@ -1290,15 +1290,38 @@ setProjection()
 				lookingUp.x, lookingUp.y, lookingUp.z);
 		}
 		else {	// when giga drill breaking, look at the train
-			Pnt3f trainRight = trainFront * trainUp;
-			trainRight.normalize();
-			static Pnt3f camPos;
-			if ((int)af == 1) {
-				camPos = trainPos + trainFront * 100 + trainRight * -100;
+			static Pnt3f startCamPos;
+			static Pnt3f finalCamPos;
+			static float startTime = -999;
+			if (af == 1) {
+				Pnt3f trainRight = trainFront * trainUp;
+				trainRight.normalize();
+				Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
+				Pnt3f aimFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
+				Pnt3f aimUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+				Pnt3f aimRight = aimFront * aimUp;
+				aimFront.y = 0;
+				aimRight.y = 0;
+				aimFront.normalize();
+				aimRight.normalize();
+				finalCamPos = trainPos + aimFront * 80 + aimRight * -20 + Pnt3f(0, 0, 0);
+				startCamPos = trainPos + trainFront * 80 + trainRight * -20 + Pnt3f(0, 0, 0);
+				startTime = tw->clock_time;
 			}
-			gluLookAt(camPos.x, camPos.y, camPos.z,
-				trainPos.x, trainPos.y, trainPos.z,
-				0, 1, 0);
+			if (af <= 25) {
+				float t = (tw->clock_time - startTime)/25;
+				Pnt3f tempCamPos = MathHelper::lerpVec3(startCamPos,finalCamPos,MathHelper::sigmoid(t,10));
+				gluLookAt(tempCamPos.x, tempCamPos.y, tempCamPos.z,
+					trainPos.x + trainFront.x * 30, trainPos.y + trainFront.y * 30, trainPos.z + trainFront.z * 30,
+					0, 1, 0);
+				eyepos = tempCamPos.glmvec3();
+			}
+			else {
+				gluLookAt(finalCamPos.x, finalCamPos.y, finalCamPos.z,
+					trainPos.x + trainFront.x * 30, trainPos.y + trainFront.y * 30, trainPos.z + trainFront.z * 30,
+					0, 1, 0);
+				eyepos = finalCamPos.glmvec3();
+			}
 		}
 	}
 	else if (tw->freeCam->value()) {
@@ -1340,12 +1363,11 @@ void TrainView::setShaders() {
 		shaders[i]->use();
 
 		//set the uniform
-		glm::vec3 eyepos;
 		if (tw->worldCam->value() || tw->topCam->value())
 			eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
 		else if (tw->freeCam->value())
 			eyepos = freeCamera.getPosition();
-		else if (tw->trainCam->value())
+		else if (tw->trainCam->value() && af==0)
 			eyepos = trainPos.glmvec3();
 
 		shaders[i]->setVec3("eyePosition", eyepos);
@@ -2039,16 +2061,16 @@ void TrainView::addMoreTarget()
 // Today is Friday in California
 void TrainView::shoot()
 {
-	lastShootTime = tw->clock_time;
-	lookingFront.normalize();
-	lookingUp.normalize();
-	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
-	rocket.thrusterVelocity = lookingFront * 4;
-	rockets.push_back(rocket);
+	//lastShootTime = tw->clock_time;
+	//lookingFront.normalize();
+	//lookingUp.normalize();
+	//Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
+	//rocket.thrusterVelocity = lookingFront * 4;
+	//rockets.push_back(rocket);
 
-	//if (af == 0) {
-	//	af = 1;
-	//}
+	if (af == 0) {
+		af = 1;
+	}
 }
 
 // judge the distance of target and rocket
@@ -2166,10 +2188,13 @@ void TrainView::gigaDrillBreak()
 	using namespace MathHelper;
 
 	const float kf[]{	// use float to lerp
-		30.0,35.0,	// elongation
-		60.0,65.0,	// widen
-		90.0,95.0,	// rotate
-		150.0,300	// fly
+	 //	start	end
+		10.0,	25.0,	// turn horizontally
+		35.0,	50.0,	// turn vertically
+		60.0,	65.0,	// elongation
+		90.0,	95.0,	// widen
+		120.0,	125.0,	// rotate
+		180.0,	330		// fly
 	};
 	Material trainMaterial = {
 		glm::vec3(0.89225f, 0.19225f, 0.19225f),
@@ -2181,23 +2206,43 @@ void TrainView::gigaDrillBreak()
 	InstanceDrawer drillInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer blackLineInstance(RenderDatabase::SLIVER_MATERIAL);
 	drillInstance.setTexture(this->getObjectTexture("drillImage"));
-	trainFront.normalize();
-	static Pnt3f originalUp;
+
 	static Pnt3f originalFront;
+	static Pnt3f originalUp;
+	static Pnt3f horizontalFront;
+	static Pnt3f targetFront;
 	static Pnt3f targetUp;
-	if ((int)af == 1) {
+
+	if (af == 1) {
+		Pnt3f trainRight = trainFront * trainUp;
 		originalUp = trainUp;
 		originalFront = trainFront;
-		targetUp = Pnt3f(-originalFront.x, 0, -originalFront.z);
-		targetUp.normalize();
+		horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
+		horizontalFront.normalize();
+		targetFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
+		targetUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
 	}
-	else if (af <= kf[0]) {
-		// turn to the sky
-		float t = af / kf[0];
-		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
-		glm::vec3 front = lerpVec3(originalFront.glmvec3(), glm::vec3(0, 1, 0), t);
+	else if (af <= kf[1]) {
+		// turn horizontally
+		float t = (af - kf[0]) / (kf[1]-kf[0]);
+		if (t < 0)
+			t = 0;
+		glm::vec3 front = lerpVec3(originalFront.glmvec3(), horizontalFront.glmvec3(), t);
 		trainInstance.addModelMatrix(getTransformMatrix(
-			trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10)));
+			trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10)));
+		trainFront = Pnt3f(front);
+		trainFront.normalize();
+		trainUp.normalize();
+	}
+	else if (af <= kf[3]) {
+		// turn to the sky
+		float t = (af-kf[2]) / (kf[3]-kf[2]);
+		if (t < 0)
+			t = 0;
+		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
+		glm::vec3 front = lerpVec3(horizontalFront.glmvec3(), targetFront.glmvec3(), t);
+		trainInstance.addModelMatrix(getTransformMatrix(
+		trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10)));
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp = Pnt3f(up);
@@ -2205,17 +2250,17 @@ void TrainView::gigaDrillBreak()
 	}
 	else {
 		trainUp = Pnt3f(targetUp);
-		trainFront = Pnt3f(0, 1, 0);
-		if (af > kf[6]) {
-			float f = af - kf[6];
+		trainFront = Pnt3f(targetFront);
+		if (af > kf[10]) {
+			float f = af - kf[10];
 			trainPos = trainPos + trainFront * f * 10;
 		}
 		trainInstance.addModelMatrix(getTransformMatrix(
-			trainPos.glmvec3(), glm::vec3(0, 1, 0), targetUp.glmvec3(), glm::vec3(6, 8, 10)));
+			trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(6, 8, 10)));
 	}
 
-	if (af < kf[1]) {
-		float t = (af - kf[0]) / (kf[1] - kf[0]);
+	if (af < kf[5]) {
+		float t = (af - kf[4]) / (kf[5] - kf[4]);
 		if (t < 0)
 			t = 0;
 		else {
@@ -2225,8 +2270,8 @@ void TrainView::gigaDrillBreak()
 			drillInstance.addModelMatrix(drillModel);
 		}
 	}
-	else if (af < kf[3]) {
-		float t = (af - kf[2]) / (kf[3] - kf[2]);
+	else if (af < kf[7]) {
+		float t = (af - kf[6]) / (kf[7] - kf[6]);
 		if (t < 0)
 			t = 0;
 		// yeah, it is not a circle, so it will tramble when rotating!
@@ -2235,11 +2280,11 @@ void TrainView::gigaDrillBreak()
 			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 50));
 		drillInstance.addModelMatrix(drillModel);
 	}
-	else if (af < kf[7]) {
-		float t = (af - kf[4]);
+	else if (af < kf[11]) {
+		float t = (af - kf[8]);
 		if (t < 0)
 			t = 0;
-		trainRight = trainFront * trainUp;
+		Pnt3f trainRight = trainFront * trainUp;
 		trainRight.normalize();
 		Pnt3f rotatingUp = trainUp * cos(t * 6.28 * 0.072*4) + trainRight * sin(t * 6.28 * 0.072*4);
 		rotatingUp.normalize();
@@ -2248,7 +2293,7 @@ void TrainView::gigaDrillBreak()
 			glm::vec3(38, 37, 50));
 		drillInstance.addModelMatrix(drillModel);
 
-		if (af > kf[5]) {
+		if (af > kf[9]) {
 			drillShader->use();
 			drillShader->setFloat("z_rotation", t * 6.28 * 0.072);
 			if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE)
@@ -2258,12 +2303,12 @@ void TrainView::gigaDrillBreak()
 			blackLineInstance.addModelMatrix(drillModel);
 		}
 	}
-	else if (af < kf[7]) {
+	else if (af < kf[11]) {
 	}
 	else {
 		af = 0;
 	}
-
+	
 	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
 	drillInstance.drawByInstance(simpleInstanceObjectShader, cone);
 	blackLineInstance.drawByInstance(drillShader, cone);

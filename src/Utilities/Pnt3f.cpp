@@ -54,10 +54,10 @@ Pnt3f(const float* iv) : x(iv[0]), y(iv[1]), z(iv[2])
 //=============================================================================
 {
 }
-Pnt3f::Pnt3f(glm::vec3* vec) : x(vec->z), y(vec->z), z(vec->z)
+Pnt3f::Pnt3f(glm::vec3* vec) : x(vec->x), y(vec->y), z(vec->z)
 {
 }
-Pnt3f::Pnt3f(glm::vec3 vec) : x(vec.z), y(vec.z), z(vec.z)
+Pnt3f::Pnt3f(glm::vec3 vec) : x(vec.x), y(vec.y), z(vec.z)
 {
 }
 //*****************************************************************************

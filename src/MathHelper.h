@@ -9,8 +9,10 @@ namespace MathHelper {
 	float lerp(float a, float b, float t);
 
 	glm::vec3 lerpVec3(glm::vec3 a, glm::vec3 b, float t);
+	Pnt3f lerpVec3(Pnt3f a, Pnt3f b, float t);
 
 	float clamp(float value, float min, float max);
+	float sigmoid(float x, float k);
 
 	//get the gradient color in [colorA, colorB, color C], g is colorB transition point
 	//t = 0 -> colorA
