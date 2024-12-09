@@ -21,6 +21,8 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/frame.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/whiteLine.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/whiteLine.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/drill.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/drill.frag
 ) 
 
 set(SRC_RENDER_UNIT

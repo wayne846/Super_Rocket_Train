@@ -221,15 +221,24 @@ advanceTrain(float dir)
 	//#####################################################################
 	// TODO: make this work for your train
 	//#####################################################################
+	if (trainView->af == 0) {	// it won't move when playing animation
+		float realCycleTime = cycle_time();
+		if (trainView->totalArcLength != 0 && arcLength->value()) {
+			realCycleTime *= trainView->totalArcLength / 500;
+		}
 
-	trainView->t_time += (dir / 50.0f)/ cycle_time() * RenderDatabase::timeScale;
-	if (trainView->t_time > 1)
-		trainView->t_time -= 1;
-	else if(trainView->t_time<0)
-		trainView->t_time += 1;
-
+		trainView->t_time += (dir / 50.0f) / realCycleTime * RenderDatabase::timeScale;
+		if (trainView->t_time > 1)
+			trainView->t_time -= 1;
+		else if (trainView->t_time < 0)
+			trainView->t_time += 1;
+	}
+	else {
+		trainView->af += RenderDatabase::timeScale;	// update animation
+	}
 	trainView->updateParticleSystem();
 	clock_time += RenderDatabase::timeScale;
+	
 	//printf("%f\n", m_Track.trainU);
 
 #ifdef EXAMPLE_SOLUTION

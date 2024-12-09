@@ -63,6 +63,8 @@
 #define FRAME_FRAG_PATH "/assets/shaders/frame.frag"
 #define WHITELINE_VERT_PATH "/assets/shaders/whiteLine.vert"
 #define WHITELINE_FRAG_PATH "/assets/shaders/whiteLine.frag"
+#define DRILL_VERT_PATH "/assets/shaders/drill.vert"
+#define DRILL_FRAG_PATH "/assets/shaders/drill.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
@@ -85,8 +87,8 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define WATER_RESOLUTION 100
 
-#define USE_MODEL true
-#define USE_WATER_ANIMATION true
+#define USE_MODEL false
+#define USE_WATER_ANIMATION false
 
 Assimp::Importer importer;
 
@@ -218,7 +220,7 @@ int TrainView::handle(int event)
 			}
 		}
 		else {
-			
+
 			aim();
 		}
 		break;
@@ -270,6 +272,7 @@ void TrainView::initRander() {
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	whiteLineShader = new Shader(PROJECT_DIR WHITELINE_VERT_PATH, PROJECT_DIR WHITELINE_FRAG_PATH);
+	drillShader = new Shader(PROJECT_DIR DRILL_VERT_PATH, PROJECT_DIR DRILL_FRAG_PATH);
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
 	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
 	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
@@ -291,29 +294,24 @@ void TrainView::initRander() {
 			waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
 		}
 	}
-	
+
 	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
 	// set object textures
 	setObjectTexture("targetImage", "targetImage.png");
-	setObjectTexture("crosshair", "crosshair.png"); 
+	setObjectTexture("drillImage", "drillImage2.png");
+	setObjectTexture("crosshair", "crosshair.png");
 
 	//init unifrom block index
 	//0 for view and project matrix
-	unsigned int uniformBlockIndex_simpleObject = glGetUniformBlockIndex(simpleObjectShader->ID, "Matrices");
-	unsigned int uniformBlockIndex_simpleInstanceObject = glGetUniformBlockIndex(simpleInstanceObjectShader->ID, "Matrices");
-	unsigned int uniformBlockIndex_whiteLine = glGetUniformBlockIndex(whiteLineShader->ID, "Matrices");
-	unsigned int uniformBlockIndex_water = glGetUniformBlockIndex(waterShader->ID, "Matrices");
-	unsigned int uniformBlockIndex_smoke = glGetUniformBlockIndex(smokeShader->ID, "Matrices");
-	unsigned int uniformBlockIndex_model = glGetUniformBlockIndex(modelShader->ID, "Matrices");
-	unsigned int uniformBlockIndex_particle = glGetUniformBlockIndex(particleShader->ID, "Matrices");
-	glUniformBlockBinding(simpleObjectShader->ID, uniformBlockIndex_simpleObject, 0);
-	glUniformBlockBinding(simpleInstanceObjectShader->ID, uniformBlockIndex_simpleInstanceObject, 0);
-	glUniformBlockBinding(whiteLineShader->ID, uniformBlockIndex_whiteLine, 0);
-	glUniformBlockBinding(waterShader->ID, uniformBlockIndex_water, 0);
-	glUniformBlockBinding(smokeShader->ID, uniformBlockIndex_smoke, 0);
-	glUniformBlockBinding(modelShader->ID, uniformBlockIndex_model, 0);
-	glUniformBlockBinding(particleShader->ID, uniformBlockIndex_particle, 0);
+	simpleObjectShader->setBlock("Matrices", 0);
+	simpleInstanceObjectShader->setBlock("Matrices", 0);
+	whiteLineShader->setBlock("Matrices", 0);
+	drillShader->setBlock("Matrices", 0);
+	waterShader->setBlock("Matrices", 0);
+	smokeShader->setBlock("Matrices", 0);
+	modelShader->setBlock("Matrices", 0);
+	particleShader->setBlock("Matrices", 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -363,7 +361,7 @@ void TrainView::initRander() {
 		g.setPosition(glm::vec3(0, 20, 0));
 		g.setParticleLife(60);
 	}
-	
+
 	g.setGravity(0.04);
 
 	ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
@@ -633,6 +631,7 @@ void TrainView::setCone()
 	int vn = circleVerticesNumber;
 	GLfloat coneVertices[circleVerticesNumber * 9];
 	GLfloat coneNormal[circleVerticesNumber * 9];
+	GLfloat conetexCoord[circleVerticesNumber * 6];
 	GLuint coneElement[(circleVerticesNumber * 2 + (circleVerticesNumber - 2)) * 3];
 	float pi = 3.1415926535;
 	// top vertices
@@ -674,7 +673,26 @@ void TrainView::setCone()
 		coneNormal[index + 1] = 0;
 		coneNormal[index + 2] = 1;
 	}
-
+	// top texture
+	for (int i = 0; i < vn; i += 1) {
+		int index = i * 2;
+		conetexCoord[index] = 0.25;
+		conetexCoord[index + 1] = 0.75;
+	}
+	// buttom(side) texture 
+	for (int i = vn; i < vn * 2; i += 1) {
+		int index = i * 2;
+		float unitAngle = (float)2 * pi / vn;
+		conetexCoord[index] = 0.25 + 0.25 * sin((float)unitAngle * i);
+		conetexCoord[index + 1] = 0.75 + 0.25 * cos((float)unitAngle * i);
+	}
+	// buttom(really buttom) texture
+	for (int i = vn * 2; i < vn * 3; i += 1) {
+		int index = i * 2;
+		float unitAngle = (float)2 * pi / vn;
+		conetexCoord[index] = 0.75 + 0.25 * sin((float)unitAngle * i);
+		conetexCoord[index + 1] = 0.75 + 0.25 * cos((float)unitAngle * i);
+	}
 	// side surface
 	for (int i = 0; i < vn; i++) {
 		int index = i * 3;
@@ -708,6 +726,11 @@ void TrainView::setCone()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(coneNormal), coneNormal, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
+	// Image texture attribute
+	glBindBuffer(GL_ARRAY_BUFFER, cylinder.VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(conetexCoord), conetexCoord, GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(2);
 	//Element attribute
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cone.EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(coneElement), coneElement, GL_STATIC_DRAW);
@@ -1003,7 +1026,7 @@ void TrainView::setFrame() {
 void TrainView::setFrameBufferTexture()
 {
 	glActiveTexture(GL_TEXTURE0);
-	
+
 	glBindTexture(GL_TEXTURE_2D, frameTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w(), h(), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1023,7 +1046,7 @@ void TrainView::setFrameBufferTexture()
 		std::cout << "Framebuffer is not complete!" << std::endl;
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	
+
 }
 
 //set all light to dark
@@ -1236,13 +1259,26 @@ setProjection()
 		gluPerspective(60, aspect, 0.01, 1000);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		Pnt3f trainRight = trainFront * trainUp;
-		Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
-		lookingFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
-		lookingUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
-		gluLookAt(trainPos.x, trainPos.y, trainPos.z,
-			trainPos.x + lookingFront.x, trainPos.y + lookingFront.y, trainPos.z + lookingFront.z,
-			lookingUp.x, lookingUp.y, lookingUp.z);
+		if (af == 0) {	// default
+			Pnt3f trainRight = trainFront * trainUp;
+			Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
+			lookingFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
+			lookingUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+			gluLookAt(trainPos.x, trainPos.y, trainPos.z,
+				trainPos.x + lookingFront.x, trainPos.y + lookingFront.y, trainPos.z + lookingFront.z,
+				lookingUp.x, lookingUp.y, lookingUp.z);
+		}
+		else {	// when giga drill breaking, look at the train
+			Pnt3f trainRight = trainFront * trainUp;
+			trainRight.normalize();
+			static Pnt3f camPos;
+			if ((int)af == 1) {
+				camPos = trainPos + trainFront * 100 + trainRight * -100;
+			}
+			gluLookAt(camPos.x, camPos.y, camPos.z,
+				trainPos.x, trainPos.y, trainPos.z,
+				0, 1, 0);
+		}
 	}
 	else if (tw->freeCam->value()) {
 		glMatrixMode(GL_PROJECTION);
@@ -1482,7 +1518,7 @@ void TrainView::drawWhiteLine()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, whiteLineFrameTexture, 0);
-	
+
 	glBindRenderbuffer(GL_RENDERBUFFER, whiteLineRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w(), h());
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1522,9 +1558,9 @@ void TrainView::drawFrame()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, frameTexture);
 
-	if (tw->trainCam->value()) {
+	if (tw->trainCam->value() && af == 0) {
 		frameShader->setBool("useCrosshair", true);
-		frameShader->setFloat("screenAspectRatio",(float)w() / (float)h());
+		frameShader->setFloat("screenAspectRatio", (float)w() / (float)h());
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, getObjectTexture("crosshair"));
 	}
@@ -1540,12 +1576,12 @@ void TrainView::drawFrame()
 	else {
 		frameShader->setBool("bulletTime", false);
 	}
-	
+
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glActiveTexture(0);
 
-	
+
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//glDepthFunc(GL_LESS);
@@ -1591,7 +1627,7 @@ void TrainView::drawStuff(bool doingShadows)
 		glm::mat4 floorModel = MathHelper::getTransformMatrix(glm::vec3(0, -0.5, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(200, 1, 200));
 		drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
 	}
-	
+
 
 	//draw modle
 	if (USE_MODEL) {
@@ -1606,7 +1642,7 @@ void TrainView::drawStuff(bool doingShadows)
 		glm::mat4 pillarModel = MathHelper::getTransformMatrix(glm::vec3(0, -2, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.2, 0.2, 0.2));
 		modelShader->setMat4("model", pillarModel);
 		stonePillar->Draw(modelShader);
-		
+
 		//draw pillar section
 		glm::mat4 pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(20, -8, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
 		modelShader->setMat4("model", pillarSectionModel);
@@ -1631,7 +1667,7 @@ void TrainView::drawStuff(bool doingShadows)
 		glUseProgram(0);
 	}
 
-	
+
 
 
 	//draw the tree
@@ -1642,9 +1678,9 @@ void TrainView::drawStuff(bool doingShadows)
 
 	// draw the track, sleeper, train
 	Material trainMaterial = {
-		glm::vec3(0.19225f, 0.19225f, 0.89225f),
-		glm::vec3(0.50754f, 0.50754f, 0.80754f),
-		glm::vec3(0.508273f, 0.508273f, 0.808273f),
+		glm::vec3(0.89225f, 0.19225f, 0.19225f),
+		glm::vec3(0.80754f, 0.50754f, 0.50754f),
+		glm::vec3(0.808273f, 0.508273f, 0.508273f),
 		128.0f
 	};
 	InstanceDrawer trackInstance(RenderDatabase::SLIVER_MATERIAL);
@@ -1773,9 +1809,6 @@ void TrainView::drawStuff(bool doingShadows)
 				trainUp = cross_t * trainFront;
 				trainUp.normalize();
 				trainPos = Pnt3f(qt1 + trainUp * 3);
-				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
-				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
-				float direction[] = { trainFront.x,trainFront.y,trainFront.z };
 				if (!tw->trainCam->value()) {
 					//draw train
 					glm::vec3 right = cross_t.glmvec3();
@@ -1785,11 +1818,17 @@ void TrainView::drawStuff(bool doingShadows)
 					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
 					trainInstance.addModelMatrix(model);
 				}
+				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
+				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
+				float direction[] = { trainFront.x,trainFront.y,trainFront.z };
 				trainDrawed = true;
 			}
 		}
 	}
 	totalArcLength = presentArcLength;
+	if (af > 0) {
+		gigaDrillBreak();
+	}
 	trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
 	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube);
 	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
@@ -1818,7 +1857,7 @@ void TrainView::drawStuff(bool doingShadows)
 			// add smoke partical
 			for (int j = 0; j < 20; j++) {
 				for (int k = 0; k < 20; k++) {
-					Pnt3f smokePos = rockets[i].pos + rockets[i].front * -(10 + 3*j) + randUnitVector() * (0.5 * j);
+					Pnt3f smokePos = rockets[i].pos + rockets[i].front * -(10 + 3 * j) + randUnitVector() * (0.5 * j);
 					smoke.push_back(glm::vec4(smokePos.x, smokePos.y, smokePos.z, (float)(j / 20.0)));
 				}
 			}
@@ -1826,7 +1865,7 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone);
 	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
-	if(smoke.size()>0)
+	if (smoke.size() > 0)
 		drawSmoke(smoke);
 
 	for (int i = 0; i < targets.size(); i++) {
@@ -1868,7 +1907,7 @@ void TrainView::drawStuff(bool doingShadows)
 		glEnd();
 		glLineWidth(1);
 	}
-	
+
 }
 
 // 
@@ -1970,11 +2009,15 @@ void TrainView::addMoreTarget()
 // Today is Friday in California
 void TrainView::shoot()
 {
-	lookingFront.normalize();
-	lookingUp.normalize();
-	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
-	rocket.thrusterVelocity = lookingFront * 4;
-	rockets.push_back(rocket);
+	//lookingFront.normalize();
+	//lookingUp.normalize();
+	//Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
+	//rocket.thrusterVelocity = lookingFront * 4;
+	//rockets.push_back(rocket);
+
+	if (af == 0) {
+		af = 1;
+	}
 }
 
 // judge the distance of target and rocket
@@ -2059,7 +2102,7 @@ void TrainView::updateEntity() {
 				for (int i = 0; i < 3; i++) {
 					Pnt3f front = randUnitVector();
 					PhysicalEntity frag(targets[targetID].pos + 2.5 * randUnitVector(), front, front * randUnitVector());
-					frag.velocity = (frag.pos - targets[targetID].pos) * (0.5+(rand() % 30)/10.0);
+					frag.velocity = (frag.pos - targets[targetID].pos) * (0.5 + (rand() % 30) / 10.0);
 					frag.angularVelocity = randUnitVector() * (rand() % 10);
 					targetFrags.push_back(frag);
 				}
@@ -2082,6 +2125,114 @@ void TrainView::updateEntity() {
 			}
 		}
 	}
+}
+
+void TrainView::gigaDrillBreak()
+{
+	using namespace MathHelper;
+
+	const float kf[]{	// use float to lerp
+		30.0,35.0,	// elongation
+		60.0,65.0,	// widen
+		90.0,95.0,	// rotate
+		150.0,300	// fly
+	};
+	Material trainMaterial = {
+		glm::vec3(0.89225f, 0.19225f, 0.19225f),
+		glm::vec3(0.80754f, 0.50754f, 0.50754f),
+		glm::vec3(0.808273f, 0.508273f, 0.508273f),
+		128.0f
+	};
+	InstanceDrawer trainInstance(trainMaterial);
+	InstanceDrawer drillInstance(RenderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer blackLineInstance(RenderDatabase::SLIVER_MATERIAL);
+	drillInstance.setTexture(this->getObjectTexture("drillImage"));
+	trainFront.normalize();
+	static Pnt3f originalUp;
+	static Pnt3f originalFront;
+	static Pnt3f targetUp;
+	if ((int)af == 1) {
+		originalUp = trainUp;
+		originalFront = trainFront;
+		targetUp = Pnt3f(-originalFront.x, 0, -originalFront.z);
+		targetUp.normalize();
+	}
+	else if (af <= kf[0]) {
+		// turn to the sky
+		float t = af / kf[0];
+		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
+		glm::vec3 front = lerpVec3(originalFront.glmvec3(), glm::vec3(0, 1, 0), t);
+		trainInstance.addModelMatrix(getTransformMatrix(
+			trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10)));
+		trainFront = Pnt3f(front);
+		trainFront.normalize();
+		trainUp = Pnt3f(up);
+		trainUp.normalize();
+	}
+	else {
+		trainUp = Pnt3f(targetUp);
+		trainFront = Pnt3f(0, 1, 0);
+		if (af > kf[6]) {
+			float f = af - kf[6];
+			trainPos = trainPos + trainFront * f * 10;
+		}
+		trainInstance.addModelMatrix(getTransformMatrix(
+			trainPos.glmvec3(), glm::vec3(0, 1, 0), targetUp.glmvec3(), glm::vec3(6, 8, 10)));
+	}
+
+	if (af < kf[1]) {
+		float t = (af - kf[0]) / (kf[1] - kf[0]);
+		if (t < 0)
+			t = 0;
+		else {
+			glm::mat4 drillModel = getTransformMatrix(
+				(trainPos + trainFront * (10 + (lerp(0, 25, t)))).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
+				glm::vec3(3, 3, lerp(0, 50, t)));
+			drillInstance.addModelMatrix(drillModel);
+		}
+	}
+	else if (af < kf[3]) {
+		float t = (af - kf[2]) / (kf[3] - kf[2]);
+		if (t < 0)
+			t = 0;
+		// yeah, it is not a circle, so it will tramble when rotating!
+		glm::mat4 drillModel = getTransformMatrix(
+			(trainPos + trainFront * 35).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
+			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 33, t), 50));
+		drillInstance.addModelMatrix(drillModel);
+	}
+	else if (af < kf[7]) {
+		float t = (af - kf[4]);
+		if (t < 0)
+			t = 0;
+		trainRight = trainFront * trainUp;
+		trainRight.normalize();
+		Pnt3f rotatingUp = trainUp * cos(t * 6.28 * 0.072) + trainRight * sin(t * 6.28 * 0.072);
+		rotatingUp.normalize();
+		glm::mat4 drillModel = getTransformMatrix(
+			(trainPos + trainFront * 35).glmvec3(), trainFront.glmvec3(), rotatingUp.glmvec3(),
+			glm::vec3(38, 38, 50));
+		drillInstance.addModelMatrix(drillModel);
+
+		if (af > kf[5]) {
+			drillShader->use();
+			drillShader->setFloat("z_rotation", t * 6.28 * 0.072);
+			if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE)
+				drillShader->setBool("slow", true);
+			else
+				drillShader->setBool("slow", false);
+			blackLineInstance.addModelMatrix(drillModel);
+		}
+	}
+	else if (af < kf[7]) {
+	}
+	else {
+		af = 0;
+	}
+
+	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
+	drillInstance.drawByInstance(simpleInstanceObjectShader, cone);
+	blackLineInstance.drawByInstance(drillShader, cone);
 }
 
 //call by trainWindow every clock

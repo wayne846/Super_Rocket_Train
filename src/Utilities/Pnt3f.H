@@ -45,6 +45,9 @@ class Pnt3f {
 		// copy constructor created by default
 		// Pnt3f(const Pnt3f&);		
 
+		Pnt3f(glm::vec3*);
+		Pnt3f(glm::vec3);
+
 	public:
 		// if you want to treat this thing as a C vector (point to float)
 		float* v();

@@ -38,6 +38,6 @@ int main(int, char**)
 
 	TrainWindow tw;
 	tw.show();
-
+	tw.damageMe();
 	Fl::run();
 }

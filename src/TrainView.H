@@ -125,7 +125,9 @@ class TrainView : public Fl_Gl_Window
 		void shoot();
 		void collisionJudge();
 		void updateEntity();
+		void gigaDrillBreak();
 		Pnt3f randUnitVector();
+
 	public:
 		float DIVIDE_LINE = 256; //how many segment are track divide
 		const int MATERIAL_SHAPE = 0;
@@ -140,9 +142,11 @@ class TrainView : public Fl_Gl_Window
 		TrainWindow*	tw;				// The parent of this display window
 		CTrack*			m_pTrack;		// The track of the entire scene
 
+		float totalArcLength = 0;
+		float af = 0; // use float to lerp
+
 	private:
 		std::vector<float> arcLength;
-		float totalArcLength = 0;
 		Pnt3f trainPos;
 		Pnt3f trainFront;
 		Pnt3f trainUp;
@@ -167,6 +171,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* simpleObjectShader;
 		Shader* simpleInstanceObjectShader;
 		Shader* whiteLineShader;
+		Shader* drillShader;
 		Shader* waterShader;
 		Shader* smokeShader;
 		Shader* modelShader;
@@ -178,7 +183,7 @@ class TrainView : public Fl_Gl_Window
 
 		//Objects
 		Object cube;
-		#define circleVerticesNumber 24	// the fineness of cylinder and cone
+		#define circleVerticesNumber 48	// the fineness of cylinder and cone
 		Object cylinder;
 		Object cone;
 		Object sector;
