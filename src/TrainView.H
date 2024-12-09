@@ -156,6 +156,8 @@ class TrainView : public Fl_Gl_Window
 		float camRotateX = 0,camRotateY = 0;
 		float lastX=0, lastY=0;	// the mouse position
 		float lastShootTime = -999;
+		float lastExplodeTime = -999;
+		Pnt3f lastExplodePos;
 		Pnt3f lookingFront;	// the orient of train pov
 		Pnt3f lookingUp;
 		std::vector<Rocket> rockets;

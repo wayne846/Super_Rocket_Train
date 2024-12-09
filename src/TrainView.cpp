@@ -133,8 +133,8 @@ resetArcball()
 void TrainView::aim() {
 	float currentX, currentY;
 	arcball.getMouseNDC(currentX, currentY);
-	camRotateX += (currentX - lastX) * 2;
-	camRotateY += (currentY - lastY) * 2;
+	camRotateX += (currentX - lastX) * 2.5;
+	camRotateY += (currentY - lastY) * 2.5;
 	if (camRotateY >= 1.57) camRotateY = 1.57;
 	if (camRotateY <= -1.57) camRotateY = -1.57;
 	lastX = currentX;
@@ -1266,8 +1266,24 @@ setProjection()
 			lookingUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
 			Pnt3f cameraShake (0, 0, 0);
 			float t = tw->clock_time - lastShootTime;
-			if (t < 50) {
-				cameraShake = lookingUp * sin(6.28*t*0.3) * (0.08 / t);
+			if (t < 30) {
+				if (t < 1)
+					t = 1;
+				cameraShake = lookingUp * sin(6.28*t*0.3) * (0.02 / (1+t));
+			}
+			float t2 = tw->clock_time - lastExplodeTime;
+			if (t2 < 30) {
+				static float str = 0;
+				static Pnt3f dir;
+				if (t2 <= 1) {
+					str = 50 / pow((trainPos - lastExplodePos).len2(), 0.8);
+					Pnt3f lookingRight = lookingFront * lookingUp;
+					lookingRight.normalize();
+					dir = lookingUp + lookingRight*1.5;
+					dir.normalize();
+					t2 = 1;
+				}
+				cameraShake = dir * sin(6.28 * t2 * 0.2) * (str / (t2*2));
 			}
 			gluLookAt(trainPos.x, trainPos.y, trainPos.z,
 				trainPos.x + lookingFront.x + cameraShake.x, trainPos.y + lookingFront.y + cameraShake.y, trainPos.z + lookingFront.z + cameraShake.z,
@@ -2048,6 +2064,9 @@ void TrainView::collisionJudge()
 					targets[targetID].state = 1;
 					rockets[rocketID].state = 1;
 
+					lastExplodeTime = tw->clock_time;
+					lastExplodePos = targets[targetID].pos;
+
 					//target explode paricle effect
 					//smoke
 					ParticleGenerator& g1 = particleSystem.addParticleGenerator(particleShader);
@@ -2067,7 +2086,7 @@ void TrainView::collisionJudge()
 					g2.setPosition(targets[targetID].pos.glmvec3());
 					g2.setLife(2);
 					g2.setColor(glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), 0.5);
-					g2.setParticleVelocity(10);
+					g2.setParticleVelocity(7);
 					g2.setParticleVelocityRandomOffset(2);
 					g2.setFriction(0.95);
 					g2.setParticleLife(100);
