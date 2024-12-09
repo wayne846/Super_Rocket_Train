@@ -2111,21 +2111,11 @@ void TrainView::shoot()
 	rocket.thrusterVelocity = lookingFront * 4;
 	rockets.push_back(rocket);
 
-	/*if (af == 0) {
-		af = 1;
-	}*/
-
 	soundSource_RPGshot->Play(RPGshot);
-	//lastShootTime = tw->clock_time;
-	//lookingFront.normalize();
-	//lookingUp.normalize();
-	//Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
-	//rocket.thrusterVelocity = lookingFront * 4;
-	//rockets.push_back(rocket);
 
-	if (animationFrame == 0) {
-		animationFrame = 1;
-	}
+	//if (animationFrame == 0) {
+	//	animationFrame = 1;
+	//}
 }
 
 // judge the distance of target and rocket
