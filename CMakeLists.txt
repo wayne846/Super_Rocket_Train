@@ -65,6 +65,13 @@ add_executable(RollerCoasters
     ${SRC_DIR}FreeCamera.cpp
     ${INCLUDE_DIR}glad4.6/src/glad.c
 
+    ${SRC_DIR}SoundBuffer.h
+    ${SRC_DIR}SoundBuffer.cpp
+    ${SRC_DIR}SoundDevice.h
+    ${SRC_DIR}SoundDevice.cpp
+    ${SRC_DIR}SoundSource.h
+    ${SRC_DIR}SoundSource.cpp
+
     ${SRC_SHADER}
     ${SRC_RENDER_UNIT}
 )
@@ -92,9 +99,25 @@ target_link_libraries(RollerCoasters
 
 target_link_libraries(RollerCoasters 
     ${LIB_DIR}OpenGL32.lib
-    ${LIB_DIR}glu32.lib)
+    ${LIB_DIR}glu32.lib
+    ${LIB_DIR}OpenAL32.lib
+    ${LIB_DIR}sndfile.lib)
 
 target_link_libraries(RollerCoasters Utilities)
+
+# 需要複製到執行檔路徑下的dll
+set(DLL_SOURCE_PATHS
+    ${LIB_DIR}dll/OpenAL32.dll
+    ${LIB_DIR}dll/sndfile.dll
+)
+# 每次編譯完成後，把dll複製到執行檔所在資料夾(debug/release)
+foreach(DLL_PATH ${DLL_SOURCE_PATHS})
+    add_custom_command(TARGET RollerCoasters POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${DLL_PATH}
+        ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration)
+    )
+endforeach()
 
 set(ASSETS_SOURCE_PATHS
     ${PROJECT_SOURCE_DIR}/assets
