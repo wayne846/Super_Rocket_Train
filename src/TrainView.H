@@ -129,7 +129,7 @@ class TrainView : public Fl_Gl_Window
 		
 
 		// some thing about the rocket launcher
-		void aim();
+		void aim(bool draging);
 		void shoot();
 		void collisionJudge();
 		void updateEntity();
@@ -237,18 +237,24 @@ class TrainView : public Fl_Gl_Window
 		SoundSource* soundSource_slowMotionStart;
 		SoundSource* soundSource_slowMotionEnd;
 		SoundSource* soundSource_targetExplosion;
+		SoundSource* soundSource_GDBEffect;
 		ALuint RPGshot;
 		ALuint slowMotionStart;
 		ALuint slowMotionEnd;
 		ALuint targetExplosion;
+		ALuint GDBEffect;
+
 		// animation
+		float SpiralPower = 0;
+		float staticSpiralPower;
 		const float keyFrame[12]{	// use float to lerp
 		 //	start	end
-			10.0,	25.0,	// turn horizontally
-			35.0,	50.0,	// turn vertically
-			60.0,	65.0,	// elongation
+			42.0,	50.0,	// turn horizontally
+			53.0,	65.0,	// turn vertically
+			75.0,	80.0,	// elongation
 			90.0,	95.0,	// widen
-			120.0,	125.0,	// rotate
-			180.0,	330		// fly
+			100.0,	132.0,	// rotate
+			204.0,	310		// fly
+		//	314,	470		// explotion
 		};
 };

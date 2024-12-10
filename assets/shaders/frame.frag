@@ -3,8 +3,10 @@ in vec2 TexCoords;
 
 out vec4 FragColor;
 
+uniform float time;
 uniform bool useCrosshair = false;
 uniform bool bulletTime = false;
+uniform bool useSpiral = false;
 
 uniform float screenAspectRatio=1.0;
 uniform sampler2D screenTexture;
@@ -18,19 +20,10 @@ void main()
 { 
     const vec4 black = vec4 (0.0,0.0,0.0,1.0);
     const vec4 white = vec4 (1.0,1.0,1.0,1.0);
+    const vec4 lightGreen = vec4 (0.37,0.87,0.69,1.0);
 
     vec4 color;
-    vec2 PixelCoords;
-    PixelCoords.x = round(TexCoords.x*100)/100;
-    if(PixelCoords.x == 0.0)
-        PixelCoords.x = 0.005;
-    if(PixelCoords.x == 1.0)
-        PixelCoords.x = 0.995;
-    PixelCoords.y = round(TexCoords.y*100)/100;
-    if(PixelCoords.y == 0.0)
-        PixelCoords.y = 0.005;
-    if(PixelCoords.y == 1.0)
-        PixelCoords.y = 0.995;
+
     color = texture(screenTexture, TexCoords);
     if(useCrosshair){
         vec2 scaledCoords = vec2((TexCoords.x-0.5)* screenAspectRatio*0.5+0.5, TexCoords.y );
@@ -38,13 +31,20 @@ void main()
         color = mix(color,temp_color,temp_color.w);
     }
 
+    // bullet time
     if (bulletTime){
         color =reduceSaturation(color,0.8);
-        
         float r = abs((TexCoords.x-0.5)*(TexCoords.x-0.5)*4+(TexCoords.y-0.5)*(TexCoords.y-0.5)*4);
         color = mix(color,black,(r-0.5)*0.5);
         if(texture(whiteLineTexture, vec2(TexCoords.x+0.0017f,TexCoords.y))!=texture(whiteLineTexture, vec2(TexCoords.x,TexCoords.y+0.0017f)))
             color = white;
+    }
+
+    // green border
+    if(useSpiral){
+        texture(whiteLineTexture, vec2(TexCoords.x+0.0017f,TexCoords.y));
+        float r = abs((TexCoords.x-0.5)*(TexCoords.x-0.5)*4+(TexCoords.y-0.5)*(TexCoords.y-0.5)*4);
+        color = mix(color,lightGreen,(r-0.5)*0.5*abs(sin(time*6.28*0.015)));
     }
     FragColor = color;
 }

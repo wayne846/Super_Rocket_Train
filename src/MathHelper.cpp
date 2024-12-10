@@ -24,6 +24,19 @@ namespace MathHelper {
 		return 1 / (1 + pow(2.71828182846, -k * (x - 0.5)));
 	}
 
+	int quadrant(float x, float y) {
+		if (y >= 0)
+			if (x >= 0)
+				return 1;
+			else
+				return 2;
+		else
+			if (x >= 0)
+				return 4;
+			else
+				return 3;
+	}
+
 	//get the gradient color in [colorA, colorB, color C], g is colorB position in gradient line
 	//t = 0 -> colorA
 	//t = g -> colorB

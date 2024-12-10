@@ -13,6 +13,7 @@ namespace MathHelper {
 
 	float clamp(float value, float min, float max);
 	float sigmoid(float x, float k);
+	int quadrant(float x, float y);
 
 	//get the gradient color in [colorA, colorB, color C], g is colorB transition point
 	//t = 0 -> colorA

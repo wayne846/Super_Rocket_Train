@@ -91,7 +91,6 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define USE_MODEL false
 #define USE_WATER_ANIMATION false
-
 Assimp::Importer importer;
 
 //************************************************************************
@@ -115,10 +114,12 @@ TrainView(int x, int y, int w, int h, const char* l)
 	slowMotionStart = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/slowMotionStart.wav");
 	slowMotionEnd = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/slowMotionEnd.wav");
 	targetExplosion = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/MetalPipeFalling.wav");
+	GDBEffect = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/GigaDrillBreak.wav");
 	soundSource_RPGshot = new SoundSource();
 	soundSource_slowMotionStart = new SoundSource();
 	soundSource_slowMotionEnd = new SoundSource();
 	soundSource_targetExplosion = new SoundSource();
+	soundSource_GDBEffect = new SoundSource();
 }
 
 //************************************************************************
@@ -143,13 +144,23 @@ resetArcball()
 //       (like key presses), you might want to hack this.
 //########################################################################
 //========================================================================
-void TrainView::aim() {
+void TrainView::aim(bool draging) {
 	float currentX, currentY;
 	arcball.getMouseNDC(currentX, currentY);
 	camRotateX += (currentX - lastX) * 2.5;
 	camRotateY += (currentY - lastY) * 2.5;
 	if (camRotateY >= 1.57) camRotateY = 1.57;
 	if (camRotateY <= -1.57) camRotateY = -1.57;
+	if (draging) {
+		if ((MathHelper::quadrant(lastX, lastY) - MathHelper::quadrant(currentX, currentY) + 4) % 4 == 1) {
+			// rotate clock wise
+			SpiralPower += 0.25;
+		}
+		else if (SpiralPower<3 && MathHelper::quadrant(lastX, lastY) != MathHelper::quadrant(currentX, currentY))
+			SpiralPower = 0;
+	}
+	else
+		SpiralPower = 0;
 	lastX = currentX;
 	lastY = currentY;
 }
@@ -203,10 +214,18 @@ int TrainView::handle(int event)
 	case FL_RELEASE: // button release
 		damage(1);
 		last_push = 0;
-
-		if (Fl::event_button() == FL_RIGHT_MOUSE && tw->trainCam->value() && event != FL_PUSH) {
-			RenderDatabase::timeScale = RenderDatabase::INIT_TIME_SCALE;
-			soundSource_slowMotionEnd->Play(slowMotionEnd);
+		if (tw->trainCam->value()) {
+			if (Fl::event_button() == FL_RIGHT_MOUSE && event != FL_PUSH) {
+				RenderDatabase::timeScale = RenderDatabase::INIT_TIME_SCALE;
+				soundSource_slowMotionEnd->Play(slowMotionEnd);
+			}
+			else if (SpiralPower>=3 && Fl::event_button() == FL_LEFT_MOUSE && event != FL_PUSH) {
+				// giga drill break!
+				if (animationFrame == 0) {
+					staticSpiralPower = SpiralPower;
+					animationFrame = 1;
+				}
+			}
 		}
 		return 1;
 
@@ -235,8 +254,7 @@ int TrainView::handle(int event)
 			}
 		}
 		else {
-
-			aim();
+			aim(1);
 		}
 		break;
 
@@ -274,7 +292,7 @@ int TrainView::handle(int event)
 	}
 	case FL_MOVE:
 		if (tw->trainCam->value()) {
-			aim();
+			aim(0);
 		}
 	}
 
@@ -1278,7 +1296,7 @@ setProjection()
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(60, aspect, 0.01, 1000);
+		gluPerspective(60, aspect, 1, 10000);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		if (animationFrame == 0) {	// default
@@ -1326,24 +1344,27 @@ setProjection()
 				aimRight.y = 0;
 				aimFront.normalize();
 				aimRight.normalize();
-				finalCamPos = trainPos + aimFront * 130 + aimRight * -20 + Pnt3f(0, 0, 0);
-				startCamPos = trainPos + trainFront * 80 + trainRight * -20 + Pnt3f(0, 0, 0);
+				finalCamPos = trainPos + aimFront * 80 + aimRight * -20 + Pnt3f(0, 0, 0);
+				startCamPos = trainPos + trainFront * 40 + trainRight * -40 + Pnt3f(0, 0, 0);
 				startTime = tw->clock_time;
 			}
 			if (animationFrame <= keyFrame[1]) {
 				float t = (animationFrame - keyFrame[0])/ (keyFrame[1]- keyFrame[0]);
 				if (t < 0) t = 0;
 				float t2 = MathHelper::sigmoid(t, 10);
+
 				Pnt3f tempCamPos = startCamPos*cos(t2 * 3.14159 / 2)+finalCamPos*sin(t2*3.14159/2);
 				gluLookAt(tempCamPos.x, tempCamPos.y, tempCamPos.z,
-					trainPos.x + trainFront.x * 30, trainPos.y + trainFront.y * 30, trainPos.z + trainFront.z * 30,
+					trainPos.x + trainFront.x * 2, trainPos.y + trainFront.y * 2, trainPos.z + trainFront.z * 2,
 					0, 1, 0);
 				eyepos = tempCamPos.glmvec3();
 			}
 			else {
-				
+				float t3 = (animationFrame - keyFrame[4]) / (keyFrame[5] - keyFrame[4]);
+					if (t3 < 0) t3 = 0;
+					if (t3 > 1) t3 = 1;
 				gluLookAt(finalCamPos.x, finalCamPos.y, finalCamPos.z,
-					trainPos.x + trainFront.x * 30, trainPos.y + trainFront.y * 30, trainPos.z + trainFront.z * 30,
+					trainPos.x + trainFront.x * 30* t3, trainPos.y + trainFront.y * 30* t3, trainPos.z + trainFront.z * 30* t3,
 					0, 1, 0);
 				eyepos = finalCamPos.glmvec3();
 			}
@@ -1673,6 +1694,18 @@ void TrainView::drawFrame()
 	else {
 		frameShader->setBool("bulletTime", false);
 	}
+	static float SpiralstartTime;
+	if (SpiralPower == 2.75) {
+		SpiralstartTime = tw->clock_time;
+	}
+	if (SpiralPower >= 3) {
+		frameShader->setBool("useSpiral", true);
+		frameShader->setFloat("time", (SpiralstartTime-tw->clock_time)*(SpiralPower/3));
+	}
+	else {
+		frameShader->setBool("useSpiral", false);
+		frameShader->setFloat("time", 0);
+	}
 
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1905,7 +1938,7 @@ void TrainView::drawStuff(bool doingShadows)
 				trainUp = cross_t * trainFront;
 				trainUp.normalize();
 				trainPos = Pnt3f(qt1 + trainUp * 3);
-				if (!tw->trainCam->value()) {
+				if (!tw->trainCam->value() && animationFrame==0) {
 					//draw train
 					glm::vec3 right = cross_t.glmvec3();
 					glm::vec3 up = glm::cross(glm::normalize(right), trainFront.glmvec3());
@@ -2252,6 +2285,9 @@ void TrainView::gigaDrillBreak()
 	static Pnt3f horizontalFront;
 	static Pnt3f targetFront;
 	static Pnt3f targetUp;
+	static Pnt3f smallDrillPos[12];
+	glm::mat4 trainModel;
+	glm::mat4 trainRotate;
 
 	if (animationFrame == 1) {
 		Pnt3f trainRight = trainFront * trainUp;
@@ -2261,6 +2297,10 @@ void TrainView::gigaDrillBreak()
 		horizontalFront.normalize();
 		targetFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
 		targetUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+		for (int i = 0; i < 12; i++) {
+			smallDrillPos[i] = randUnitVector()+ Pnt3f(0,0,(randomFloat()*2-1));
+		}
+		soundSource_GDBEffect->Play(GDBEffect);
 	}
 	else if (animationFrame <= keyFrame[1]) {
 		// turn horizontally
@@ -2268,8 +2308,9 @@ void TrainView::gigaDrillBreak()
 		if (t < 0)
 			t = 0;
 		glm::vec3 front = lerpVec3(originalFront.glmvec3(), horizontalFront.glmvec3(), t);
-		trainInstance.addModelMatrix(getTransformMatrix(
-			trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10)));
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(1,1,1));
+		trainModel = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10));
+		trainInstance.addModelMatrix(trainModel);
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp.normalize();
@@ -2281,8 +2322,9 @@ void TrainView::gigaDrillBreak()
 			t = 0;
 		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
 		glm::vec3 front = lerpVec3(horizontalFront.glmvec3(), targetFront.glmvec3(), t);
-		trainInstance.addModelMatrix(getTransformMatrix(
-		trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10)));
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(1, 1, 1));
+		trainModel = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10));
+		trainInstance.addModelMatrix(trainModel);
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp = Pnt3f(up);
@@ -2295,19 +2337,43 @@ void TrainView::gigaDrillBreak()
 			float f = animationFrame - keyFrame[10];
 			trainPos = trainPos + trainFront * f * 10;
 		}
-		trainInstance.addModelMatrix(getTransformMatrix(
-			trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(6, 8, 10)));
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(1, 1, 1));
+		trainModel = getTransformMatrix(trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(6, 8, 10));
+		trainInstance.addModelMatrix(trainModel);
 	}
 
-	if (animationFrame < keyFrame[5]) {
+	if (animationFrame < keyFrame[4]) {
+		float t = (animationFrame - 24) / (32 - 24);
+		if (t < 0)
+			t = 0;
+		else {
+			if (t > 1)
+				t = 1;
+			for (int i = 0; i < 12; i++) {
+				glm::mat4 smallDrillModel = getTransformMatrix(
+					(smallDrillPos[i] * (2 + (lerp(0, 5, t)) * (staticSpiralPower / 3))).glmvec3(),
+					smallDrillPos[i].glmvec3(), (smallDrillPos[i] * Pnt3f(1,0,0)).glmvec3(),
+					glm::vec3(1, 1, lerp(0, 12, t)) * (staticSpiralPower / 3));
+				drillInstance.addModelMatrix(trainRotate *smallDrillModel);
+			}
+		}
+	}
+	else if (animationFrame < keyFrame[5]) {
 		float t = (animationFrame - keyFrame[4]) / (keyFrame[5] - keyFrame[4]);
 		if (t < 0)
 			t = 0;
 		else {
 			glm::mat4 drillModel = getTransformMatrix(
-				(trainPos + trainFront * (10 + (lerp(0, 25, t)))).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
-				glm::vec3(3, 3, lerp(0, 50, t)));
+				(trainPos + trainFront * (7 + (lerp(0, 25, t)) * (staticSpiralPower / 3))).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
+				glm::vec3(3, 3, lerp(0, 50, t)) * (staticSpiralPower / 3));
 			drillInstance.addModelMatrix(drillModel);
+			for (int i = 0; i < 12; i++) {
+				glm::mat4 smallDrillModel = getTransformMatrix(
+					(smallDrillPos[i] * (2 + (lerp(0, 5, 1-t)) * (staticSpiralPower / 3))).glmvec3(),
+					smallDrillPos[i].glmvec3(), (smallDrillPos[i] * Pnt3f(1, 0, 0)).glmvec3(),
+					glm::vec3(1, 1, lerp(0, 12, 1-t)) * (staticSpiralPower / 3));
+				drillInstance.addModelMatrix(trainRotate* smallDrillModel);
+			}
 		}
 	}
 	else if (animationFrame < keyFrame[7]) {
@@ -2316,8 +2382,8 @@ void TrainView::gigaDrillBreak()
 			t = 0;
 		// yeah, it is not a circle, so it will tramble when rotating!
 		glm::mat4 drillModel = getTransformMatrix(
-			(trainPos + trainFront * 35).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
-			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 50));
+			(trainPos + trainFront * (7 + 25 * (staticSpiralPower / 3))).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
+			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 50) * (staticSpiralPower / 3));
 		drillInstance.addModelMatrix(drillModel);
 	}
 	else if (animationFrame < keyFrame[11]) {
@@ -2329,8 +2395,8 @@ void TrainView::gigaDrillBreak()
 		Pnt3f rotatingUp = trainUp * cos(t * 6.28 * 0.072*4) + trainRight * sin(t * 6.28 * 0.072*4);
 		rotatingUp.normalize();
 		glm::mat4 drillModel = getTransformMatrix(
-			(trainPos + trainFront * 35).glmvec3(), trainFront.glmvec3(), rotatingUp.glmvec3(),
-			glm::vec3(38, 37, 50));
+			(trainPos + trainFront * (7 + 25 * (staticSpiralPower / 3))).glmvec3(), trainFront.glmvec3(), rotatingUp.glmvec3(),
+			glm::vec3(38, 37, 50)*(staticSpiralPower /3));
 		drillInstance.addModelMatrix(drillModel);
 
 		if (animationFrame > keyFrame[9]) {
