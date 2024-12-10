@@ -15,5 +15,7 @@ void main() {
 
     gl_Position = projection * view * vec4(instancePos, 1.0); // 使用粒子的位置作為最終位置
     gl_PointSize = instanceSize * scale / gl_Position.z;          // 設定粒子的大小
+    if(projection[3]==vec4(0,0,0,1))      // is Ortho
+        gl_PointSize = instanceSize * scale / 300.0f;
     fragColor = instanceColor;            // 傳遞顏色到片段著色器
 }

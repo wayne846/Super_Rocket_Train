@@ -14,7 +14,9 @@ uniform vec3 eyePosition;
 void main() {
     vec4 globalPos = projection * view * vec4(infoIn.xyz, 1);
     gl_Position = globalPos;
-    gl_PointSize = 500.0/float(length(globalPos.xyz - eyePosition));
+    gl_PointSize = 500.0/float(length(globalPos.xyz));
+    if(projection[3]==vec4(0,0,0,1))    // is Ortho
+        gl_PointSize = 2;
     position = globalPos.xyz;
     alpha = infoIn.w;
 }

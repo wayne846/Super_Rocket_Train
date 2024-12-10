@@ -1267,6 +1267,7 @@ setProjection()
 		// Set up the top camera drop mode to be orthogonal and set
 		// up proper projection matrix
 		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
 		glOrtho(-wi, wi, -he, he, 200, -200);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
