@@ -257,4 +257,7 @@ class TrainView : public Fl_Gl_Window
 			204.0,	310		// fly
 		//	314,	470		// explotion
 		};
+		float targetChainExplosionStartTime = INFINITY;
+		void targetChainExplosionStart(Entity startTarget);
+		void targetChainExplosionUpdate();
 };
