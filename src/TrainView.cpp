@@ -1229,8 +1229,12 @@ void TrainView::draw()
 
 	//draw particle
 	trainParticle->setPosition(trainPos.glmvec3() - trainFront.glmvec3() * 2.0f);
-	trainParticle->setDirection(-trainFront.glmvec3());
-	trainParticle->setAngle(45);
+	trainParticle->setDirection(-trainFront.glmvec3()+(3*trainUp).glmvec3());
+	trainParticle->setParticleLife(10);
+	trainParticle->setGravity(0.5);
+	trainParticle->setParticleVelocityRandomOffset(0.3);
+	trainParticle->setParticleVelocity(3);
+	trainParticle->setAngle(5);
 	trainParticle->setParticleSize(0.5);
 	particleSystem.draw();
 
