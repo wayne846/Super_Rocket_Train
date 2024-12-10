@@ -1238,6 +1238,9 @@ void TrainView::draw()
 	trainParticle->setParticleSize(0.5);
 	particleSystem.draw();
 
+	//update animation
+	targetChainExplosionUpdate();
+
 	// this time drawing is for shadows (except for top view)
 	/*
 	if (!tw->topCam->value()) {
@@ -2416,6 +2419,7 @@ void TrainView::gigaDrillBreak()
 	else if (animationFrame < keyFrame[11]) {
 	}
 	else {
+		targetChainExplosionStart(Entity(Pnt3f(0, 0, 0), Pnt3f(0, 0, -1), Pnt3f(0, 1, 0)));
 		animationFrame = 0;
 	}
 	
@@ -2427,4 +2431,78 @@ void TrainView::gigaDrillBreak()
 //call by trainWindow every clock
 void TrainView::updateParticleSystem() {
 	particleSystem.update();
+}
+
+void TrainView::targetChainExplosionStart(Entity startTarget) {
+	if (targetChainExplosionStartTime != INFINITY) return;
+
+	//sort tartget pos
+	for (int i = 0; i < targets.size(); i++) {
+		for (int j = 0; j < targets.size() - 1 - i; j++) {
+			if (MathHelper::distance(startTarget.pos, targets[j].pos) > MathHelper::distance(startTarget.pos, targets[j + 1].pos)) {
+				//swap
+				Entity temp = targets[j];
+				targets[j] = targets[j + 1];
+				targets[j + 1] = temp;
+			}
+		}
+	}
+
+	targetChainExplosionStartTime = tw->clock_time;
+}
+
+void TrainView::targetChainExplosionUpdate() {
+	if (targetChainExplosionStartTime == INFINITY) return;
+	if (targets.size() == 0) {
+		targetChainExplosionStartTime = INFINITY;
+		return;
+	}
+
+	float animationTime = tw->clock_time - targetChainExplosionStartTime;
+	
+	int targetID = 0;
+	if(targetID >= targets.size()) return;
+	targets[targetID].state = 1;
+	//target explode paricle effect
+	//smoke
+	ParticleGenerator& g1 = particleSystem.addParticleGenerator(particleShader);
+	g1.setPosition(targets[targetID].pos.glmvec3());
+	g1.setLife(2);
+	g1.setColor(glm::vec3(1.0f, 0.105f, 0.039f), glm::vec3(0.078f, 0.078f, 0.078f), glm::vec3(0.078f, 0.078f, 0.078f), 0.7);
+	g1.setParticleVelocity(3);
+	g1.setParticleVelocityRandomOffset(1);
+	g1.setFriction(0.85);
+	g1.setParticleLife(80);
+	g1.setParticleLifeRandomOffset(15);
+	g1.setGenerateRate(80);
+	g1.setGravity(-0.07);
+	g1.setParticleSize(0.5);
+	//outer fire
+	ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
+	g2.setPosition(targets[targetID].pos.glmvec3());
+	g2.setLife(2);
+	g2.setColor(glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), 0.5);
+	g2.setParticleVelocity(20);
+	g2.setParticleVelocityRandomOffset(2);
+	g2.setParticleLife(100);
+	g2.setGenerateRate(80);
+	g2.setGravity(0.15);
+	g2.setParticleSize(0.3);
+	//inner fire
+	ParticleGenerator& g3 = particleSystem.addParticleGenerator(particleShader);
+	g3.setPosition(targets[targetID].pos.glmvec3());
+	g3.setLife(2);
+	g3.setColor(glm::vec3(1.0f, 0.105f, 0.039f), glm::vec3(1.0f, 0.621f, 0.0195f), glm::vec3(1.0f, 0.914f, 0.0195f), 0.7);
+	g3.setParticleVelocity(3);
+	g3.setParticleVelocityRandomOffset(1);
+	g3.setFriction(0.85);
+	g3.setParticleLife(40);
+	g3.setParticleLifeRandomOffset(10);
+	g3.setGenerateRate(80);
+	g3.setGravity(0);
+	g3.setParticleSize(1.2);
+
+	if (animationTime > 200) {
+		targetChainExplosionStartTime = INFINITY;
+	}
 }
