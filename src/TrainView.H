@@ -249,15 +249,15 @@ class TrainView : public Fl_Gl_Window
 		// animation
 		float SpiralPower = 0;
 		float staticSpiralPower;
-		const float keyFrame[12]{	// use float to lerp
+		const float keyFrame[14]{	// use float to lerp
 		 //	start	end
 			42.0,	50.0,	// turn horizontally
 			53.0,	65.0,	// turn vertically
 			75.0,	80.0,	// elongation
 			90.0,	95.0,	// widen
 			100.0,	132.0,	// rotate
-			204.0,	310		// fly
-		//	314,	470		// explotion
+			204.0,	310,	// fly
+			314,	470		// explotion
 		};
 		float targetChainExplosionStartTime = INFINITY;
 		void targetChainExplosionStart(Entity startTarget);

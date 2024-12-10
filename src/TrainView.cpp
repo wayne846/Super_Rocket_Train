@@ -1395,12 +1395,23 @@ setProjection()
 					0, 1, 0);
 				eyepos = tempCamPos.glmvec3();
 			}
-			else {
+			else if(animationFrame < keyFrame[11]){
 				float t3 = (animationFrame - keyFrame[4]) / (keyFrame[5] - keyFrame[4]);
 					if (t3 < 0) t3 = 0;
 					if (t3 > 1) t3 = 1;
 				gluLookAt(finalCamPos.x, finalCamPos.y, finalCamPos.z,
 					trainPos.x + trainFront.x * 30* t3, trainPos.y + trainFront.y * 30* t3, trainPos.z + trainFront.z * 30* t3,
+					0, 1, 0);
+				eyepos = finalCamPos.glmvec3();
+			}
+			else {
+				static Pnt3f reallyFinalCamPos;
+				if ((int)animationFrame == keyFrame[11]) {
+					Pnt3f trainRight = trainFront * trainUp;
+					reallyFinalCamPos = trainPos + trainFront * 200 + trainUp * 20 + trainRight * -30;
+				}
+				gluLookAt(reallyFinalCamPos.x, reallyFinalCamPos.y, reallyFinalCamPos.z,
+					0, 5, 0,
 					0, 1, 0);
 				eyepos = finalCamPos.glmvec3();
 			}
@@ -2370,8 +2381,14 @@ void TrainView::gigaDrillBreak()
 		trainUp = Pnt3f(targetUp);
 		trainFront = Pnt3f(targetFront);
 		if (animationFrame > keyFrame[10]) {
-			float f = animationFrame - keyFrame[10];
-			trainPos = trainPos + trainFront * f * 10;
+			if (animationFrame < keyFrame[11] - 1) {
+				float f = animationFrame - keyFrame[10];
+				trainPos = trainPos + trainFront * f * 10;
+			}
+			else {
+				float f = animationFrame - keyFrame[11] + 25;
+				trainPos = trainPos + trainFront * f * 10;
+			}
 		}
 		trainRotate = getTransformMatrix(trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(1, 1, 1));
 		trainModel = getTransformMatrix(trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(6, 8, 10));
@@ -2422,7 +2439,7 @@ void TrainView::gigaDrillBreak()
 			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 50) * (staticSpiralPower / 3));
 		drillInstance.addModelMatrix(drillModel);
 	}
-	else if (animationFrame < keyFrame[11]) {
+	else if (animationFrame < keyFrame[13]) {
 		float t = (animationFrame - keyFrame[8]);
 		if (t < 0)
 			t = 0;
@@ -2444,11 +2461,13 @@ void TrainView::gigaDrillBreak()
 				drillShader->setBool("slow", false);
 			blackLineInstance.addModelMatrix(drillModel);
 		}
-	}
-	else if (animationFrame < keyFrame[11]) {
+
+		if ((int)animationFrame == 330) {
+			targetChainExplosionStart(Entity(Pnt3f(0, 0, 0), Pnt3f(0, 0, -1), Pnt3f(0, 1, 0)));
+			animationFrame += 1;
+		}
 	}
 	else {
-		targetChainExplosionStart(Entity(Pnt3f(0, 0, 0), Pnt3f(0, 0, -1), Pnt3f(0, 1, 0)));
 		animationFrame = 0;
 	}
 	
