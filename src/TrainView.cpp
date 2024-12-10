@@ -2550,7 +2550,7 @@ void TrainView::targetChainExplosionUpdate() {
 		g3.setParticleSize(1.2);
 	}
 	
-	if (animationTime > 1000) {
+	if (animationTime > keyFrame[13]) {
 		targetChainExplosionStartTime = INFINITY;
 	}
 }
