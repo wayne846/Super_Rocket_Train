@@ -59,6 +59,8 @@
 #define MODEL_FRAG_PATH "/assets/shaders/model_loading.frag"
 #define PARTICLE_VERT_PATH "/assets/shaders/particle.vert"
 #define PARTICLE_FRAG_PATH "/assets/shaders/particle.frag"
+#define ELLIPTICAL_PARTICLE_VERT_PATH "/assets/shaders/ellipticalParticle.vert"
+#define ELLIPTICAL_PARTICLE_FRAG_PATH "/assets/shaders/ellipticalParticle.frag"
 #define FRAME_VERT_PATH "/assets/shaders/frame.vert"
 #define FRAME_FRAG_PATH "/assets/shaders/frame.frag"
 #define WHITELINE_VERT_PATH "/assets/shaders/whiteLine.vert"
@@ -310,6 +312,7 @@ void TrainView::initRander() {
 	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
 	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
 	particleShader = new Shader(PROJECT_DIR PARTICLE_VERT_PATH, PROJECT_DIR PARTICLE_FRAG_PATH);
+	ellipticalParticleShader = new Shader(PROJECT_DIR ELLIPTICAL_PARTICLE_VERT_PATH, PROJECT_DIR ELLIPTICAL_PARTICLE_FRAG_PATH);
 	speedBgShader = new Shader(PROJECT_DIR SPEEDBG_VERT_PATH, PROJECT_DIR SPEEDBG_FRAG_PATH);
 	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
 
@@ -347,6 +350,7 @@ void TrainView::initRander() {
 	smokeShader->setBlock("Matrices", 0);
 	modelShader->setBlock("Matrices", 0);
 	particleShader->setBlock("Matrices", 0);
+	ellipticalParticleShader->setBlock("Matrices", 0);
 	speedBgShader->setBlock("Matrices", 0);
 
 	//set ubo
@@ -359,6 +363,7 @@ void TrainView::initRander() {
 
 	// set some parameters
 	glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
 
 	// set VAO and VBO
 	setCube();
@@ -383,7 +388,7 @@ void TrainView::initRander() {
 	//init particle system, need call after generate particle VAO
 	particleSystem.setParticleVAO(particle);
 
-	//color axiz spring
+	//color axis spring
 	ParticleGenerator& g = particleSystem.addParticleGenerator(particleShader);
 	g.setColor(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1), 0.5);
 	g.setParticleSize(0.5);
@@ -413,7 +418,8 @@ void TrainView::initRander() {
 	g2.setGenerateRate(30);
 	g2.setGravity(0.04);
 
-	trainParticle = particleSystem.addParticleGenerator_pointer(particleShader);
+	trainParticle1 = particleSystem.addParticleGenerator_pointer(ellipticalParticleShader);
+	trainParticle2 = particleSystem.addParticleGenerator_pointer(ellipticalParticleShader);
 }
 
 //cube
@@ -1228,15 +1234,38 @@ void TrainView::draw()
 	drawStuff();
 
 	//draw particle
-	trainParticle->setPosition(trainPos.glmvec3() - trainFront.glmvec3() * 2.0f);
-	trainParticle->setDirection(-trainFront.glmvec3()+(3*trainUp).glmvec3());
-	trainParticle->setParticleLife(10);
-	trainParticle->setGravity(0.5);
-	trainParticle->setParticleVelocityRandomOffset(0.3);
-	trainParticle->setParticleVelocity(3);
-	trainParticle->setAngle(5);
-	trainParticle->setParticleSize(0.5);
+	static float lastSpeed = 0;
+	static float breakerStrength = 0;
+	if (tw->speed->value() - lastSpeed < 0) {
+		breakerStrength += (lastSpeed - tw->speed->value())*10;
+	}
+	lastSpeed = tw->speed->value();
+
+	Pnt3f trainRight = trainFront * trainUp;
+	trainParticle1->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 4.0f - trainUp.glmvec3() * 3.0f + trainRight.glmvec3() * 3.0f);
+	trainParticle1->setDirection(-trainFront.glmvec3()+(2.5*trainUp).glmvec3());
+	trainParticle1->setParticleLife(10);
+	trainParticle1->setGenerateRate(breakerStrength);
+	trainParticle1->setGravity(0.5);
+	trainParticle1->setParticleVelocityRandomOffset(0.3);
+	trainParticle1->setParticleVelocity(3);
+	trainParticle1->setAngle(5);
+	trainParticle1->setParticleSize(1);
+	trainParticle1->setColor(glm::vec3(1, 0.95, 0), glm::vec3(1, 0.75, 0), glm::vec3(1, 0.75, 0), 0.8);
+
+	trainParticle2->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 4.0f - trainUp.glmvec3() * 3.0f - trainRight.glmvec3() * 3.0f);
+	trainParticle2->setDirection(-trainFront.glmvec3() + (2.5 * trainUp).glmvec3());
+	trainParticle2->setParticleLife(10);
+	trainParticle2->setGenerateRate(breakerStrength);
+	trainParticle2->setGravity(0.5);
+	trainParticle2->setParticleVelocityRandomOffset(0.3);
+	trainParticle2->setParticleVelocity(3);
+	trainParticle2->setAngle(5);
+	trainParticle2->setParticleSize(1);
+	trainParticle2->setColor(glm::vec3(1, 0.95, 0), glm::vec3(1, 0.75, 0), glm::vec3(1, 0.75, 0), 0.8);
 	particleSystem.draw();
+
+	breakerStrength *= pow(0.8, RenderDatabase::timeScale);
 
 	//update animation
 	targetChainExplosionUpdate();

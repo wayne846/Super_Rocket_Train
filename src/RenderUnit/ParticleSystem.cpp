@@ -72,7 +72,7 @@ ParticleGenerator::ParticleEntity::ParticleEntity() {
 	this->attribute.position = glm::vec3(0, 0, 0);
 	this->attribute.color = glm::vec3(0, 0, 0);
 	this->attribute.size = 1;
-	this->velocity = glm::vec3(0, 0, 0);
+	this->attribute.velocity = glm::vec3(0, 0, 0);
 	this->lifeCount = 1;
 }
 
@@ -80,7 +80,7 @@ ParticleGenerator::ParticleEntity::ParticleEntity(glm::vec3 position, glm::vec3 
 	this->attribute.position = position;
 	this->attribute.color = color;
 	this->attribute.size = size;
-	this->velocity = velocity;
+	this->attribute.velocity = velocity;
 	this->lifeCount = life;
 }
 
@@ -117,7 +117,7 @@ void ParticleGenerator::update() {
 			newParticle.attribute.color = MathHelper::gradientColor(color1, color2, color3, colorTransitionPoint, 0);
 			newParticle.attribute.size = particleSize;
 			float particleInitVelocity = particleVelocity + (MathHelper::randomFloat() * 2 - 1.0f) * particleVelocityRandomOffset;
-			newParticle.velocity = MathHelper::randomDirectionInCone(direction, angle) * particleInitVelocity;
+			newParticle.attribute.velocity = MathHelper::randomDirectionInCone(direction, angle) * particleInitVelocity;
 			int life = std::roundf(particleLife + (MathHelper::randomFloat() * 2 - 1.0f) * particleLifeRandomOffset);
 			newParticle.lifeCount = life;
 			particles.push_back(newParticle);
@@ -130,11 +130,11 @@ void ParticleGenerator::update() {
 	//update all particle
 	for (auto& p : particles) {
 		//update velocity
-		p.velocity += glm::vec3(0, -1, 0) * gravity * RenderDatabase::timeScale;
-		p.velocity = p.velocity * std::pow(friction, RenderDatabase::timeScale);
+		p.attribute.velocity += glm::vec3(0, -1, 0) * gravity * RenderDatabase::timeScale;
+		p.attribute.velocity = p.attribute.velocity * std::pow(friction, RenderDatabase::timeScale);
 
 		//update position
-		p.attribute.position += p.velocity * RenderDatabase::timeScale;
+		p.attribute.position += p.attribute.velocity * RenderDatabase::timeScale;
 
 		p.attribute.color = MathHelper::gradientColor(color1, color2, color3, colorTransitionPoint, (float)(particleLife - p.lifeCount) / particleLife);
 		p.lifeCount -= RenderDatabase::timeScale;

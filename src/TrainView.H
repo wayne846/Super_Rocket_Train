@@ -188,6 +188,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* smokeShader;
 		Shader* modelShader;
 		Shader* particleShader;
+		Shader* ellipticalParticleShader;
 		Shader* speedBgShader;
 		Shader* frameShader;
 
@@ -229,7 +230,8 @@ class TrainView : public Fl_Gl_Window
 
 		//particle system
 		ParticleSystem particleSystem;
-		ParticleGenerator* trainParticle;
+		ParticleGenerator* trainParticle1;
+		ParticleGenerator* trainParticle2;
 
 		//sound
 		SoundDevice* soundDevice;

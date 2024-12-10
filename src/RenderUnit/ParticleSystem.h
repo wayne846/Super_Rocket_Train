@@ -39,7 +39,6 @@ private:
 	public:
 		Particle attribute; //pos, color, size
 
-		glm::vec3 velocity;
 		float lifeCount;
 
 		ParticleEntity();
