@@ -2455,50 +2455,50 @@ void TrainView::targetChainExplosionUpdate() {
 	}
 
 	float animationTime = tw->clock_time - targetChainExplosionStartTime;
+	int explosionNum = (int)(animationTime / 30.0f) + 1;
+	for (int targetID = 0; targetID < explosionNum && targetID < targets.size(); targetID++) {
+		targets[targetID].state = 1;
+		//target explode paricle effect
+		//smoke
+		ParticleGenerator& g1 = particleSystem.addParticleGenerator(particleShader);
+		g1.setPosition(targets[targetID].pos.glmvec3());
+		g1.setLife(2);
+		g1.setColor(glm::vec3(1.0f, 0.105f, 0.039f), glm::vec3(0.078f, 0.078f, 0.078f), glm::vec3(0.078f, 0.078f, 0.078f), 0.7);
+		g1.setParticleVelocity(3);
+		g1.setParticleVelocityRandomOffset(1);
+		g1.setFriction(0.85);
+		g1.setParticleLife(80);
+		g1.setParticleLifeRandomOffset(15);
+		g1.setGenerateRate(80);
+		g1.setGravity(-0.07);
+		g1.setParticleSize(0.5);
+		//outer fire
+		ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
+		g2.setPosition(targets[targetID].pos.glmvec3());
+		g2.setLife(2);
+		g2.setColor(glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), 0.5);
+		g2.setParticleVelocity(20);
+		g2.setParticleVelocityRandomOffset(2);
+		g2.setParticleLife(100);
+		g2.setGenerateRate(80);
+		g2.setGravity(0.15);
+		g2.setParticleSize(0.3);
+		//inner fire
+		ParticleGenerator& g3 = particleSystem.addParticleGenerator(particleShader);
+		g3.setPosition(targets[targetID].pos.glmvec3());
+		g3.setLife(2);
+		g3.setColor(glm::vec3(1.0f, 0.105f, 0.039f), glm::vec3(1.0f, 0.621f, 0.0195f), glm::vec3(1.0f, 0.914f, 0.0195f), 0.7);
+		g3.setParticleVelocity(3);
+		g3.setParticleVelocityRandomOffset(1);
+		g3.setFriction(0.85);
+		g3.setParticleLife(40);
+		g3.setParticleLifeRandomOffset(10);
+		g3.setGenerateRate(80);
+		g3.setGravity(0);
+		g3.setParticleSize(1.2);
+	}
 	
-	int targetID = 0;
-	if(targetID >= targets.size()) return;
-	targets[targetID].state = 1;
-	//target explode paricle effect
-	//smoke
-	ParticleGenerator& g1 = particleSystem.addParticleGenerator(particleShader);
-	g1.setPosition(targets[targetID].pos.glmvec3());
-	g1.setLife(2);
-	g1.setColor(glm::vec3(1.0f, 0.105f, 0.039f), glm::vec3(0.078f, 0.078f, 0.078f), glm::vec3(0.078f, 0.078f, 0.078f), 0.7);
-	g1.setParticleVelocity(3);
-	g1.setParticleVelocityRandomOffset(1);
-	g1.setFriction(0.85);
-	g1.setParticleLife(80);
-	g1.setParticleLifeRandomOffset(15);
-	g1.setGenerateRate(80);
-	g1.setGravity(-0.07);
-	g1.setParticleSize(0.5);
-	//outer fire
-	ParticleGenerator& g2 = particleSystem.addParticleGenerator(particleShader);
-	g2.setPosition(targets[targetID].pos.glmvec3());
-	g2.setLife(2);
-	g2.setColor(glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), glm::vec3(0.98f, 0.99f, 0.039f), 0.5);
-	g2.setParticleVelocity(20);
-	g2.setParticleVelocityRandomOffset(2);
-	g2.setParticleLife(100);
-	g2.setGenerateRate(80);
-	g2.setGravity(0.15);
-	g2.setParticleSize(0.3);
-	//inner fire
-	ParticleGenerator& g3 = particleSystem.addParticleGenerator(particleShader);
-	g3.setPosition(targets[targetID].pos.glmvec3());
-	g3.setLife(2);
-	g3.setColor(glm::vec3(1.0f, 0.105f, 0.039f), glm::vec3(1.0f, 0.621f, 0.0195f), glm::vec3(1.0f, 0.914f, 0.0195f), 0.7);
-	g3.setParticleVelocity(3);
-	g3.setParticleVelocityRandomOffset(1);
-	g3.setFriction(0.85);
-	g3.setParticleLife(40);
-	g3.setParticleLifeRandomOffset(10);
-	g3.setGenerateRate(80);
-	g3.setGravity(0);
-	g3.setParticleSize(1.2);
-
-	if (animationTime > 200) {
+	if (animationTime > 1000) {
 		targetChainExplosionStartTime = INFINITY;
 	}
 }
