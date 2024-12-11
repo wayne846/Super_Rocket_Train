@@ -1410,8 +1410,21 @@ setProjection()
 					Pnt3f trainRight = trainFront * trainUp;
 					reallyFinalCamPos = trainPos + trainFront * 120 + trainUp * 15 + trainRight * -25;
 				}
-				gluLookAt(reallyFinalCamPos.x, reallyFinalCamPos.y, reallyFinalCamPos.z,
-					0, 5, 0,
+				Pnt3f cameraShake(0, 0, 0);
+				float t2 = tw->clock_time - lastExplodeTime;
+				if (t2 < 1000) {
+					static float str = staticSpiralPower * 4;
+					static Pnt3f dir;
+					static Pnt3f dir2;
+					if (t2 <= 1) {
+						dir = randUnitVector();
+						dir2 = randUnitVector();
+						t2 = 1;
+					}
+					cameraShake = dir * sin(6.28 * t2 * 0.2) * (str / (t2));
+				}
+				gluLookAt(reallyFinalCamPos.x + cameraShake.x, reallyFinalCamPos.y + cameraShake.y, reallyFinalCamPos.z + cameraShake.z,
+					0+ cameraShake.x, 5+ cameraShake.y, 0+ cameraShake.z,
 					0, 1, 0);
 				eyepos = finalCamPos.glmvec3();
 			}
@@ -2577,6 +2590,8 @@ void TrainView::targetChainExplosionUpdate() {
 		g3.setGenerateRate(80);
 		g3.setGravity(0);
 		g3.setParticleSize(1.2);
+
+		lastExplodeTime = tw->clock_time;
 	}
 	
 	if (animationTime > keyFrame[13]) {
