@@ -7,6 +7,7 @@ uniform float time;
 uniform bool useCrosshair = false;
 uniform bool bulletTime = false;
 uniform bool useSpiral = false;
+uniform bool useImpact = false;
 
 uniform float screenAspectRatio=1.0;
 uniform sampler2D screenTexture;
@@ -45,6 +46,14 @@ void main()
         texture(whiteLineTexture, vec2(TexCoords.x+0.0017f,TexCoords.y));
         float r = abs((TexCoords.x-0.5)*(TexCoords.x-0.5)*4+(TexCoords.y-0.5)*(TexCoords.y-0.5)*4);
         color = mix(color,lightGreen,(r-0.5)*0.5*abs(sin(time*6.28*0.015)));
+    }
+
+    if(useImpact){
+        color =reduceSaturation(color,1);
+        if(color.r>0.5)
+            color = white;
+        else
+            color = black;
     }
     FragColor = color;
 }

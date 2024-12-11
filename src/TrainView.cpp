@@ -1408,7 +1408,7 @@ setProjection()
 				static Pnt3f reallyFinalCamPos;
 				if ((int)animationFrame == keyFrame[11]) {
 					Pnt3f trainRight = trainFront * trainUp;
-					reallyFinalCamPos = trainPos + trainFront * 200 + trainUp * 20 + trainRight * -30;
+					reallyFinalCamPos = trainPos + trainFront * 120 + trainUp * 15 + trainRight * -25;
 				}
 				gluLookAt(reallyFinalCamPos.x, reallyFinalCamPos.y, reallyFinalCamPos.z,
 					0, 5, 0,
@@ -1753,7 +1753,11 @@ void TrainView::drawFrame()
 		frameShader->setBool("useSpiral", false);
 		frameShader->setFloat("time", 0);
 	}
-
+	if (animationFrame > 314 && animationFrame < 326) {
+		frameShader->setBool("useImpact", true);
+		frameShader->setFloat("time", animationFrame);
+	}else
+		frameShader->setBool("useImpact", false);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glActiveTexture(0);
@@ -2402,7 +2406,9 @@ void TrainView::gigaDrillBreak()
 				trainPos = trainPos + trainFront * f * 10;
 			}
 			else {
-				float f = animationFrame - keyFrame[11] + 25;
+				float f = animationFrame - keyFrame[11] + 20;
+				if (animationFrame >= 314)
+					f -= (std::min(animationFrame - 314, 326.0f - 314.0f));
 				trainPos = trainPos + trainFront * f * 10;
 			}
 		}
@@ -2458,6 +2464,8 @@ void TrainView::gigaDrillBreak()
 	else if (animationFrame < keyFrame[13]) {
 		float t = (animationFrame - keyFrame[8]);
 		if (t < 0)
+			t = 0;
+		if (animationFrame >= 314 && animationFrame <= 326)
 			t = 0;
 		Pnt3f trainRight = trainFront * trainUp;
 		trainRight.normalize();
