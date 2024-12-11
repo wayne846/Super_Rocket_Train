@@ -2497,6 +2497,7 @@ void TrainView::targetChainExplosionStart(Entity startTarget) {
 	}
 
 	targetChainExplosionStartTime = tw->clock_time;
+	targetChainExplosionFrameCount = 0;
 }
 
 void TrainView::targetChainExplosionUpdate() {
@@ -2507,6 +2508,10 @@ void TrainView::targetChainExplosionUpdate() {
 	}
 
 	float animationTime = tw->clock_time - targetChainExplosionStartTime;
+	targetChainExplosionFrameCount += RenderDatabase::timeScale;
+	if (targetChainExplosionFrameCount < 1) return;
+	targetChainExplosionFrameCount -= 1;
+
 	int explosionNum = (int)(animationTime / 30.0f) + 1;
 	for (int targetID = 0; targetID < explosionNum && targetID < targets.size(); targetID++) {
 		targets[targetID].state = 1;
