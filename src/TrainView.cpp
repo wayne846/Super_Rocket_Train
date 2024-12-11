@@ -1736,6 +1736,7 @@ void TrainView::drawFrame()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, frameTexture);
 
+	frameShader->setFloat("frame", tw->clock_time);
 	if (tw->trainCam->value() && animationFrame == 0) {
 		frameShader->setBool("useCrosshair", true);
 		frameShader->setFloat("screenAspectRatio", (float)w() / (float)h());
@@ -1760,15 +1761,15 @@ void TrainView::drawFrame()
 	}
 	if (SpiralPower >= 3) {
 		frameShader->setBool("useSpiral", true);
-		frameShader->setFloat("time", (SpiralstartTime-tw->clock_time)*(SpiralPower/3));
+		frameShader->setFloat("shineTime", (SpiralstartTime-tw->clock_time)*(SpiralPower/3));
 	}
 	else {
 		frameShader->setBool("useSpiral", false);
-		frameShader->setFloat("time", 0);
+		frameShader->setFloat("shineTime", 0);
 	}
 	if (animationFrame > 314 && animationFrame < 326) {
 		frameShader->setBool("useImpact", true);
-		frameShader->setFloat("time", animationFrame);
+		frameShader->setFloat("shineTime", animationFrame);
 	}else
 		frameShader->setBool("useImpact", false);
 
