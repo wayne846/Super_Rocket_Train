@@ -134,10 +134,10 @@ void InstanceDrawer::drawParticleByInstance(Shader* shader, const unsigned int p
 	glEnableVertexAttribArray(3);
 	glVertexAttribDivisor(3, 1);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_ONE, GL_ONE);
 	glDrawArraysInstanced(GL_POINTS, 0, 1, particlAttributes.size());
-	glDisable(GL_BLEND);
+	//glDisable(GL_BLEND);
 
 	//unbind VAO
 	glBindVertexArray(0);

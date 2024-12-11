@@ -2031,18 +2031,34 @@ void TrainView::drawStuff(bool doingShadows)
 			rocketBodyInstance.addModelMatrix(BodyModel);
 
 			// add smoke partical
-			for (int j = 0; j < 20; j++) {
-				for (int k = 0; k < 20; k++) {
-					Pnt3f smokePos = rockets[i].pos + rockets[i].front * -(10 + 3 * j) + randUnitVector() * (0.5 * j);
-					smoke.push_back(glm::vec4(smokePos.x, smokePos.y, smokePos.z, (float)(j / 20.0)));
-				}
+			//for (int j = 0; j < 20; j++) {
+			//	for (int k = 0; k < 20; k++) {
+			//		Pnt3f smokePos = rockets[i].pos + rockets[i].front * -(10 + 3 * j) + randUnitVector() * (0.5 * j);
+			//		smoke.push_back(glm::vec4(smokePos.x, smokePos.y, smokePos.z, (float)(j / 20.0)));
+			//	}
+			//}
+
+			if (smokeGenerator.size() <= i) {
+				smokeGenerator.push_back(particleSystem.addParticleGenerator_pointer(particleShader));
 			}
+			smokeGenerator[i]->setPosition(rockets[i].pos.glmvec3());
+			smokeGenerator[i]->setDirection(-rockets[i].front.glmvec3());
+			smokeGenerator[i]->setParticleLife(10);
+			smokeGenerator[i]->setGenerateRate(20);
+			smokeGenerator[i]->setGravity(0);
+			smokeGenerator[i]->setParticleVelocityRandomOffset(0.5);
+			smokeGenerator[i]->setParticleVelocity(1);
+			smokeGenerator[i]->setAngle(40);
+			smokeGenerator[i]->setParticleSize(0.6);
+			smokeGenerator[i]->setColor(glm::vec3(1.0, 1.0, 0.0), glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.5, 0.5, 0.5), 0.5);
 		}
+	}for (int i = rockets.size(); i < smokeGenerator.size(); i++) {
+		smokeGenerator[i]->setGenerateRate(0);
 	}
 	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone);
 	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
-	if (smoke.size() > 0)
-		drawSmoke(smoke);
+	//if (smoke.size() > 0)
+	//	drawSmoke(smoke);
 
 	for (int i = 0; i < targets.size(); i++) {
 		if (targets[i].state == 0) {

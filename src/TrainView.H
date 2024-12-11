@@ -232,6 +232,7 @@ class TrainView : public Fl_Gl_Window
 		ParticleSystem particleSystem;
 		ParticleGenerator* trainParticle1;
 		ParticleGenerator* trainParticle2;
+		std::vector<ParticleGenerator*> smokeGenerator;
 
 		//sound
 		SoundDevice* soundDevice;
