@@ -151,7 +151,7 @@ class TrainView : public Fl_Gl_Window
 		CTrack*			m_pTrack;		// The track of the entire scene
 
 		float totalArcLength = 0;
-		float animationFrame = 0; // use float to lerp
+		double animationFrame = 0; // use float to lerp
 
 		float trainVelocity = 0;
 
@@ -260,7 +260,7 @@ class TrainView : public Fl_Gl_Window
 		// animation
 		float SpiralPower = 0;
 		float staticSpiralPower;
-		const float keyFrame[14]{	// use float to lerp
+		const double keyFrame[14]{	// use float to lerp
 		 //	start	end
 			42.0,	50.0,	// turn horizontally
 			53.0,	65.0,	// turn vertically
@@ -268,7 +268,7 @@ class TrainView : public Fl_Gl_Window
 			90.0,	95.0,	// widen
 			100.0,	132.0,	// rotate
 			204.0,	310,	// fly
-			314,	470		// explotion
+			316,	470		// explotion
 		};
 		float targetChainExplosionStartTime = INFINITY;
 		float targetChainExplosionFrameCount = 0;

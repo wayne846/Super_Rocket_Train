@@ -221,6 +221,7 @@ advanceTrain(float dir)
 	//#####################################################################
 	// TODO: make this work for your train
 	//#####################################################################
+	static clock_t lastAnimationUpdate = clock();
 	if (trainView->animationFrame == 0) {	// it won't move when playing animation
 		static float gradientSpeed = 1;
 		float t = pow(0.9, RenderDatabase::timeScale);
@@ -237,8 +238,12 @@ advanceTrain(float dir)
 			trainView->t_time += 1;
 	}
 	else {
-		trainView->animationFrame += RenderDatabase::timeScale;	// update animation
+		double elapsed = static_cast<double>(clock() - lastAnimationUpdate) / CLOCKS_PER_SEC;
+		if (elapsed > 0.3)
+			elapsed = 1.0 / 30.0;
+		trainView->animationFrame += elapsed*30.0*RenderDatabase::timeScale*dir;	// update animation
 	}
+	lastAnimationUpdate = clock();
 	trainView->updateParticleSystem();
 	clock_time += RenderDatabase::timeScale;
 	
