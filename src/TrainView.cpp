@@ -98,7 +98,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define WATER_RESOLUTION 100
 
-#define USE_MODEL false
+#define USE_MODEL true
 #define USE_WATER_ANIMATION false
 Assimp::Importer importer;
 
@@ -165,7 +165,7 @@ void TrainView::aim(bool draging) {
 			// rotate clock wise
 			SpiralPower += 0.25;
 		}
-		else if (SpiralPower<3 && MathHelper::quadrant(lastX, lastY) != MathHelper::quadrant(currentX, currentY))
+		else if (SpiralPower < 3 && MathHelper::quadrant(lastX, lastY) != MathHelper::quadrant(currentX, currentY))
 			SpiralPower = 0;
 	}
 	else
@@ -228,7 +228,7 @@ int TrainView::handle(int event)
 				RenderDatabase::timeScale = RenderDatabase::INIT_TIME_SCALE;
 				soundSource_slowMotionEnd->Play(slowMotionEnd);
 			}
-			else if (SpiralPower>=3 && Fl::event_button() == FL_LEFT_MOUSE && event != FL_PUSH) {
+			else if (SpiralPower >= 3 && Fl::event_button() == FL_LEFT_MOUSE && event != FL_PUSH) {
 				// giga drill break!
 				if (animationFrame == 0) {
 					staticSpiralPower = SpiralPower;
@@ -324,7 +324,7 @@ void TrainView::initRander() {
 	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
 	instanceShadowShader = new Shader(PROJECT_DIR INSTANCE_SHADOW_VERT_PATH, PROJECT_DIR OBJ_SHADOW_FRAG_PATH);
 	islandHeightShader = new Shader(PROJECT_DIR ISLAND_HEIGHT_VERT_PATH, PROJECT_DIR ISLAND_HEIGHT_FRAG_PATH);
-	
+
 
 	//init texture
 	if (USE_WATER_ANIMATION) {
@@ -1273,13 +1273,13 @@ void TrainView::draw()
 	static float lastSpeed = 0;
 	static float breakerStrength = 0;
 	if (tw->speed->value() - lastSpeed < 0) {
-		breakerStrength += (lastSpeed - trainVelocity)*10;
+		breakerStrength += (lastSpeed - trainVelocity) * 10;
 	}
 	lastSpeed = trainVelocity;
 
 	Pnt3f trainRight = trainFront * trainUp;
 	trainParticle1->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 4.0f - trainUp.glmvec3() * 3.0f + trainRight.glmvec3() * 3.0f);
-	trainParticle1->setDirection(-trainFront.glmvec3()+(2.5*trainUp).glmvec3());
+	trainParticle1->setDirection(-trainFront.glmvec3() + (2.5 * trainUp).glmvec3());
 	trainParticle1->setParticleLife(10);
 	trainParticle1->setGenerateRate(breakerStrength);
 	trainParticle1->setGravity(0.5);
@@ -1376,12 +1376,12 @@ setProjection()
 			Pnt3f horizontalFront = trainFront * cos(camRotateX) + trainRight * sin(camRotateX);
 			lookingFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
 			lookingUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
-			Pnt3f cameraShake (0, 0, 0);
+			Pnt3f cameraShake(0, 0, 0);
 			float t = tw->clock_time - lastShootTime;
 			if (t < 30) {
 				if (t < 1)
 					t = 1;
-				cameraShake = lookingUp * sin(6.28*t*0.3) * (0.02 / (1+t));
+				cameraShake = lookingUp * sin(6.28 * t * 0.3) * (0.02 / (1 + t));
 			}
 			float t2 = tw->clock_time - lastExplodeTime;
 			if (t2 < 30) {
@@ -1391,20 +1391,27 @@ setProjection()
 					str = 50 / pow((trainPos - lastExplodePos).len2(), 0.8);
 					Pnt3f lookingRight = lookingFront * lookingUp;
 					lookingRight.normalize();
-					dir = lookingUp + lookingRight*1.5;
+					dir = lookingUp + lookingRight * 1.5;
 					dir.normalize();
 					t2 = 1;
 				}
-				cameraShake = dir * sin(6.28 * t2 * 0.2) * (str / (t2*2));
+				cameraShake = dir * sin(6.28 * t2 * 0.2) * (str / (t2 * 2));
 			}
-			gluLookAt(trainPos.x, trainPos.y, trainPos.z,
-				trainPos.x + lookingFront.x + cameraShake.x, trainPos.y + lookingFront.y + cameraShake.y, trainPos.z + lookingFront.z + cameraShake.z,
-				lookingUp.x, lookingUp.y, lookingUp.z);
+			if (!USE_MODEL)
+				gluLookAt(trainPos.x, trainPos.y, trainPos.z,
+					trainPos.x + lookingFront.x + cameraShake.x, trainPos.y + lookingFront.y + cameraShake.y, trainPos.z + lookingFront.z + cameraShake.z,
+					lookingUp.x, lookingUp.y, lookingUp.z);
+			else 
+				gluLookAt(trainPos.x + trainUp.x * 7, trainPos.y + trainUp.y * 7, trainPos.z + trainUp.z * 7,
+					trainPos.x + trainUp.x * 7 + lookingFront.x + cameraShake.x, trainPos.y + trainUp.y * 7 + lookingFront.y + cameraShake.y, trainPos.z + trainUp.z * 7 + lookingFront.z + cameraShake.z,
+					lookingUp.x, lookingUp.y, lookingUp.z);
 		}
 		else {	// when giga drill breaking, look at the train
 			static Pnt3f startCamPos;
 			static Pnt3f finalCamPos;
 			static float startTime = -999;
+			static bool camFlag1 = false;
+			static bool camFlag2 = false;
 			if (animationFrame == 1) {
 				Pnt3f trainRight = trainFront * trainUp;
 				trainRight.normalize();
@@ -1419,32 +1426,38 @@ setProjection()
 				finalCamPos = trainPos + aimFront * 80 + aimRight * -20 + Pnt3f(0, 0, 0);
 				startCamPos = trainPos + trainFront * 40 + trainRight * -40 + Pnt3f(0, 0, 0);
 				startTime = tw->clock_time;
+				camFlag1 = false;
+				camFlag2 = false;
 			}
 			if (animationFrame <= keyFrame[1]) {
-				float t = (animationFrame - keyFrame[0])/ (keyFrame[1]- keyFrame[0]);
+				float t = (animationFrame - keyFrame[0]) / (keyFrame[1] - keyFrame[0]);
 				if (t < 0) t = 0;
 				float t2 = MathHelper::sigmoid(t, 10);
 
-				Pnt3f tempCamPos = startCamPos*cos(t2 * 3.14159 / 2)+finalCamPos*sin(t2*3.14159/2);
+				Pnt3f tempCamPos = startCamPos * cos(t2 * 3.14159 / 2) + finalCamPos * sin(t2 * 3.14159 / 2);
 				gluLookAt(tempCamPos.x, tempCamPos.y, tempCamPos.z,
 					trainPos.x + trainFront.x * 2, trainPos.y + trainFront.y * 2, trainPos.z + trainFront.z * 2,
 					0, 1, 0);
 				eyepos = tempCamPos.glmvec3();
 			}
-			else if(animationFrame < keyFrame[11]){
+			else if (animationFrame < keyFrame[11]) {
 				float t3 = (animationFrame - keyFrame[4]) / (keyFrame[5] - keyFrame[4]);
-					if (t3 < 0) t3 = 0;
-					if (t3 > 1) t3 = 1;
+				if (t3 < 0) t3 = 0;
+				if (t3 > 1) t3 = 1;
 				gluLookAt(finalCamPos.x, finalCamPos.y, finalCamPos.z,
-					trainPos.x + trainFront.x * 30* t3, trainPos.y + trainFront.y * 30* t3, trainPos.z + trainFront.z * 30* t3,
+					trainPos.x + trainFront.x * 30 * t3, trainPos.y + trainFront.y * 30 * t3, trainPos.z + trainFront.z * 30 * t3,
 					0, 1, 0);
 				eyepos = finalCamPos.glmvec3();
 			}
 			else {
 				static Pnt3f reallyFinalCamPos;
-				if ((int)animationFrame == keyFrame[11]) {
+				if (!camFlag1) {
+					camFlag1 = true;
+				}
+				else if (!camFlag2) {
 					Pnt3f trainRight = trainFront * trainUp;
 					reallyFinalCamPos = trainPos + trainFront * 120 + trainUp * 15 + trainRight * -25;
+					camFlag2 = true;
 				}
 				Pnt3f cameraShake(0, 0, 0);
 				float t2 = tw->clock_time - lastExplodeTime;
@@ -1460,7 +1473,7 @@ setProjection()
 					cameraShake = dir * sin(6.28 * t2 * 0.2) * (str / (t2));
 				}
 				gluLookAt(reallyFinalCamPos.x + cameraShake.x, reallyFinalCamPos.y + cameraShake.y, reallyFinalCamPos.z + cameraShake.z,
-					0+ cameraShake.x, 5+ cameraShake.y, 0+ cameraShake.z,
+					0 + cameraShake.x, 5 + cameraShake.y, 0 + cameraShake.z,
 					0, 1, 0);
 				eyepos = finalCamPos.glmvec3();
 			}
@@ -1509,7 +1522,7 @@ void TrainView::setShaders() {
 			eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
 		else if (tw->freeCam->value())
 			eyepos = freeCamera.getPosition();
-		else if (tw->trainCam->value() && animationFrame==0)
+		else if (tw->trainCam->value() && animationFrame == 0)
 			eyepos = trainPos.glmvec3();
 
 		shaders[i]->setVec3("eyePosition", eyepos);
@@ -1698,7 +1711,7 @@ void TrainView::drawSpeedBg()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 	speedBgShader->setInt("bg", 0);
-	speedBgShader->setFloat("t", animationFrame-keyFrame[8]);
+	speedBgShader->setFloat("t", animationFrame - keyFrame[8]);
 	static glm::vec3 drill_dir;
 	if (animationFrame < keyFrame[10]) {
 		drill_dir = trainFront.glmvec3();
@@ -1724,7 +1737,7 @@ void TrainView::drawIslandHeight()
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, islandHeightTexture, 0);
 
 	glViewport(0, 0, w(), h());
-	glClearColor(9999, 9999,9999, 9999);
+	glClearColor(9999, 9999, 9999, 9999);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -1836,7 +1849,7 @@ void TrainView::drawFrame()
 	}
 	if (SpiralPower >= 3) {
 		frameShader->setBool("useSpiral", true);
-		frameShader->setFloat("shineTime", (SpiralstartTime-tw->clock_time)*(SpiralPower/3));
+		frameShader->setFloat("shineTime", (SpiralstartTime - tw->clock_time) * (SpiralPower / 3));
 	}
 	else {
 		frameShader->setBool("useSpiral", false);
@@ -1845,7 +1858,8 @@ void TrainView::drawFrame()
 	if (animationFrame > 316 && animationFrame < 326) {
 		frameShader->setBool("useImpact", true);
 		frameShader->setFloat("shineTime", animationFrame);
-	}else
+	}
+	else
 		frameShader->setBool("useImpact", false);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1902,6 +1916,72 @@ void TrainView::drawStuff(bool doingShadows)
 
 	//draw the water
 	drawWater(glm::vec3(0, -120, 0), glm::vec3(1000, 1, 1000));
+
+	//draw modle
+	if (USE_MODEL) {
+		modelShader->use();
+
+		//draw island
+		glm::mat4 islandModel = MathHelper::getTransformMatrix(glm::vec3(-150, -280, 170), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
+		modelShader->setMat4("model", islandModel);
+		island->Draw(modelShader);
+
+		//draw pillar
+		glm::mat4 pillarModel = MathHelper::getTransformMatrix(glm::vec3(0, -2, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.2, 0.2, 0.2));
+		modelShader->setMat4("model", pillarModel);
+		stonePillar->Draw(modelShader);
+
+		//draw pillar section
+		glm::mat4 pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(20, -8, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
+		modelShader->setMat4("model", pillarSectionModel);
+		stonePillarSection->Draw(modelShader);
+		//another pillar section
+		pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(0, -8, 20), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
+		modelShader->setMat4("model", pillarSectionModel);
+		stonePillarSection->Draw(modelShader);
+
+		//draw red arrow
+		glm::mat4 arrowModel = MathHelper::getTransformMatrix(glm::vec3(20, 14.5, 0), glm::vec3(0, 0, -1), glm::vec3(1, 0, 0), glm::vec3(1.5, 1.5, 1.5));
+		modelShader->setMat4("model", arrowModel);
+		arrow_red->Draw(modelShader);
+
+		//draw blue arrow
+		arrowModel = MathHelper::getTransformMatrix(glm::vec3(0, 14.5, 20), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1), glm::vec3(1.5, 1.5, 1.5));
+		modelShader->setMat4("model", arrowModel);
+		arrow_blue->Draw(modelShader);
+
+		//FUMO(fumo)(9)
+		if (!tw->trainCam->value() || animationFrame > 0) {
+			Pnt3f trainRight = trainFront * trainUp;
+			trainRight.normalize();
+			Pnt3f CirnoFront = trainFront + trainRight * 1.25;
+			CirnoFront.normalize();
+			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
+			modelShader->setMat4("model", CirnoModel);
+			Cirno->Draw(modelShader);
+		}
+
+		//draw tank
+		if (1) {
+			glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+			modelShader->setMat4("model", tankModel);
+			tank->Draw(modelShader);
+		}
+		//draw cannon 
+		if (tw->trainCam->value()) {
+			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f, -lookingFront.glmvec3(), lookingUp.glmvec3(), glm::vec3(5, 5, 5));
+			modelShader->setMat4("model", cannonModel);
+		}
+		else {
+			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+			modelShader->setMat4("model", cannonModel);
+		}
+		cannon->Draw(modelShader);
+
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+	}
 
 	// draw the track, sleeper, train
 	Material trainMaterial = {
@@ -2026,7 +2106,7 @@ void TrainView::drawStuff(bool doingShadows)
 				last_sleeper = qt1;
 			}
 			if (tw->arcLength->value() == false) {
-				if (t_time * m_pTrack->points.size() >= i + t && t_time * m_pTrack->points.size() <= i + t + percent)
+				if (!trainDrawed && t_time * m_pTrack->points.size() >= i + t && t_time * m_pTrack->points.size() <= i + t + percent)
 					needToDrawTrain = true;
 			}
 			else {
@@ -2039,22 +2119,22 @@ void TrainView::drawStuff(bool doingShadows)
 				trainFront.normalize();
 				trainUp = cross_t * trainFront;
 				trainUp.normalize();
-				trainPos = Pnt3f(qt1 + trainUp * 3);
-				if (!tw->trainCam->value() && animationFrame==0) {
+				trainPos = Pnt3f(qt1 + trainUp * 4);
+				if (animationFrame == 0) {
 					//draw train
-					if (!USE_MODEL) {
+					if (!USE_MODEL && !tw->trainCam->value()) {
 						glm::mat4 trainModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(6, 8, 10));
 						trainInstance.addModelMatrix(trainModel);
 					}
-					
-					//update train velocity
-					float heightGradient = (qt1.y - qt0.y) / MathHelper::distance(qt1, qt0);
-					trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.5);
-					if (trainVelocity < tw->speed->value() / 10) trainVelocity = tw->speed->value() / 10;
 				}
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
 				float direction[] = { trainFront.x,trainFront.y,trainFront.z };
+
+				//update train velocity
+				float heightGradient = (qt1.y - qt0.y) / MathHelper::distance(qt1, qt0);
+				trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.5);
+				if (trainVelocity < tw->speed->value() / 10) trainVelocity = tw->speed->value() / 10;
 				trainDrawed = true;
 			}
 		}
@@ -2072,65 +2152,6 @@ void TrainView::drawStuff(bool doingShadows)
 	sleeperInstance.drawByInstance(instanceShadowShader, cube);
 	trainInstance.setTexture(islandHeightTexture);
 	trainInstance.drawByInstance(instanceShadowShader, cube);
-
-	//draw modle
-	if (USE_MODEL) {
-		modelShader->use();
-
-		//draw island
-		glm::mat4 islandModel = MathHelper::getTransformMatrix(glm::vec3(-150, -280, 170), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
-		modelShader->setMat4("model", islandModel);
-		island->Draw(modelShader);
-
-		//draw pillar
-		glm::mat4 pillarModel = MathHelper::getTransformMatrix(glm::vec3(0, -2, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.2, 0.2, 0.2));
-		modelShader->setMat4("model", pillarModel);
-		stonePillar->Draw(modelShader);
-
-		//draw pillar section
-		glm::mat4 pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(20, -8, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
-		modelShader->setMat4("model", pillarSectionModel);
-		stonePillarSection->Draw(modelShader);
-		//another pillar section
-		pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(0, -8, 20), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
-		modelShader->setMat4("model", pillarSectionModel);
-		stonePillarSection->Draw(modelShader);
-
-		//draw red arrow
-		glm::mat4 arrowModel = MathHelper::getTransformMatrix(glm::vec3(20, 14.5, 0), glm::vec3(0, 0, -1), glm::vec3(1, 0, 0), glm::vec3(1.5, 1.5, 1.5));
-		modelShader->setMat4("model", arrowModel);
-		arrow_red->Draw(modelShader);
-
-		//draw blue arrow
-		arrowModel = MathHelper::getTransformMatrix(glm::vec3(0, 14.5, 20), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1), glm::vec3(1.5, 1.5, 1.5));
-		modelShader->setMat4("model", arrowModel);
-		arrow_blue->Draw(modelShader);
-
-		//FUMO(fumo)(9)
-		if (!tw->trainCam->value() || animationFrame > 0) {
-			Pnt3f trainRight = trainFront * trainUp;
-			trainRight.normalize();
-			Pnt3f CirnoFront = trainFront + trainRight * 1.25;
-			CirnoFront.normalize();
-			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
-			modelShader->setMat4("model", CirnoModel);
-			Cirno->Draw(modelShader);
-		}
-
-		//draw tank
-		glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
-		modelShader->setMat4("model", tankModel);
-		tank->Draw(modelShader);
-
-		//draw cannon 
-		glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
-		modelShader->setMat4("model", cannonModel);
-		cannon->Draw(modelShader);
-
-		glBindVertexArray(0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glUseProgram(0);
-	}
 
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
@@ -2336,6 +2357,8 @@ void TrainView::shoot()
 	lookingFront.normalize();
 	lookingUp.normalize();
 	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
+	if (USE_MODEL)
+		rocket = Rocket(trainPos + lookingFront * 15 + trainUp * 5, lookingFront, lookingUp);
 	rocket.thrusterVelocity = lookingFront * 4;
 	rockets.push_back(rocket);
 
@@ -2480,7 +2503,9 @@ void TrainView::gigaDrillBreak()
 	static Pnt3f targetFront;
 	static Pnt3f targetUp;
 	static Pnt3f smallDrillPos[12];
+	static bool exploded = false;
 	glm::mat4 trainModel;
+	glm::mat4 tankModel;
 	glm::mat4 trainRotate;
 
 	if (animationFrame == 1) {
@@ -2494,26 +2519,35 @@ void TrainView::gigaDrillBreak()
 		targetFront.normalize();
 		targetUp.normalize();
 		for (int i = 0; i < 12; i++) {
-			smallDrillPos[i] = randUnitVector()+ Pnt3f(0,0,(randomFloat()*2-1));
+			smallDrillPos[i] = randUnitVector() + Pnt3f(0, 0, (randomFloat() * 2 - 1));
 		}
+		exploded = false;
 		soundSource_GDBEffect->Play(GDBEffect);
 	}
 	else if (animationFrame <= keyFrame[1]) {
 		// turn horizontally
-		float t = (animationFrame - keyFrame[0]) / (keyFrame[1]-keyFrame[0]);
+		float t = (animationFrame - keyFrame[0]) / (keyFrame[1] - keyFrame[0]);
 		if (t < 0)
 			t = 0;
 		glm::vec3 front = lerpVec3(originalFront.glmvec3(), horizontalFront.glmvec3(), t);
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp.normalize();
-		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(1,1,1));
-		trainModel = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10));
-		trainInstance.addModelMatrix(trainModel);
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(1, 1, 1));
+		if (USE_MODEL) {
+			//tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+			//modelShader->use();
+			//modelShader->setMat4("model", tankModel);
+			//tank->Draw(modelShader);
+		}
+		else {
+			trainModel = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10));
+			trainInstance.addModelMatrix(trainModel);
+		}
 	}
 	else if (animationFrame <= keyFrame[3]) {
 		// turn to the sky
-		float t = (animationFrame-keyFrame[2]) / (keyFrame[3]-keyFrame[2]);
+		float t = (animationFrame - keyFrame[2]) / (keyFrame[3] - keyFrame[2]);
 		if (t < 0)
 			t = 0;
 		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
@@ -2523,8 +2557,16 @@ void TrainView::gigaDrillBreak()
 		trainUp = Pnt3f(up);
 		trainUp.normalize();
 		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(1, 1, 1));
-		trainModel = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10));
-		trainInstance.addModelMatrix(trainModel);
+		if (USE_MODEL) {
+			//tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+			//modelShader->use();
+			//modelShader->setMat4("model", tankModel);
+			//tank->Draw(modelShader);
+		}
+		else {
+			trainModel = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10));
+			trainInstance.addModelMatrix(trainModel);
+		}
 	}
 	else {
 		trainUp = Pnt3f(targetUp);
@@ -2542,8 +2584,16 @@ void TrainView::gigaDrillBreak()
 			}
 		}
 		trainRotate = getTransformMatrix(trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(1, 1, 1));
-		trainModel = getTransformMatrix(trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(6, 8, 10));
-		trainInstance.addModelMatrix(trainModel);
+		if (USE_MODEL) {
+			//tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+			//modelShader->use();
+			//modelShader->setMat4("model", tankModel);
+			//tank->Draw(modelShader);
+		}
+		else {
+			trainModel = getTransformMatrix(trainPos.glmvec3(), targetFront.glmvec3(), targetUp.glmvec3(), glm::vec3(6, 8, 10));
+			trainInstance.addModelMatrix(trainModel);
+		}
 	}
 
 	if (animationFrame < keyFrame[4]) {
@@ -2556,9 +2606,9 @@ void TrainView::gigaDrillBreak()
 			for (int i = 0; i < 12; i++) {
 				glm::mat4 smallDrillModel = getTransformMatrix(
 					(smallDrillPos[i] * (2 + (lerp(0, 5, t)) * (staticSpiralPower / 3))).glmvec3(),
-					smallDrillPos[i].glmvec3(), (smallDrillPos[i] * Pnt3f(1,0,0)).glmvec3(),
+					smallDrillPos[i].glmvec3(), (smallDrillPos[i] * Pnt3f(1, 0, 0)).glmvec3(),
 					glm::vec3(1, 1, lerp(0, 12, t)) * (staticSpiralPower / 3));
-				drillInstance.addModelMatrix(trainRotate *smallDrillModel);
+				drillInstance.addModelMatrix(trainRotate * smallDrillModel);
 			}
 		}
 	}
@@ -2573,10 +2623,10 @@ void TrainView::gigaDrillBreak()
 			drillInstance.addModelMatrix(drillModel);
 			for (int i = 0; i < 12; i++) {
 				glm::mat4 smallDrillModel = getTransformMatrix(
-					(smallDrillPos[i] * (2 + (lerp(0, 5, 1-t)) * (staticSpiralPower / 3))).glmvec3(),
+					(smallDrillPos[i] * (2 + (lerp(0, 5, 1 - t)) * (staticSpiralPower / 3))).glmvec3(),
 					smallDrillPos[i].glmvec3(), (smallDrillPos[i] * Pnt3f(1, 0, 0)).glmvec3(),
-					glm::vec3(1, 1, lerp(0, 12, 1-t)) * (staticSpiralPower / 3));
-				drillInstance.addModelMatrix(trainRotate* smallDrillModel);
+					glm::vec3(1, 1, lerp(0, 12, 1 - t)) * (staticSpiralPower / 3));
+				drillInstance.addModelMatrix(trainRotate * smallDrillModel);
 			}
 		}
 	}
@@ -2598,11 +2648,11 @@ void TrainView::gigaDrillBreak()
 			t = 0;
 		Pnt3f trainRight = trainFront * trainUp;
 		trainRight.normalize();
-		Pnt3f rotatingUp = trainUp * cos(t * 6.28 * 0.072*4) + trainRight * sin(t * 6.28 * 0.072*4);
+		Pnt3f rotatingUp = trainUp * cos(t * 6.28 * 0.072 * 4) + trainRight * sin(t * 6.28 * 0.072 * 4);
 		rotatingUp.normalize();
 		glm::mat4 drillModel = getTransformMatrix(
 			(trainPos + trainFront * (7 + 25 * (staticSpiralPower / 3))).glmvec3(), trainFront.glmvec3(), rotatingUp.glmvec3(),
-			glm::vec3(38, 37, 45)*(staticSpiralPower /3));
+			glm::vec3(38, 37, 45) * (staticSpiralPower / 3));
 		drillInstance.addModelMatrix(drillModel);
 
 		if (animationFrame > keyFrame[9]) {
@@ -2615,17 +2665,20 @@ void TrainView::gigaDrillBreak()
 			blackLineInstance.addModelMatrix(drillModel);
 		}
 
-		if ((int)animationFrame == 330) {
+		if (animationFrame >= 330 && !exploded) {
 			targetChainExplosionStart(Entity(Pnt3f(0, 0, 0), Pnt3f(0, 0, -1), Pnt3f(0, 1, 0)));
-			animationFrame += 1;
+			exploded = true;
 		}
 	}
 	else {
 		animationFrame = 0;
 	}
-	
-	trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+
+
 	drillInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
+	if (!USE_MODEL){
+		trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+	}
 	if (animationFrame < keyFrame[10]) {
 		trainInstance.setTexture(islandHeightTexture);
 		trainInstance.drawByInstance(instanceShadowShader, cube);
@@ -2633,6 +2686,7 @@ void TrainView::gigaDrillBreak()
 		drillInstance.drawByInstance(instanceShadowShader, cone);
 	}
 	blackLineInstance.drawByInstance(drillShader, cone);
+	glUseProgram(0);
 }
 
 //call by trainWindow every clock
@@ -2715,7 +2769,7 @@ void TrainView::targetChainExplosionUpdate() {
 
 		lastExplodeTime = tw->clock_time;
 	}
-	
+
 	if (animationTime > keyFrame[13]) {
 		targetChainExplosionStartTime = INFINITY;
 	}
