@@ -83,6 +83,7 @@
 #define STONE_PILLAR_SECTION_PATH "/assets/model/stone_pillar_section/stone_pillar_section.obj"
 #define ARROW_RED_PATH "/assets/model/arrow_red/arrow_boi.obj"
 #define ARROW_BLUE_PATH "/assets/model/arrow_blue/arrow_boi.obj"
+#define CIRNO_PATH "/assets/model/Cirno/cirno_fumo_3d_scan.obj"
 
 const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/right.jpg",
@@ -305,7 +306,7 @@ int TrainView::handle(int event)
 	return Fl_Gl_Window::handle(event);
 }
 
-//init shader, texture, model, VAO. need called under if(gladLoadGL())
+//init shader, texture, trainModel, VAO. need called under if(gladLoadGL())
 void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
@@ -392,6 +393,7 @@ void TrainView::initRander() {
 		stonePillarSection = new Model(PROJECT_DIR STONE_PILLAR_SECTION_PATH);
 		arrow_red = new Model(PROJECT_DIR ARROW_RED_PATH);
 		arrow_blue = new Model(PROJECT_DIR ARROW_BLUE_PATH);
+		Cirno = new Model(PROJECT_DIR CIRNO_PATH);
 	}
 
 	//init particle system, need call after generate particle VAO
@@ -1923,6 +1925,17 @@ void TrainView::drawStuff(bool doingShadows)
 		modelShader->setMat4("model", arrowModel);
 		arrow_blue->Draw(modelShader);
 
+		//FUMO(fumo)(9)
+		if (!tw->trainCam->value() || animationFrame > 0) {
+			Pnt3f trainRight = trainFront * trainUp;
+			trainRight.normalize();
+			Pnt3f CirnoFront = trainFront + trainRight * 1.25;
+			CirnoFront.normalize();
+			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
+			modelShader->setMat4("model", CirnoModel);
+			Cirno->Draw(modelShader);
+		}
+
 		glBindVertexArray(0);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glUseProgram(0);
@@ -1977,7 +1990,7 @@ void TrainView::drawStuff(bool doingShadows)
 
 		//dynamic change divide line
 		float DIVIDE_LINE = (MathHelper::distance(cp_pos_p0, cp_pos_p1) + MathHelper::distance(cp_pos_p1, cp_pos_p2) + MathHelper::distance(cp_pos_p2, cp_pos_p3)) * DIVIDE_LINE_SCALE;
-		printf("%f\n", DIVIDE_LINE);
+		//printf("%f\n", DIVIDE_LINE);
 
 		float M[16];
 		float linearMatrix[16] = {
@@ -2076,12 +2089,8 @@ void TrainView::drawStuff(bool doingShadows)
 				trainPos = Pnt3f(qt1 + trainUp * 3);
 				if (!tw->trainCam->value() && animationFrame==0) {
 					//draw train
-					glm::vec3 right = cross_t.glmvec3();
-					glm::vec3 up = glm::cross(glm::normalize(right), trainFront.glmvec3());
-					glm::vec3 glmpos = qt1.glmvec3();
-					glmpos = glmpos + 4.5f * up;
-					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
-					trainInstance.addModelMatrix(model);
+					glm::mat4 trainModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(6, 8, 10));
+					trainInstance.addModelMatrix(trainModel);
 				}
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
@@ -2103,7 +2112,6 @@ void TrainView::drawStuff(bool doingShadows)
 	sleeperInstance.drawByInstance(instanceShadowShader, cube);
 	trainInstance.setTexture(islandHeightTexture);
 	trainInstance.drawByInstance(instanceShadowShader, cube);
-	
 
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
@@ -2464,6 +2472,8 @@ void TrainView::gigaDrillBreak()
 		horizontalFront.normalize();
 		targetFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
 		targetUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+		targetFront.normalize();
+		targetUp.normalize();
 		for (int i = 0; i < 12; i++) {
 			smallDrillPos[i] = randUnitVector()+ Pnt3f(0,0,(randomFloat()*2-1));
 		}
@@ -2475,12 +2485,12 @@ void TrainView::gigaDrillBreak()
 		if (t < 0)
 			t = 0;
 		glm::vec3 front = lerpVec3(originalFront.glmvec3(), horizontalFront.glmvec3(), t);
-		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(1,1,1));
-		trainModel = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10));
-		trainInstance.addModelMatrix(trainModel);
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp.normalize();
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(1,1,1));
+		trainModel = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10));
+		trainInstance.addModelMatrix(trainModel);
 	}
 	else if (animationFrame <= keyFrame[3]) {
 		// turn to the sky
@@ -2489,13 +2499,13 @@ void TrainView::gigaDrillBreak()
 			t = 0;
 		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
 		glm::vec3 front = lerpVec3(horizontalFront.glmvec3(), targetFront.glmvec3(), t);
-		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(1, 1, 1));
-		trainModel = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10));
-		trainInstance.addModelMatrix(trainModel);
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp = Pnt3f(up);
 		trainUp.normalize();
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(1, 1, 1));
+		trainModel = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10));
+		trainInstance.addModelMatrix(trainModel);
 	}
 	else {
 		trainUp = Pnt3f(targetUp);
