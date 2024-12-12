@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <time.h>
 #include <chrono>	// for random
 #include <Fl/fl.h>
 
@@ -390,6 +391,8 @@ void TrainView::initRander() {
 	// set Model
 	if (USE_MODEL) {
 		printf("Loading model...\n");
+		float start = std::clock();
+
 		backpack = new Model(PROJECT_DIR BACKPACK_PATH);
 		island = new Model(PROJECT_DIR ISLAND_PATH);
 		stonePillar = new Model(PROJECT_DIR STONE_PILLAR_PATH);
@@ -399,7 +402,8 @@ void TrainView::initRander() {
 		Cirno = new Model(PROJECT_DIR CIRNO_PATH);
 		tank = new Model(PROJECT_DIR TANK_PATH);
 		cannon = new Model(PROJECT_DIR CANNON_PATH);
-		printf("Loading model done\n");
+
+		printf("Loading model done. (use %.2fs)\n", (std::clock() - start) / 1000);
 	}
 
 	//init particle system, need call after generate particle VAO
@@ -1401,10 +1405,13 @@ setProjection()
 				gluLookAt(trainPos.x, trainPos.y, trainPos.z,
 					trainPos.x + lookingFront.x + cameraShake.x, trainPos.y + lookingFront.y + cameraShake.y, trainPos.z + lookingFront.z + cameraShake.z,
 					lookingUp.x, lookingUp.y, lookingUp.z);
-			else 
-				gluLookAt(trainPos.x + trainUp.x * 7, trainPos.y + trainUp.y * 7, trainPos.z + trainUp.z * 7,
-					trainPos.x + trainUp.x * 7 + lookingFront.x + cameraShake.x, trainPos.y + trainUp.y * 7 + lookingFront.y + cameraShake.y, trainPos.z + trainUp.z * 7 + lookingFront.z + cameraShake.z,
+			else {
+				glm::vec3 camPos = (trainPos + trainUp * 7 + trainFront * 4).glmvec3();
+				glm::vec3 center = (trainPos + trainUp * 7 + trainFront * 4 + lookingFront + cameraShake).glmvec3();
+				gluLookAt(camPos.x, camPos.y, camPos.z,
+					center.x, center.y, center.z,
 					lookingUp.x, lookingUp.y, lookingUp.z);
+			}
 		}
 		else {	// when giga drill breaking, look at the train
 			static Pnt3f startCamPos;
@@ -1962,18 +1969,16 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 
 		//draw tank
-		if (1) {
-			glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
-			modelShader->setMat4("model", tankModel);
-			tank->Draw(modelShader);
-		}
+		glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+		modelShader->setMat4("model", tankModel);
+		tank->Draw(modelShader);
 		//draw cannon 
 		if (tw->trainCam->value()) {
-			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f, -lookingFront.glmvec3(), lookingUp.glmvec3(), glm::vec3(5, 5, 5));
+			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f + trainFront.glmvec3() * 4.0f, -lookingFront.glmvec3(), lookingUp.glmvec3(), glm::vec3(5, 5, 5));
 			modelShader->setMat4("model", cannonModel);
 		}
 		else {
-			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 3.0f + trainFront.glmvec3()*4.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
 			modelShader->setMat4("model", cannonModel);
 		}
 		cannon->Draw(modelShader);
@@ -2133,8 +2138,8 @@ void TrainView::drawStuff(bool doingShadows)
 
 				//update train velocity
 				float heightGradient = (qt1.y - qt0.y) / MathHelper::distance(qt1, qt0);
-				trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.5);
-				if (trainVelocity < tw->speed->value() / 10) trainVelocity = tw->speed->value() / 10;
+				trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.3);
+				if (trainVelocity < tw->speed->value() / 5) trainVelocity = tw->speed->value() / 5;
 				trainDrawed = true;
 			}
 		}
@@ -2358,7 +2363,7 @@ void TrainView::shoot()
 	lookingUp.normalize();
 	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
 	if (USE_MODEL)
-		rocket = Rocket(trainPos + lookingFront * 15 + trainUp * 5, lookingFront, lookingUp);
+		rocket = Rocket(trainPos + trainFront*4 +trainUp * 5 + lookingFront * 15, lookingFront, lookingUp);
 	rocket.thrusterVelocity = lookingFront * 4;
 	rockets.push_back(rocket);
 
