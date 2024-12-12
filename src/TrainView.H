@@ -137,7 +137,7 @@ class TrainView : public Fl_Gl_Window
 		Pnt3f randUnitVector();
 
 	public:
-		float DIVIDE_LINE = 256; //how many segment are track divide
+		float DIVIDE_LINE_SCALE = 2; //how many segment are track divide
 		const int MATERIAL_SHAPE = 0;
 		const int MATERIAL_METAL = 1;
 		const int MATERIAL_PLASTIC = 2;
