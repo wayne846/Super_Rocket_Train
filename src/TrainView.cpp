@@ -93,8 +93,8 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define WATER_RESOLUTION 100
 
-#define USE_MODEL false
-#define USE_WATER_ANIMATION false
+#define USE_MODEL true
+#define USE_WATER_ANIMATION true
 Assimp::Importer importer;
 
 //************************************************************************
@@ -1241,9 +1241,9 @@ void TrainView::draw()
 	static float lastSpeed = 0;
 	static float breakerStrength = 0;
 	if (tw->speed->value() - lastSpeed < 0) {
-		breakerStrength += (lastSpeed - tw->speed->value())*10;
+		breakerStrength += (lastSpeed - trainVelocity)*10;
 	}
-	lastSpeed = tw->speed->value();
+	lastSpeed = trainVelocity;
 
 	Pnt3f trainRight = trainFront * trainUp;
 	trainParticle1->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 4.0f - trainUp.glmvec3() * 3.0f + trainRight.glmvec3() * 3.0f);
@@ -1914,7 +1914,6 @@ void TrainView::drawStuff(bool doingShadows)
 
 		//dynamic change divide line
 		float DIVIDE_LINE = (MathHelper::distance(cp_pos_p0, cp_pos_p1) + MathHelper::distance(cp_pos_p1, cp_pos_p2) + MathHelper::distance(cp_pos_p2, cp_pos_p3)) * DIVIDE_LINE_SCALE;
-		printf("%f\n", DIVIDE_LINE);
 
 		float M[16];
 		float linearMatrix[16] = {
@@ -2019,6 +2018,11 @@ void TrainView::drawStuff(bool doingShadows)
 					glmpos = glmpos + 4.5f * up;
 					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
 					trainInstance.addModelMatrix(model);
+
+					//update train velocity
+					float heightGradient = (qt1.y - qt0.y) / MathHelper::distance(qt1, qt0);
+					trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.5);
+					if (trainVelocity < tw->speed->value() / 10) trainVelocity = tw->speed->value() / 10;
 				}
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };

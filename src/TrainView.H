@@ -153,6 +153,8 @@ class TrainView : public Fl_Gl_Window
 		float totalArcLength = 0;
 		float animationFrame = 0; // use float to lerp
 
+		float trainVelocity = 0;
+
 	private:
 		std::vector<float> arcLength;
 		Pnt3f trainPos;
