@@ -229,6 +229,8 @@ class TrainView : public Fl_Gl_Window
 		Model* arrow_red;
 		Model* arrow_blue;
 		Model* Cirno;
+		Model* tank;
+		Model* cannon;
 
 		//texture
 		std::vector<std::pair<std::string,unsigned int>> objectTextures;
