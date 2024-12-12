@@ -71,6 +71,8 @@
 #define SPEEDBG_FRAG_PATH "/assets/shaders/speedBg.frag"
 #define INSTANCE_SHADOW_VERT_PATH "/assets/shaders/instanceObjectShadow.vert"
 #define OBJ_SHADOW_FRAG_PATH "/assets/shaders/simpleObjectshadow.frag"
+#define ISLAND_HEIGHT_VERT_PATH "/assets/shaders/islandHeight.vert"
+#define ISLAND_HEIGHT_FRAG_PATH "/assets/shaders/islandHeight.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
@@ -81,6 +83,7 @@
 #define STONE_PILLAR_SECTION_PATH "/assets/model/stone_pillar_section/stone_pillar_section.obj"
 #define ARROW_RED_PATH "/assets/model/arrow_red/arrow_boi.obj"
 #define ARROW_BLUE_PATH "/assets/model/arrow_blue/arrow_boi.obj"
+#define CIRNO_PATH "/assets/model/Cirno/cirno_fumo_3d_scan.obj"
 
 const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/right.jpg",
@@ -94,7 +97,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 #define WATER_RESOLUTION 100
 
 #define USE_MODEL true
-#define USE_WATER_ANIMATION true
+#define USE_WATER_ANIMATION false
 Assimp::Importer importer;
 
 //************************************************************************
@@ -303,7 +306,7 @@ int TrainView::handle(int event)
 	return Fl_Gl_Window::handle(event);
 }
 
-//init shader, texture, model, VAO. need called under if(gladLoadGL())
+//init shader, texture, trainModel, VAO. need called under if(gladLoadGL())
 void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
@@ -318,6 +321,8 @@ void TrainView::initRander() {
 	speedBgShader = new Shader(PROJECT_DIR SPEEDBG_VERT_PATH, PROJECT_DIR SPEEDBG_FRAG_PATH);
 	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
 	instanceShadowShader = new Shader(PROJECT_DIR INSTANCE_SHADOW_VERT_PATH, PROJECT_DIR OBJ_SHADOW_FRAG_PATH);
+	islandHeightShader = new Shader(PROJECT_DIR ISLAND_HEIGHT_VERT_PATH, PROJECT_DIR ISLAND_HEIGHT_FRAG_PATH);
+	
 
 	//init texture
 	if (USE_WATER_ANIMATION) {
@@ -356,6 +361,7 @@ void TrainView::initRander() {
 	ellipticalParticleShader->setBlock("Matrices", 0);
 	speedBgShader->setBlock("Matrices", 0);
 	instanceShadowShader->setBlock("Matrices", 0);
+	islandHeightShader->setBlock("Matrices", 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -376,7 +382,7 @@ void TrainView::initRander() {
 	setSector();
 	setWater();
 	setSmoke();
-	setFrame();
+	setFBOs();
 	glGenVertexArrays(1, &particle);
 
 	// set Model
@@ -387,6 +393,7 @@ void TrainView::initRander() {
 		stonePillarSection = new Model(PROJECT_DIR STONE_PILLAR_SECTION_PATH);
 		arrow_red = new Model(PROJECT_DIR ARROW_RED_PATH);
 		arrow_blue = new Model(PROJECT_DIR ARROW_BLUE_PATH);
+		Cirno = new Model(PROJECT_DIR CIRNO_PATH);
 	}
 
 	//init particle system, need call after generate particle VAO
@@ -1029,14 +1036,20 @@ void TrainView::setSmoke()
 	glBindVertexArray(0);
 }
 
-void TrainView::setFrame() {
-	glGenFramebuffers(1, &frameBuffer);
-	glGenFramebuffers(1, &whiteLineFrameBuffer);
-	glGenTextures(1, &frameTexture);
+void TrainView::setFBOs() {
+	glGenFramebuffers(1, &screenFBO);
+	glGenFramebuffers(1, &whiteLineFBO);
+	glGenFramebuffers(1, &islandHeightFBO);
+
+	glGenTextures(1, &screenFrameTexture);
+	glGenTextures(1, &screenDepthTexture);
 	glGenTextures(1, &whiteLineFrameTexture);
-	glGenTextures(1, &depthTexture);
-	glGenRenderbuffers(1, &rbo);
+	glGenTextures(1, &islandHeightTexture);
+
+	glGenRenderbuffers(1, &screenRBO);
 	glGenRenderbuffers(1, &whiteLineRBO);
+	glGenRenderbuffers(1, &islandHeightRBO);
+
 
 	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
 		// positions   // texCoords
@@ -1073,20 +1086,20 @@ void TrainView::setFrameBufferTexture()
 {
 	glActiveTexture(GL_TEXTURE0);
 
-	glBindTexture(GL_TEXTURE_2D, frameTexture);
+	glBindTexture(GL_TEXTURE_2D, screenFrameTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w(), h(), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenFrameTexture, 0);
 
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, screenRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w(), h());
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, screenRBO);
 
-	//glBindTexture(GL_TEXTURE_2D, depthTexture);
+	//glBindTexture(GL_TEXTURE_2D, screenDepthTexture);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w(), h(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, screenDepthTexture, 0);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		std::cout << "Framebuffer is not complete!" << std::endl;
@@ -1156,8 +1169,10 @@ void TrainView::draw()
 	else
 		throw std::runtime_error("Could not initialize GLAD!");
 
+
+
 	// draw on our frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
 	setFrameBufferTexture();
 
 	// Set up the view port
@@ -1234,6 +1249,17 @@ void TrainView::draw()
 	//*********************************************************************
 	glEnable(GL_LIGHTING);
 	setupObjects();
+
+	if (USE_MODEL) {
+		drawIslandHeight();
+		glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
+		instanceShadowShader->use();
+		instanceShadowShader->setBool("useModel", true);
+		instanceShadowShader->setInt("islandHeight", 0);
+		glUseProgram(0);
+	}
 
 	drawStuff();
 
@@ -1677,9 +1703,48 @@ void TrainView::drawSpeedBg()
 	glDepthFunc(GL_LESS);
 	glUseProgram(0);
 }
+void TrainView::drawIslandHeight()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, islandHeightFBO);
+	glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
+	std::vector<float> zeroData(w() * h(), 9999.0f);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w(), h(), 0, GL_RED, GL_FLOAT, zeroData.data());
+	GLfloat borderColor[] = { -99999.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, islandHeightTexture, 0);
+
+	glViewport(0, 0, w(), h());
+	glClearColor(9999, 9999,9999, 9999);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, islandHeightRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w(), h());
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, islandHeightRBO);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "Framebuffer is not complete!" << std::endl;
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+	glViewport(0, 0, w(), h());
+	glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	islandHeightShader->use();
+	glm::mat4 islandModel = MathHelper::getTransformMatrix(glm::vec3(-150, -580, 170), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
+	islandHeightShader->setMat4("model", islandModel);
+	island->Draw(islandHeightShader);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 void TrainView::drawWhiteLine()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, whiteLineFrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, whiteLineFBO);
 
 	glViewport(0, 0, w(), h());
 	glClearColor(1, 1, 1, 0);
@@ -1695,7 +1760,6 @@ void TrainView::drawWhiteLine()
 
 	glBindRenderbuffer(GL_RENDERBUFFER, whiteLineRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w(), h());
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, whiteLineRBO);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -1738,7 +1802,8 @@ void TrainView::drawFrame()
 	frameShader->use();
 	glBindVertexArray(frameVAO);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, frameTexture);
+	glBindTexture(GL_TEXTURE_2D, screenFrameTexture);
+	//glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
 
 	frameShader->setFloat("frame", tw->clock_time);
 	if (tw->trainCam->value() && animationFrame == 0) {
@@ -1860,6 +1925,17 @@ void TrainView::drawStuff(bool doingShadows)
 		modelShader->setMat4("model", arrowModel);
 		arrow_blue->Draw(modelShader);
 
+		//FUMO(fumo)(9)
+		if (!tw->trainCam->value() || animationFrame > 0) {
+			Pnt3f trainRight = trainFront * trainUp;
+			trainRight.normalize();
+			Pnt3f CirnoFront = trainFront + trainRight * 1.25;
+			CirnoFront.normalize();
+			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
+			modelShader->setMat4("model", CirnoModel);
+			Cirno->Draw(modelShader);
+		}
+
 		glBindVertexArray(0);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glUseProgram(0);
@@ -1914,6 +1990,7 @@ void TrainView::drawStuff(bool doingShadows)
 
 		//dynamic change divide line
 		float DIVIDE_LINE = (MathHelper::distance(cp_pos_p0, cp_pos_p1) + MathHelper::distance(cp_pos_p1, cp_pos_p2) + MathHelper::distance(cp_pos_p2, cp_pos_p3)) * DIVIDE_LINE_SCALE;
+		//printf("%f\n", DIVIDE_LINE);
 
 		float M[16];
 		float linearMatrix[16] = {
@@ -2012,17 +2089,8 @@ void TrainView::drawStuff(bool doingShadows)
 				trainPos = Pnt3f(qt1 + trainUp * 3);
 				if (!tw->trainCam->value() && animationFrame==0) {
 					//draw train
-					glm::vec3 right = cross_t.glmvec3();
-					glm::vec3 up = glm::cross(glm::normalize(right), trainFront.glmvec3());
-					glm::vec3 glmpos = qt1.glmvec3();
-					glmpos = glmpos + 4.5f * up;
-					glm::mat4 model = MathHelper::getTransformMatrix(glmpos, trainFront.glmvec3(), up, glm::vec3(6, 8, 10));
-					trainInstance.addModelMatrix(model);
-
-					//update train velocity
-					float heightGradient = (qt1.y - qt0.y) / MathHelper::distance(qt1, qt0);
-					trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.5);
-					if (trainVelocity < tw->speed->value() / 10) trainVelocity = tw->speed->value() / 10;
+					glm::mat4 trainModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(6, 8, 10));
+					trainInstance.addModelMatrix(trainModel);
 				}
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
@@ -2038,8 +2106,11 @@ void TrainView::drawStuff(bool doingShadows)
 	trackInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
 	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
 	trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+	trackInstance.setTexture(islandHeightTexture);
 	trackInstance.drawByInstance(instanceShadowShader, cube);
+	sleeperInstance.setTexture(islandHeightTexture);
 	sleeperInstance.drawByInstance(instanceShadowShader, cube);
+	trainInstance.setTexture(islandHeightTexture);
 	trainInstance.drawByInstance(instanceShadowShader, cube);
 
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
@@ -2090,6 +2161,8 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
 	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
+	rocketHeadInstance.setTexture(islandHeightTexture);
+	rocketBodyInstance.setTexture(islandHeightTexture);
 	rocketHeadInstance.drawByInstance(instanceShadowShader, cone);
 	rocketBodyInstance.drawByInstance(instanceShadowShader, cylinder);
 	//if (smoke.size() > 0)
@@ -2104,6 +2177,7 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 	}
 	targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
+	targetInstance.setTexture(islandHeightTexture);
 	targetInstance.drawByInstance(instanceShadowShader, cylinder);
 	for (int i = 0; i < targetFrags.size(); i++) {
 		glm::mat4 targetFragModel = MathHelper::getTransformMatrix(
@@ -2112,6 +2186,7 @@ void TrainView::drawStuff(bool doingShadows)
 		targetFragInstance.addModelMatrix(targetFragModel);
 	}
 	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector, false);
+	targetFragInstance.setTexture(islandHeightTexture);
 	targetFragInstance.drawByInstance(instanceShadowShader, sector);
 
 	//draw axis
@@ -2397,6 +2472,8 @@ void TrainView::gigaDrillBreak()
 		horizontalFront.normalize();
 		targetFront = horizontalFront * cos(camRotateY) + trainUp * sin(camRotateY);
 		targetUp = horizontalFront * -sin(camRotateY) + trainUp * cos(camRotateY);
+		targetFront.normalize();
+		targetUp.normalize();
 		for (int i = 0; i < 12; i++) {
 			smallDrillPos[i] = randUnitVector()+ Pnt3f(0,0,(randomFloat()*2-1));
 		}
@@ -2408,12 +2485,12 @@ void TrainView::gigaDrillBreak()
 		if (t < 0)
 			t = 0;
 		glm::vec3 front = lerpVec3(originalFront.glmvec3(), horizontalFront.glmvec3(), t);
-		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(1,1,1));
-		trainModel = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10));
-		trainInstance.addModelMatrix(trainModel);
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp.normalize();
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(1,1,1));
+		trainModel = getTransformMatrix(trainPos.glmvec3(), front, trainUp.glmvec3(), glm::vec3(6, 8, 10));
+		trainInstance.addModelMatrix(trainModel);
 	}
 	else if (animationFrame <= keyFrame[3]) {
 		// turn to the sky
@@ -2422,13 +2499,13 @@ void TrainView::gigaDrillBreak()
 			t = 0;
 		glm::vec3 up = lerpVec3(originalUp.glmvec3(), targetUp.glmvec3(), t);
 		glm::vec3 front = lerpVec3(horizontalFront.glmvec3(), targetFront.glmvec3(), t);
-		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(1, 1, 1));
-		trainModel = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10));
-		trainInstance.addModelMatrix(trainModel);
 		trainFront = Pnt3f(front);
 		trainFront.normalize();
 		trainUp = Pnt3f(up);
 		trainUp.normalize();
+		trainRotate = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(1, 1, 1));
+		trainModel = getTransformMatrix(trainPos.glmvec3(), front, up, glm::vec3(6, 8, 10));
+		trainInstance.addModelMatrix(trainModel);
 	}
 	else {
 		trainUp = Pnt3f(targetUp);
@@ -2530,8 +2607,12 @@ void TrainView::gigaDrillBreak()
 	
 	trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
 	drillInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
+	trainInstance.setTexture(islandHeightTexture);
 	trainInstance.drawByInstance(instanceShadowShader, cube);
-	drillInstance.drawByInstance(instanceShadowShader, cone);
+	if (animationFrame < keyFrame[10]) {
+		drillInstance.setTexture(islandHeightTexture);
+		drillInstance.drawByInstance(instanceShadowShader, cone);
+	}
 	blackLineInstance.drawByInstance(drillShader, cone);
 }
 

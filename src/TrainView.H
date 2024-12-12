@@ -112,7 +112,7 @@ class TrainView : public Fl_Gl_Window
 		void setSector();
 		void setWater();
 		void setSmoke();
-		void setFrame();
+		void setFBOs();
 
 		void drawSimpleObject(const Object& object, const glm::mat4 model, const Material material);
 		void drawTree(glm::vec3 pos, float rotateTheta = 0.0f, float treeTrunkWidth = 7.0f, float treeHeight = 40.0f, float leafHeight = 10.0f, float leafWidth = 20.0f, float leafWidthDecreaseDelta = 5.0f);
@@ -122,11 +122,11 @@ class TrainView : public Fl_Gl_Window
 		// background
 		void drawSpeedBg();
 
-		// do the post-process
+		// about FBOs
+		void drawIslandHeight();
 		void drawWhiteLine();
 		void setFrameBufferTexture();
-		void drawFrame();
-		
+		void drawFrame();		
 
 		// some thing about the rocket launcher
 		void aim(bool draging);
@@ -194,6 +194,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* speedBgShader;
 		Shader* frameShader;
 		Shader* instanceShadowShader;
+		Shader* islandHeightShader;
 
 		//Uniform Buffer
 		unsigned int uboMatrices;
@@ -208,13 +209,16 @@ class TrainView : public Fl_Gl_Window
 		Object smoke;
 		unsigned int particle; //just VAO
 		unsigned int frameVAO;
-		unsigned int frameBuffer;
-		unsigned int whiteLineFrameBuffer;
-		unsigned int frameTexture;
-		unsigned int depthTexture;
+		unsigned int screenFBO;
+		unsigned int whiteLineFBO;
+		unsigned int islandHeightFBO;
+		unsigned int screenFrameTexture;
+		unsigned int screenDepthTexture;
 		unsigned int whiteLineFrameTexture;
-		unsigned int rbo;
+		unsigned int islandHeightTexture;
+		unsigned int screenRBO;
 		unsigned int whiteLineRBO;
+		unsigned int islandHeightRBO;
 		
 
 		//Model
@@ -224,6 +228,7 @@ class TrainView : public Fl_Gl_Window
 		Model* stonePillarSection;
 		Model* arrow_red;
 		Model* arrow_blue;
+		Model* Cirno;
 
 		//texture
 		std::vector<std::pair<std::string,unsigned int>> objectTextures;
