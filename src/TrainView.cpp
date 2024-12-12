@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <time.h>
 #include <chrono>	// for random
 #include <Fl/fl.h>
 
@@ -98,7 +99,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define WATER_RESOLUTION 100
 
-#define USE_MODEL false
+#define USE_MODEL true
 #define USE_WATER_ANIMATION false
 Assimp::Importer importer;
 
@@ -390,6 +391,8 @@ void TrainView::initRander() {
 	// set Model
 	if (USE_MODEL) {
 		printf("Loading model...\n");
+		float start = std::clock();
+
 		backpack = new Model(PROJECT_DIR BACKPACK_PATH);
 		island = new Model(PROJECT_DIR ISLAND_PATH);
 		stonePillar = new Model(PROJECT_DIR STONE_PILLAR_PATH);
@@ -399,7 +402,8 @@ void TrainView::initRander() {
 		Cirno = new Model(PROJECT_DIR CIRNO_PATH);
 		tank = new Model(PROJECT_DIR TANK_PATH);
 		cannon = new Model(PROJECT_DIR CANNON_PATH);
-		printf("Loading model done\n");
+
+		printf("Loading model done. (use %.2fs)\n", (std::clock() - start) / 1000);
 	}
 
 	//init particle system, need call after generate particle VAO
@@ -2049,8 +2053,8 @@ void TrainView::drawStuff(bool doingShadows)
 					
 					//update train velocity
 					float heightGradient = (qt1.y - qt0.y) / MathHelper::distance(qt1, qt0);
-					trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.5);
-					if (trainVelocity < tw->speed->value() / 10) trainVelocity = tw->speed->value() / 10;
+					trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.3);
+					if (trainVelocity < tw->speed->value() / 5) trainVelocity = tw->speed->value() / 5;
 				}
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
@@ -2118,12 +2122,12 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 
 		//draw tank
-		glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+		glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
 		modelShader->setMat4("model", tankModel);
 		tank->Draw(modelShader);
 
 		//draw cannon 
-		glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+		glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 4.0f + trainFront.glmvec3() * 4.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
 		modelShader->setMat4("model", cannonModel);
 		cannon->Draw(modelShader);
 
