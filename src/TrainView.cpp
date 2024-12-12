@@ -1267,9 +1267,9 @@ void TrainView::draw()
 	static float lastSpeed = 0;
 	static float breakerStrength = 0;
 	if (tw->speed->value() - lastSpeed < 0) {
-		breakerStrength += (lastSpeed - tw->speed->value())*10;
+		breakerStrength += (lastSpeed - trainVelocity)*10;
 	}
-	lastSpeed = tw->speed->value();
+	lastSpeed = trainVelocity;
 
 	Pnt3f trainRight = trainFront * trainUp;
 	trainParticle1->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 4.0f - trainUp.glmvec3() * 3.0f + trainRight.glmvec3() * 3.0f);
