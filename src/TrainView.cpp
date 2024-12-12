@@ -69,6 +69,8 @@
 #define DRILL_FRAG_PATH "/assets/shaders/drill.frag"
 #define SPEEDBG_VERT_PATH "/assets/shaders/speedBg.vert"
 #define SPEEDBG_FRAG_PATH "/assets/shaders/speedBg.frag"
+#define INSTANCE_SHADOW_VERT_PATH "/assets/shaders/instanceObjectShadow.vert"
+#define OBJ_SHADOW_FRAG_PATH "/assets/shaders/simpleObjectshadow.frag"
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
@@ -315,6 +317,7 @@ void TrainView::initRander() {
 	ellipticalParticleShader = new Shader(PROJECT_DIR ELLIPTICAL_PARTICLE_VERT_PATH, PROJECT_DIR ELLIPTICAL_PARTICLE_FRAG_PATH);
 	speedBgShader = new Shader(PROJECT_DIR SPEEDBG_VERT_PATH, PROJECT_DIR SPEEDBG_FRAG_PATH);
 	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
+	instanceShadowShader = new Shader(PROJECT_DIR INSTANCE_SHADOW_VERT_PATH, PROJECT_DIR OBJ_SHADOW_FRAG_PATH);
 
 	//init texture
 	if (USE_WATER_ANIMATION) {
@@ -352,6 +355,7 @@ void TrainView::initRander() {
 	particleShader->setBlock("Matrices", 0);
 	ellipticalParticleShader->setBlock("Matrices", 0);
 	speedBgShader->setBlock("Matrices", 0);
+	instanceShadowShader->setBlock("Matrices", 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -1463,7 +1467,7 @@ void TrainView::setShaders() {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	//set uniform
-	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader, smokeShader, modelShader };
+	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader, smokeShader, modelShader, instanceShadowShader };
 	int size = sizeof(shaders) / sizeof(Shader*);
 	for (int i = 0; i < size; i++) {
 		shaders[i]->use();
@@ -2023,9 +2027,12 @@ void TrainView::drawStuff(bool doingShadows)
 	if (animationFrame > 0) {
 		gigaDrillBreak();
 	}
-	trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
-	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube);
-	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
+	trackInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+	trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+	trackInstance.drawByInstance(instanceShadowShader, cube);
+	sleeperInstance.drawByInstance(instanceShadowShader, cube);
+	trainInstance.drawByInstance(instanceShadowShader, cube);
 
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
@@ -2073,8 +2080,10 @@ void TrainView::drawStuff(bool doingShadows)
 	}for (int i = rockets.size(); i < smokeGenerator.size(); i++) {
 		smokeGenerator[i]->setGenerateRate(0);
 	}
-	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone);
-	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
+	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
+	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
+	rocketHeadInstance.drawByInstance(instanceShadowShader, cone);
+	rocketBodyInstance.drawByInstance(instanceShadowShader, cylinder);
 	//if (smoke.size() > 0)
 	//	drawSmoke(smoke);
 
@@ -2086,14 +2095,16 @@ void TrainView::drawStuff(bool doingShadows)
 			targetInstance.addModelMatrix(targetModel);
 		}
 	}
-	targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
+	targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
+	targetInstance.drawByInstance(instanceShadowShader, cylinder);
 	for (int i = 0; i < targetFrags.size(); i++) {
 		glm::mat4 targetFragModel = MathHelper::getTransformMatrix(
 			targetFrags[i].pos.glmvec3(), targetFrags[i].front.glmvec3(), targetFrags[i].up.glmvec3(),
 			glm::vec3(10, 10, 1));
 		targetFragInstance.addModelMatrix(targetFragModel);
 	}
-	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector);
+	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector, false);
+	targetFragInstance.drawByInstance(instanceShadowShader, sector);
 
 	//draw axis
 	if (!USE_MODEL) {
@@ -2454,7 +2465,7 @@ void TrainView::gigaDrillBreak()
 		else {
 			glm::mat4 drillModel = getTransformMatrix(
 				(trainPos + trainFront * (7 + (lerp(0, 25, t)) * (staticSpiralPower / 3))).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
-				glm::vec3(3, 3, lerp(0, 50, t)) * (staticSpiralPower / 3));
+				glm::vec3(3, 3, lerp(0, 45, t)) * (staticSpiralPower / 3));
 			drillInstance.addModelMatrix(drillModel);
 			for (int i = 0; i < 12; i++) {
 				glm::mat4 smallDrillModel = getTransformMatrix(
@@ -2472,7 +2483,7 @@ void TrainView::gigaDrillBreak()
 		// yeah, it is not a circle, so it will tramble when rotating!
 		glm::mat4 drillModel = getTransformMatrix(
 			(trainPos + trainFront * (7 + 25 * (staticSpiralPower / 3))).glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(),
-			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 50) * (staticSpiralPower / 3));
+			glm::vec3(3 + lerp(0, 35, t), 3 + lerp(0, 34, t), 45) * (staticSpiralPower / 3));
 		drillInstance.addModelMatrix(drillModel);
 	}
 	else if (animationFrame < keyFrame[13]) {
@@ -2487,7 +2498,7 @@ void TrainView::gigaDrillBreak()
 		rotatingUp.normalize();
 		glm::mat4 drillModel = getTransformMatrix(
 			(trainPos + trainFront * (7 + 25 * (staticSpiralPower / 3))).glmvec3(), trainFront.glmvec3(), rotatingUp.glmvec3(),
-			glm::vec3(38, 37, 50)*(staticSpiralPower /3));
+			glm::vec3(38, 37, 45)*(staticSpiralPower /3));
 		drillInstance.addModelMatrix(drillModel);
 
 		if (animationFrame > keyFrame[9]) {
@@ -2509,8 +2520,10 @@ void TrainView::gigaDrillBreak()
 		animationFrame = 0;
 	}
 	
-	trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
-	drillInstance.drawByInstance(simpleInstanceObjectShader, cone);
+	trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+	drillInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
+	trainInstance.drawByInstance(instanceShadowShader, cube);
+	drillInstance.drawByInstance(instanceShadowShader, cone);
 	blackLineInstance.drawByInstance(drillShader, cone);
 }
 

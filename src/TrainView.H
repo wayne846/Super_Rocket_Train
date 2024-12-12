@@ -191,6 +191,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* ellipticalParticleShader;
 		Shader* speedBgShader;
 		Shader* frameShader;
+		Shader* instanceShadowShader;
 
 		//Uniform Buffer
 		unsigned int uboMatrices;

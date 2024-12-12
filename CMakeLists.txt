@@ -27,6 +27,8 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/drill.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/speedBg.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/speedBg.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/instanceObjectShadow.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObjectShadow.frag
 ) 
 
 set(SRC_RENDER_UNIT

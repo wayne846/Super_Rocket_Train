@@ -37,8 +37,8 @@ void InstanceDrawer::setTexture(unsigned int id)
 }
 
 //draw the object by all model matrix, the model ande normal matrix will be clear after drawed
-void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
-{
+// if you will draw it for the second time, set "doClear" to false
+void InstanceDrawer::drawByInstance(Shader* shader, Object& object, bool doClear){
 	if (instanceVBO[0] == 0 && instanceVBO[1] == 0) {
 		glGenBuffers(2, this->instanceVBO);
 	}
@@ -93,8 +93,10 @@ void InstanceDrawer::drawByInstance(Shader* shader, Object &object)
 	//unbind shader(switch to fixed pipeline)
 	glUseProgram(0);
 
-	modelMatrices.clear();
-	normalMatrices.clear();
+	if (doClear) {
+		modelMatrices.clear();
+		normalMatrices.clear();
+	}
 }
 
 void InstanceDrawer::addParticleAttribute(Particle attribute) {

@@ -27,7 +27,7 @@ public:
 	void addModelMatrix(glm::mat4 modelMatrix);
 	void setMaterial(const Material& m);
 	void setTexture(unsigned int id);
-	void drawByInstance(Shader* shader, Object &object);
+	void drawByInstance(Shader* shader, Object &object, bool doClear = true);
 
 	void addParticleAttribute(Particle attribute);
 	void drawParticleByInstance(Shader* shader, const unsigned int particleVAO);
