@@ -225,7 +225,7 @@ advanceTrain(float dir)
 	if (trainView->animationFrame == 0) {	// it won't move when playing animation
 		static float gradientSpeed = 1;
 		float t = pow(0.9, RenderDatabase::timeScale);
-		gradientSpeed = gradientSpeed* t +speed->value()*(1-t);
+		gradientSpeed = gradientSpeed* t + trainView->trainVelocity * (1-t);
 		float realCycleTime = 10/gradientSpeed;
 		if (trainView->totalArcLength != 0 && arcLength->value()) {
 			realCycleTime *= trainView->totalArcLength / 500;
