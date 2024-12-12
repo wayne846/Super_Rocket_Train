@@ -20,7 +20,7 @@ vec4 grayScale(vec4 color);
 vec4 reduceSaturation(vec4 color, float strength);
 
 float hash(float n) {
-    return -1+fract(sin(n)*678.9)*2;
+    return -1+fract(sin(n*678.9))*2;
 }
 
 void main()
@@ -32,6 +32,8 @@ void main()
     vec4 color;
 
     color = texture(screenTexture, TexCoords);
+//    float red = texture(screenTexture, TexCoords).r;
+//    color=vec4(red,red*10.0f,red/10.0f,1.0);
     if(useCrosshair){
         vec2 scaledCoords = vec2((TexCoords.x-0.5)* screenAspectRatio*0.5+0.5, TexCoords.y );
         vec4 temp_color = texture(crosshairTexture, scaledCoords);
