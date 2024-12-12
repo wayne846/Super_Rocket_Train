@@ -96,7 +96,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define WATER_RESOLUTION 100
 
-#define USE_MODEL true
+#define USE_MODEL false
 #define USE_WATER_ANIMATION false
 Assimp::Importer importer;
 
@@ -1836,7 +1836,7 @@ void TrainView::drawFrame()
 		frameShader->setBool("useSpiral", false);
 		frameShader->setFloat("shineTime", 0);
 	}
-	if (animationFrame > 314 && animationFrame < 326) {
+	if (animationFrame > 316 && animationFrame < 326) {
 		frameShader->setBool("useImpact", true);
 		frameShader->setFloat("shineTime", animationFrame);
 	}else
@@ -2517,8 +2517,8 @@ void TrainView::gigaDrillBreak()
 			}
 			else {
 				float f = animationFrame - keyFrame[11] + 20;
-				if (animationFrame >= 314)
-					f -= (std::min(animationFrame - 314, 326.0f - 314.0f));
+				if (animationFrame >= 316)
+					f -= (std::min(animationFrame - 316, 326.0 - 316.0));
 				trainPos = trainPos + trainFront * f * 10;
 			}
 		}
@@ -2575,7 +2575,7 @@ void TrainView::gigaDrillBreak()
 		float t = (animationFrame - keyFrame[8]);
 		if (t < 0)
 			t = 0;
-		if (animationFrame >= 314 && animationFrame <= 326)
+		if (animationFrame >= 316 && animationFrame <= 326)
 			t = 0;
 		Pnt3f trainRight = trainFront * trainUp;
 		trainRight.normalize();
@@ -2607,9 +2607,9 @@ void TrainView::gigaDrillBreak()
 	
 	trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
 	drillInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
-	trainInstance.setTexture(islandHeightTexture);
-	trainInstance.drawByInstance(instanceShadowShader, cube);
 	if (animationFrame < keyFrame[10]) {
+		trainInstance.setTexture(islandHeightTexture);
+		trainInstance.drawByInstance(instanceShadowShader, cube);
 		drillInstance.setTexture(islandHeightTexture);
 		drillInstance.drawByInstance(instanceShadowShader, cone);
 	}
