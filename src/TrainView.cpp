@@ -84,6 +84,8 @@
 #define ARROW_RED_PATH "/assets/model/arrow_red/arrow_boi.obj"
 #define ARROW_BLUE_PATH "/assets/model/arrow_blue/arrow_boi.obj"
 #define CIRNO_PATH "/assets/model/Cirno/cirno_fumo_3d_scan.obj"
+#define TANK_PATH "/assets/model/tank/tank.obj"
+#define CANNON_PATH "/assets/model/cannon/cannon.obj"
 
 const std::vector<std::string> SKYBOX_PATH = {
 	PROJECT_DIR "/assets/images/skybox/right.jpg",
@@ -387,6 +389,7 @@ void TrainView::initRander() {
 
 	// set Model
 	if (USE_MODEL) {
+		printf("Loading model...\n");
 		backpack = new Model(PROJECT_DIR BACKPACK_PATH);
 		island = new Model(PROJECT_DIR ISLAND_PATH);
 		stonePillar = new Model(PROJECT_DIR STONE_PILLAR_PATH);
@@ -394,6 +397,9 @@ void TrainView::initRander() {
 		arrow_red = new Model(PROJECT_DIR ARROW_RED_PATH);
 		arrow_blue = new Model(PROJECT_DIR ARROW_BLUE_PATH);
 		Cirno = new Model(PROJECT_DIR CIRNO_PATH);
+		tank = new Model(PROJECT_DIR TANK_PATH);
+		cannon = new Model(PROJECT_DIR CANNON_PATH);
+		printf("Loading model done\n");
 	}
 
 	//init particle system, need call after generate particle VAO
@@ -1891,59 +1897,6 @@ void TrainView::drawStuff(bool doingShadows)
 		drawSimpleObject(cube, floorModel, RenderDatabase::GREEN_PLASTIC_MATERIAL);
 	}
 
-
-	//draw modle
-	if (USE_MODEL) {
-		modelShader->use();
-
-		//draw island
-		glm::mat4 islandModel = MathHelper::getTransformMatrix(glm::vec3(-150, -280, 170), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
-		modelShader->setMat4("model", islandModel);
-		island->Draw(modelShader);
-
-		//draw pillar
-		glm::mat4 pillarModel = MathHelper::getTransformMatrix(glm::vec3(0, -2, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.2, 0.2, 0.2));
-		modelShader->setMat4("model", pillarModel);
-		stonePillar->Draw(modelShader);
-
-		//draw pillar section
-		glm::mat4 pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(20, -8, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
-		modelShader->setMat4("model", pillarSectionModel);
-		stonePillarSection->Draw(modelShader);
-		//another pillar section
-		pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(0, -8, 20), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
-		modelShader->setMat4("model", pillarSectionModel);
-		stonePillarSection->Draw(modelShader);
-
-		//draw red arrow
-		glm::mat4 arrowModel = MathHelper::getTransformMatrix(glm::vec3(20, 14.5, 0), glm::vec3(0, 0, -1), glm::vec3(1, 0, 0), glm::vec3(1.5, 1.5, 1.5));
-		modelShader->setMat4("model", arrowModel);
-		arrow_red->Draw(modelShader);
-
-		//draw blue arrow
-		arrowModel = MathHelper::getTransformMatrix(glm::vec3(0, 14.5, 20), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1), glm::vec3(1.5, 1.5, 1.5));
-		modelShader->setMat4("model", arrowModel);
-		arrow_blue->Draw(modelShader);
-
-		//FUMO(fumo)(9)
-		if (!tw->trainCam->value() || animationFrame > 0) {
-			Pnt3f trainRight = trainFront * trainUp;
-			trainRight.normalize();
-			Pnt3f CirnoFront = trainFront + trainRight * 1.25;
-			CirnoFront.normalize();
-			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
-			modelShader->setMat4("model", CirnoModel);
-			Cirno->Draw(modelShader);
-		}
-
-		glBindVertexArray(0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glUseProgram(0);
-	}
-
-
-
-
 	//draw the tree
 	//drawTree(glm::vec3(0, 0, 0));
 
@@ -2089,8 +2042,15 @@ void TrainView::drawStuff(bool doingShadows)
 				trainPos = Pnt3f(qt1 + trainUp * 3);
 				if (!tw->trainCam->value() && animationFrame==0) {
 					//draw train
-					glm::mat4 trainModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(6, 8, 10));
-					trainInstance.addModelMatrix(trainModel);
+					if (!USE_MODEL) {
+						glm::mat4 trainModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(6, 8, 10));
+						trainInstance.addModelMatrix(trainModel);
+					}
+					
+					//update train velocity
+					float heightGradient = (qt1.y - qt0.y) / MathHelper::distance(qt1, qt0);
+					trainVelocity = MathHelper::lerp(trainVelocity, tw->speed->value() - heightGradient * 10, 0.5);
+					if (trainVelocity < tw->speed->value() / 10) trainVelocity = tw->speed->value() / 10;
 				}
 				Pnt3f trainLightPosition = qt1 + trainFront * 5.1 + trainUp * 1;
 				float position2[] = { qt1.x + trainFront.x, qt1.y + trainFront.y, qt1.z + trainFront.z, 1.0f };
@@ -2112,6 +2072,65 @@ void TrainView::drawStuff(bool doingShadows)
 	sleeperInstance.drawByInstance(instanceShadowShader, cube);
 	trainInstance.setTexture(islandHeightTexture);
 	trainInstance.drawByInstance(instanceShadowShader, cube);
+
+	//draw modle
+	if (USE_MODEL) {
+		modelShader->use();
+
+		//draw island
+		glm::mat4 islandModel = MathHelper::getTransformMatrix(glm::vec3(-150, -280, 170), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
+		modelShader->setMat4("model", islandModel);
+		island->Draw(modelShader);
+
+		//draw pillar
+		glm::mat4 pillarModel = MathHelper::getTransformMatrix(glm::vec3(0, -2, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.2, 0.2, 0.2));
+		modelShader->setMat4("model", pillarModel);
+		stonePillar->Draw(modelShader);
+
+		//draw pillar section
+		glm::mat4 pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(20, -8, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
+		modelShader->setMat4("model", pillarSectionModel);
+		stonePillarSection->Draw(modelShader);
+		//another pillar section
+		pillarSectionModel = MathHelper::getTransformMatrix(glm::vec3(0, -8, 20), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.01, 0.01, 0.01));
+		modelShader->setMat4("model", pillarSectionModel);
+		stonePillarSection->Draw(modelShader);
+
+		//draw red arrow
+		glm::mat4 arrowModel = MathHelper::getTransformMatrix(glm::vec3(20, 14.5, 0), glm::vec3(0, 0, -1), glm::vec3(1, 0, 0), glm::vec3(1.5, 1.5, 1.5));
+		modelShader->setMat4("model", arrowModel);
+		arrow_red->Draw(modelShader);
+
+		//draw blue arrow
+		arrowModel = MathHelper::getTransformMatrix(glm::vec3(0, 14.5, 20), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1), glm::vec3(1.5, 1.5, 1.5));
+		modelShader->setMat4("model", arrowModel);
+		arrow_blue->Draw(modelShader);
+
+		//FUMO(fumo)(9)
+		if (!tw->trainCam->value() || animationFrame > 0) {
+			Pnt3f trainRight = trainFront * trainUp;
+			trainRight.normalize();
+			Pnt3f CirnoFront = trainFront + trainRight * 1.25;
+			CirnoFront.normalize();
+			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
+			modelShader->setMat4("model", CirnoModel);
+			Cirno->Draw(modelShader);
+		}
+
+		//draw tank
+		glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+		modelShader->setMat4("model", tankModel);
+		tank->Draw(modelShader);
+
+		//draw cannon 
+		glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+		modelShader->setMat4("model", cannonModel);
+		cannon->Draw(modelShader);
+
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+	}
 
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
