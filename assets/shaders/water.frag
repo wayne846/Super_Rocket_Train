@@ -100,7 +100,7 @@ void main()
     vec3 R = refract(-eyeDir, norm, ratio);
     vec4 refractColor = vec4(texture(skybox, R).rgb, 1.0);
     
-    f_color = mix(reflectColor, vec4(result, 1.0), 0.5);//vec4(result, 1.0);
+    f_color = mix(reflectColor, vec4(result, 1.0), 0);//vec4(result, 1.0);
     f_color.rgb = pow(f_color.rgb, vec3(1.0/gamma));
 }
 

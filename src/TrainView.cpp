@@ -1912,6 +1912,10 @@ void TrainView::drawStuff(bool doingShadows)
 		float cp_orient_y[4] = { cp_orient_p0.y,cp_orient_p1.y,cp_orient_p2.y,cp_orient_p3.y };
 		float cp_orient_z[4] = { cp_orient_p0.z,cp_orient_p1.z,cp_orient_p2.z,cp_orient_p3.z };
 
+		//dynamic change divide line
+		float DIVIDE_LINE = (MathHelper::distance(cp_pos_p0, cp_pos_p1) + MathHelper::distance(cp_pos_p1, cp_pos_p2) + MathHelper::distance(cp_pos_p2, cp_pos_p3)) * DIVIDE_LINE_SCALE;
+		printf("%f\n", DIVIDE_LINE);
+
 		float M[16];
 		float linearMatrix[16] = {
 			0,0,0,0,
