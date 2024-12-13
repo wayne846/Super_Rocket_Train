@@ -184,6 +184,7 @@ class TrainView : public Fl_Gl_Window
 		bool hasInitRander = false;
 		Shader* simpleObjectShader;
 		Shader* simpleInstanceObjectShader;
+		Shader* pierShader;
 		Shader* whiteLineShader;
 		Shader* drillShader;
 		Shader* waterShader;

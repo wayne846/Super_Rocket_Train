@@ -9,6 +9,7 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObject.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/instanceObject.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/pier.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/smoke.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/smoke.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/water.vert

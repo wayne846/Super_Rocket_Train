@@ -154,6 +154,11 @@ TrainWindow(const int x, const int y)
 		Fl_Button* addMoreTarget = new Fl_Button(690, pty, 110, 20, "MORE TARGET");
 		addMoreTarget->callback((Fl_Callback*)addMoreTargetCB, this);
 
+		pty += 50;
+
+		drawShadow = new Fl_Button(605, pty, 60, 20, "Shadow");
+		togglify(drawShadow);
+
 		pty += 30;
 
 		// TODO: add widgets for all of your fancier features here

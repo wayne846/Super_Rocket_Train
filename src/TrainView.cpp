@@ -52,6 +52,7 @@
 #define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
 #define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
 #define INSTANCE_OBJECT_VERT_PATH "/assets/shaders/instanceObject.vert"
+#define PIER_FRAG_PATH "/assets/shaders/pier.frag"
 #define SMOKE_VERT_PATH "/assets/shaders/smoke.vert"
 #define SMOKE_FRAG_PATH "/assets/shaders/smoke.frag"
 #define WATER_VERT_PATH "/assets/shaders/water.vert"
@@ -314,6 +315,7 @@ void TrainView::initRander() {
 	//init shader
 	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
 	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
+	pierShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR PIER_FRAG_PATH);
 	whiteLineShader = new Shader(PROJECT_DIR WHITELINE_VERT_PATH, PROJECT_DIR WHITELINE_FRAG_PATH);
 	drillShader = new Shader(PROJECT_DIR DRILL_VERT_PATH, PROJECT_DIR DRILL_FRAG_PATH);
 	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
@@ -355,6 +357,7 @@ void TrainView::initRander() {
 	//0 for view and project matrix
 	simpleObjectShader->setBlock("Matrices", 0);
 	simpleInstanceObjectShader->setBlock("Matrices", 0);
+	pierShader->setBlock("Matrices", 0);
 	whiteLineShader->setBlock("Matrices", 0);
 	drillShader->setBlock("Matrices", 0);
 	waterShader->setBlock("Matrices", 0);
@@ -1265,9 +1268,14 @@ void TrainView::draw()
 		glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
-		instanceShadowShader->use();
-		instanceShadowShader->setBool("useModel", true);
-		instanceShadowShader->setInt("islandHeight", 0);
+		if (tw->drawShadow->value()){
+			instanceShadowShader->use();
+			instanceShadowShader->setBool("useModel", true);
+			instanceShadowShader->setInt("islandHeight", 0);
+		}
+		pierShader->use();
+		pierShader->setBool("useModel", true);
+		pierShader->setInt("islandHeight", 0);
 		glUseProgram(0);
 	}
 
@@ -1519,7 +1527,7 @@ void TrainView::setShaders() {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	//set uniform
-	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, waterShader, smokeShader, modelShader, instanceShadowShader };
+	Shader* shaders[] = { simpleObjectShader, simpleInstanceObjectShader, pierShader, waterShader, smokeShader, modelShader, instanceShadowShader };
 	int size = sizeof(shaders) / sizeof(Shader*);
 	for (int i = 0; i < size; i++) {
 		shaders[i]->use();
@@ -1997,10 +2005,12 @@ void TrainView::drawStuff(bool doingShadows)
 	};
 	InstanceDrawer trackInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer sleeperInstance(RenderDatabase::SLIVER_MATERIAL);
+	InstanceDrawer pierInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer trainInstance(trainMaterial);
 
 	const float track_width = 5;
 	Pnt3f last_sleeper(999, 999, 999);
+	Pnt3f last_pier(999, 999, 999);
 	int num_point = m_pTrack->points.size();
 
 	bool trainDrawed = false;
@@ -2095,20 +2105,37 @@ void TrainView::drawStuff(bool doingShadows)
 			Pnt3f trackCenter1 = (qt0 + cross_t + qt1 + cross_t) * 0.5f;
 			Pnt3f trackCenter2 = (qt0 + cross_t * -1 + qt1 + cross_t * -1) * 0.5;
 			Pnt3f trackDifference = qt1 - qt0;
-			glm::mat4 trackModel1 = MathHelper::getTransformMatrix(trackCenter1.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
-			glm::mat4 trackModel2 = MathHelper::getTransformMatrix(trackCenter2.glmvec3(), trackDifference.glmvec3(), (cross_t * trackDifference).glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
+			Pnt3f trackUp = (cross_t * trackDifference).glmvec3();
+			glm::mat4 trackModel1 = MathHelper::getTransformMatrix(trackCenter1.glmvec3(), trackDifference.glmvec3(), trackUp.glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
+			glm::mat4 trackModel2 = MathHelper::getTransformMatrix(trackCenter2.glmvec3(), trackDifference.glmvec3(), trackUp.glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
 			trackInstance.addModelMatrix(trackModel1);
 			trackInstance.addModelMatrix(trackModel2);
 
-			Pnt3f distance = qt1 + (-1 * last_sleeper);
+			Pnt3f sleeperDistance = qt1 + (-1 * last_sleeper);
+			Pnt3f pierDistance = qt1 + (-1 * last_pier);
 			bool needToDrawTrain = false;
-			if (distance.len() > 5) {
+			if (sleeperDistance.len() > 5) {
 				//draw sleeper
 				glm::vec3 up = glm::cross(cross_t.glmvec3(), (qt1 + qt0 * -1).glmvec3());
 				glm::mat4 sleeperModel = MathHelper::getTransformMatrix(qt1.glmvec3(), (qt1 + qt0 * -1).glmvec3(), up, glm::vec3(10, 0.5, 2));
 				sleeperInstance.addModelMatrix(sleeperModel);
-
 				last_sleeper = qt1;
+			}
+			if (pierDistance.len() > 10 && trackUp.y>0) {
+				// drae pier
+				Pnt3f trackDifference = qt1 - qt0;
+				Pnt3f pierCenter1 = trackCenter1;
+				Pnt3f pierCenter2 = trackCenter2;
+				Pnt3f pierFront = trackDifference;
+				pierFront.y = 0;
+				pierFront.normalize();
+				pierCenter1.y = pierCenter1.y/2-50;
+				pierCenter2.y = pierCenter2.y/2-50;
+				glm::mat4 pierModel1 = MathHelper::getTransformMatrix(pierCenter1.glmvec3(), pierFront.glmvec3(), glm::vec3(0,1,0), glm::vec3(0.4, trackCenter1.y+100, 0.4));
+				glm::mat4 pierModel2 = MathHelper::getTransformMatrix(pierCenter2.glmvec3(), pierFront.glmvec3(), glm::vec3(0, 1, 0), glm::vec3(0.4, trackCenter2.y+100, 0.4));
+				pierInstance.addModelMatrix(pierModel1);
+				pierInstance.addModelMatrix(pierModel2);
+				last_pier = qt1;
 			}
 			if (tw->arcLength->value() == false) {
 				if (!trainDrawed && t_time * m_pTrack->points.size() >= i + t && t_time * m_pTrack->points.size() <= i + t + percent)
@@ -2148,16 +2175,28 @@ void TrainView::drawStuff(bool doingShadows)
 	if (animationFrame > 0) {
 		gigaDrillBreak();
 	}
-	trackInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
-	sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
-	trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
-	trackInstance.setTexture(islandHeightTexture);
-	trackInstance.drawByInstance(instanceShadowShader, cube);
-	sleeperInstance.setTexture(islandHeightTexture);
-	sleeperInstance.drawByInstance(instanceShadowShader, cube);
-	trainInstance.setTexture(islandHeightTexture);
-	trainInstance.drawByInstance(instanceShadowShader, cube);
+	if(USE_MODEL)
+		pierInstance.setTexture(islandHeightTexture);
+	pierInstance.drawByInstance(pierShader, cube, true);
+	if (tw->drawShadow->value()) {
+		trackInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+		sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+		trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
 
+		trackInstance.setTexture(islandHeightTexture);
+		trackInstance.drawByInstance(instanceShadowShader, cube);
+		sleeperInstance.setTexture(islandHeightTexture);
+		sleeperInstance.drawByInstance(instanceShadowShader, cube);
+		trainInstance.setTexture(islandHeightTexture);
+		trainInstance.drawByInstance(instanceShadowShader, cube);
+	}
+	else {
+		trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
+		sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube);
+		trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
+	}
+
+	//draw rockets and targets
 	InstanceDrawer rocketHeadInstance(RenderDatabase::RUBY_MATERIAL);
 	InstanceDrawer rocketBodyInstance(RenderDatabase::SLIVER_MATERIAL);
 	InstanceDrawer targetInstance(RenderDatabase::WHITE_PLASTIC_MATERIAL);
@@ -2167,7 +2206,6 @@ void TrainView::drawStuff(bool doingShadows)
 	targetFragInstance.setTexture(this->getObjectTexture("targetImage"));
 	updateEntity();
 	collisionJudge();
-	//draw rocket and target
 	for (int i = 0; i < rockets.size(); i++) {
 		if (rockets[i].state == 0) {
 			glm::mat4 HeadModel = MathHelper::getTransformMatrix(
@@ -2204,12 +2242,18 @@ void TrainView::drawStuff(bool doingShadows)
 	}for (int i = rockets.size(); i < smokeGenerator.size(); i++) {
 		smokeGenerator[i]->setGenerateRate(0);
 	}
-	rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
-	rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
-	rocketHeadInstance.setTexture(islandHeightTexture);
-	rocketBodyInstance.setTexture(islandHeightTexture);
-	rocketHeadInstance.drawByInstance(instanceShadowShader, cone);
-	rocketBodyInstance.drawByInstance(instanceShadowShader, cylinder);
+	if (tw->drawShadow->value()) {
+		rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
+		rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
+		rocketHeadInstance.setTexture(islandHeightTexture);
+		rocketBodyInstance.setTexture(islandHeightTexture);
+		rocketHeadInstance.drawByInstance(instanceShadowShader, cone);
+		rocketBodyInstance.drawByInstance(instanceShadowShader, cylinder);
+	}
+	else {
+		rocketHeadInstance.drawByInstance(simpleInstanceObjectShader, cone);
+		rocketBodyInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
+	}
 	//if (smoke.size() > 0)
 	//	drawSmoke(smoke);
 
@@ -2221,18 +2265,26 @@ void TrainView::drawStuff(bool doingShadows)
 			targetInstance.addModelMatrix(targetModel);
 		}
 	}
-	targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
-	targetInstance.setTexture(islandHeightTexture);
-	targetInstance.drawByInstance(instanceShadowShader, cylinder);
+	if (tw->drawShadow->value()) {
+		targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder, false);
+		targetInstance.setTexture(islandHeightTexture);
+		targetInstance.drawByInstance(instanceShadowShader, cylinder);
+	}
+	else
+		targetInstance.drawByInstance(simpleInstanceObjectShader, cylinder);
 	for (int i = 0; i < targetFrags.size(); i++) {
 		glm::mat4 targetFragModel = MathHelper::getTransformMatrix(
 			targetFrags[i].pos.glmvec3(), targetFrags[i].front.glmvec3(), targetFrags[i].up.glmvec3(),
 			glm::vec3(10, 10, 1));
 		targetFragInstance.addModelMatrix(targetFragModel);
 	}
-	targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector, false);
-	targetFragInstance.setTexture(islandHeightTexture);
-	targetFragInstance.drawByInstance(instanceShadowShader, sector);
+	if (tw->drawShadow->value()) {
+		targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector, false);
+		targetFragInstance.setTexture(islandHeightTexture);
+		targetFragInstance.drawByInstance(instanceShadowShader, sector);
+	}
+	else
+		targetFragInstance.drawByInstance(simpleInstanceObjectShader, sector);
 
 	//draw axis
 	if (!USE_MODEL) {
@@ -2374,7 +2426,7 @@ void TrainView::shoot()
 	//}
 }
 
-// judge the distance of target and rocket
+// judge the sleeperDistance of target and rocket
 void TrainView::collisionJudge()
 {
 	for (int targetID = 0; targetID < targets.size(); targetID++) {
@@ -2679,16 +2731,21 @@ void TrainView::gigaDrillBreak()
 		animationFrame = 0;
 	}
 
-
-	drillInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
-	if (!USE_MODEL){
-		trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
-	}
-	if (animationFrame < keyFrame[10]) {
-		trainInstance.setTexture(islandHeightTexture);
-		trainInstance.drawByInstance(instanceShadowShader, cube);
+	if (tw->drawShadow->value() && animationFrame < keyFrame[10]) {
+		if (!USE_MODEL) {
+			trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+			trainInstance.setTexture(islandHeightTexture);
+			trainInstance.drawByInstance(instanceShadowShader, cube);
+		}
+		drillInstance.drawByInstance(simpleInstanceObjectShader, cone, false);
 		drillInstance.setTexture(islandHeightTexture);
 		drillInstance.drawByInstance(instanceShadowShader, cone);
+	}
+	else {
+		drillInstance.drawByInstance(simpleInstanceObjectShader, cone);
+		if (!USE_MODEL) {
+			trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
+		}
 	}
 	blackLineInstance.drawByInstance(drillShader, cone);
 	glUseProgram(0);
