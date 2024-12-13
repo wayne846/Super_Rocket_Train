@@ -25,6 +25,8 @@ namespace MathHelper {
 
 	float dot(Pnt3f P1, Pnt3f P2);
 
+	float cos(Pnt3f P1, Pnt3f P2);
+
 	//we assume front is -z in model space
 	glm::mat4 getTransformMatrix(glm::vec3 position, glm::vec3 front, glm::vec3 up, glm::vec3 scale);
 

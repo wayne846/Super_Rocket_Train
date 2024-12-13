@@ -631,17 +631,17 @@ void TrainView::setHollowCube()
 		//4, 5, 6,
 		//4, 6, 7,
 		//right +x
-		8-4, 9-4, 10-4,
-		8-4, 10-4, 11-4,
+		8 - 4, 9 - 4, 10 - 4,
+		8 - 4, 10 - 4, 11 - 4,
 		//back
 		//12, 13, 14,
 		//12, 14, 15,
 		//left
-		16-8, 17-8, 18-8,
-		16-8, 18-8, 19-8,
+		16 - 8, 17 - 8, 18 - 8,
+		16 - 8, 18 - 8, 19 - 8,
 		//top +y
-		20-8, 21-8, 22-8,
-		20-8, 22-8, 23-8,
+		20 - 8, 21 - 8, 22 - 8,
+		20 - 8, 22 - 8, 23 - 8,
 	};
 	glGenVertexArrays(1, &hollowCube.VAO);
 	glGenBuffers(2, hollowCube.VBO);
@@ -1378,7 +1378,7 @@ void TrainView::draw()
 		glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
-		if (tw->drawShadow->value()){
+		if (tw->drawShadow->value()) {
 			instanceShadowShader->use();
 			instanceShadowShader->setBool("useModel", true);
 			instanceShadowShader->setInt("islandHeight", 0);
@@ -2096,7 +2096,7 @@ void TrainView::drawStuff(bool doingShadows)
 			modelShader->setMat4("model", cannonModel);
 		}
 		else {
-			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 3.0f + trainFront.glmvec3()*4.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
+			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 3.0f + trainFront.glmvec3() * 4.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
 			modelShader->setMat4("model", cannonModel);
 		}
 		cannon->Draw(modelShader);
@@ -2198,9 +2198,14 @@ void TrainView::drawStuff(bool doingShadows)
 		float t = 0;
 		Pnt3f qt(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
 
-		for (size_t j = 0; j < DIVIDE_LINE; j++) {
+		bool finalRound = false;
+		while (!finalRound) {
 			Pnt3f qt0 = qt;
 			t += percent;
+			if (t >= 1) {
+				finalRound = true;
+				t = 1;
+			}
 			qt = Pnt3f(MathHelper::MxT(cp_pos_x, t), MathHelper::MxT(cp_pos_y, t), MathHelper::MxT(cp_pos_z, t));
 			Pnt3f qt1 = qt;
 			glLineWidth(1);
@@ -2212,35 +2217,47 @@ void TrainView::drawStuff(bool doingShadows)
 			cross_t.normalize();
 			cross_t = cross_t * (track_width / 2);
 			//draw track
-			Pnt3f trackCenter1 = (qt0 + cross_t + qt1 + cross_t) * 0.5f;
-			Pnt3f trackCenter2 = (qt0 + cross_t * -1 + qt1 + cross_t * -1) * 0.5;
-			Pnt3f trackDifference = qt1 - qt0;
-			Pnt3f trackUp = (cross_t * trackDifference).glmvec3();
-			glm::mat4 trackModel1 = MathHelper::getTransformMatrix(trackCenter1.glmvec3(), trackDifference.glmvec3(), trackUp.glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
-			glm::mat4 trackModel2 = MathHelper::getTransformMatrix(trackCenter2.glmvec3(), trackDifference.glmvec3(), trackUp.glmvec3(), glm::vec3(0.3, 0.3, trackDifference.len() + 0.05));
-			trackInstance.addModelMatrix(trackModel1);
-			trackInstance.addModelMatrix(trackModel2);
+			static Pnt3f lastDir(0, -1, 0);
+			static Pnt3f lastUp(0, 0, 1);
+			static Pnt3f lastPos(qt1);
+			Pnt3f difference = qt1 - qt0;
+			Pnt3f trackUp = (cross_t * difference).glmvec3();
+			float remoteness = (qt0 + (-1) * eyepos).len()*0.2+100;
+			float Accuracy = (remoteness) / (remoteness - 1) - 0.01;
+			if ((difference.len2() > 0 && MathHelper::cos(lastDir, difference) < Accuracy || MathHelper::cos(lastUp, cross_t) < Accuracy || (lastPos - qt1).len2() > 10000) || finalRound) {
+				Pnt3f trackCenter1 = (qt1 + lastPos + cross_t * 2) * 0.5f;
+				Pnt3f trackCenter2 = (qt1 + lastPos + cross_t * -2) * 0.5f;
+				Pnt3f trackFront = qt1 - lastPos;
+				glm::mat4 trackModel1 = MathHelper::getTransformMatrix(trackCenter1.glmvec3(), trackFront.glmvec3(), trackUp.glmvec3(), glm::vec3(0.3, 0.3, trackFront.len() + 0.15));
+				glm::mat4 trackModel2 = MathHelper::getTransformMatrix(trackCenter2.glmvec3(), trackFront.glmvec3(), trackUp.glmvec3(), glm::vec3(0.3, 0.3, trackFront.len() + 0.15));
+				trackInstance.addModelMatrix(trackModel1);
+				trackInstance.addModelMatrix(trackModel2);
+				lastDir = difference;
+				lastPos = qt1;
+				lastUp = cross_t;
+			}
 
 			Pnt3f sleeperDistance = qt1 + (-1 * last_sleeper);
 			Pnt3f pierDistance = qt1 + (-1 * last_pier);
 			bool needToDrawTrain = false;
-			if (sleeperDistance.len() > 5) {
+			if (sleeperDistance.len() > 5 || finalRound) {
 				//draw sleeper
 				glm::vec3 up = glm::cross(cross_t.glmvec3(), (qt1 + qt0 * -1).glmvec3());
 				glm::mat4 sleeperModel = MathHelper::getTransformMatrix(qt1.glmvec3(), (qt1 + qt0 * -1).glmvec3(), up, glm::vec3(10, 0.5, 2));
 				sleeperInstance.addModelMatrix(sleeperModel);
 				last_sleeper = qt1;
 			}
-			if (pierDistance.len() > 10 && trackUp.y>0) {
-				// drae pier
-				Pnt3f trackDifference = qt1 - qt0;
+			if ((pierDistance.len2() > 111 || finalRound) && trackUp.y > 0) {
+				// draw pier
+				Pnt3f trackCenter1 = (qt0 + qt1 + cross_t * 2) * 0.5f;
+				Pnt3f trackCenter2 = (qt0 + qt1 + cross_t * -2) * 0.5f;
 				Pnt3f pierCenter1 = trackCenter1;
 				Pnt3f pierCenter2 = trackCenter2;
-				Pnt3f pierFront = trackDifference;
+				pierCenter1.y = pierCenter1.y / 2 - 50;
+				pierCenter2.y = pierCenter2.y / 2 - 50;
+				Pnt3f pierFront = qt1 - qt0;
 				pierFront.y = 0;
 				pierFront.normalize();
-				pierCenter1.y = pierCenter1.y/2-50;
-				pierCenter2.y = pierCenter2.y/2-50;
 				glm::mat4 pierModel1 = MathHelper::getTransformMatrix(pierCenter1.glmvec3(), glm::vec3(0, 1, 0), pierFront.glmvec3(), glm::vec3(0.4, 0.4, trackCenter1.y + 100));
 				glm::mat4 pierModel2 = MathHelper::getTransformMatrix(pierCenter2.glmvec3(), glm::vec3(0, 1, 0), pierFront.glmvec3(), glm::vec3(0.4, 0.4, trackCenter2.y + 100));
 				pierInstance.addModelMatrix(pierModel1);
@@ -2285,7 +2302,7 @@ void TrainView::drawStuff(bool doingShadows)
 	if (animationFrame > 0) {
 		gigaDrillBreak();
 	}
-	if(USE_MODEL)
+	if (USE_MODEL)
 		pierInstance.setTexture(islandHeightTexture);
 	pierInstance.drawByInstance(pierShader, hollowCube, true);
 	if (tw->drawShadow->value()) {
@@ -2525,7 +2542,7 @@ void TrainView::shoot()
 	lookingUp.normalize();
 	Rocket rocket(trainPos + lookingFront * 10, lookingFront, lookingUp);
 	if (USE_MODEL)
-		rocket = Rocket(trainPos + trainFront*4 +trainUp * 5 + lookingFront * 15, lookingFront, lookingUp);
+		rocket = Rocket(trainPos + trainFront * 4 + trainUp * 5 + lookingFront * 15, lookingFront, lookingUp);
 	rocket.thrusterVelocity = lookingFront * 4;
 	rockets.push_back(rocket);
 

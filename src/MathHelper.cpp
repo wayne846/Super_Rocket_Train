@@ -72,6 +72,10 @@ namespace MathHelper {
 		return P1.x * P2.x + P1.y * P2.y + P1.z * P2.z;
 	}
 
+	float cos(Pnt3f P1, Pnt3f P2) {
+		return (P1.x * P2.x + P1.y * P2.y + P1.z * P2.z)/ P1.len()/P2.len();
+	}
+
 	//we assume front is -z in model space
 	glm::mat4 getTransformMatrix(glm::vec3 position, glm::vec3 front, glm::vec3 up, glm::vec3 scale) {
 		glm::mat4 transform(1.0f);
@@ -184,7 +188,7 @@ namespace MathHelper {
 
 		// 隨機生成球坐標參數
 		float phi = lerp(0, 2 * PI, randomFloat()); //[0, 2*pi]
-		float cosTheta = lerp(cos(angleRadians), 1, randomFloat()); //[cos(andgleDegress), 1]
+		float cosTheta = lerp(std::cos(angleRadians), 1, randomFloat()); //[cos(andgleDegress), 1]
 		float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
 
 		// 初始生成的向量（以z軸為中心）

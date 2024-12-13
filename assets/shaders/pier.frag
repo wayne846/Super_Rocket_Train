@@ -58,7 +58,7 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 #define NR_SPOT_LIGHTS 4  
 uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 
-uniform bool useModel;
+uniform bool useModel = false;
 uniform sampler2D islandHeight;
 
 uniform float gamma;
