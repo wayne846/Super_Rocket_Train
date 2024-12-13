@@ -100,7 +100,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define WATER_RESOLUTION 100
 
-#define USE_MODEL true
+#define USE_MODEL false
 #define USE_WATER_ANIMATION false
 Assimp::Importer importer;
 
@@ -383,6 +383,7 @@ void TrainView::initRander() {
 
 	// set VAO and VBO
 	setCube();
+	setHollowCube();
 	setCone();
 	setCylinder();
 	setSector();
@@ -551,6 +552,115 @@ void TrainView::setCube()
 	//Element attribute
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube.EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeElement), cubeElement, GL_STATIC_DRAW);
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+
+// a cube but its face and back are removed
+void TrainView::setHollowCube()
+{
+	GLfloat hollowCubeVertices[] = {
+		//down
+		0.5f, -0.5f, 0.5f,
+		-0.5f, -0.5f, 0.5f,
+		-0.5f, -0.5f, -0.5f,
+		0.5f, -0.5f, -0.5f,
+		//front -z
+		//0.5f, -0.5f, -0.5f,
+		//-0.5f, -0.5f, -0.5f,
+		//-0.5f, 0.5f, -0.5f,
+		//0.5f, 0.5f, -0.5f,
+		//right +x
+		0.5f, -0.5f, 0.5f,
+		0.5f, -0.5f, -0.5f,
+		0.5f, 0.5f, -0.5f,
+		0.5f, 0.5f, 0.5f,
+		//back
+		//-0.5f, -0.5f, 0.5f,
+		//0.5f, -0.5f, 0.5f,
+		//0.5f, 0.5f, 0.5f,
+		//-0.5f, 0.5f, 0.5f,
+		//left
+		-0.5f, -0.5f, 0.5f,
+		-0.5f, 0.5f, 0.5f,
+		-0.5f, 0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		//top +y
+		0.5f, 0.5f, 0.5f,
+		0.5f, 0.5f, -0.5f,
+		-0.5f, 0.5f, -0.5f,
+		-0.5f, 0.5f, 0.5f
+	};
+	GLfloat hollowCubeNormal[] = {
+		//down
+		0, -1.0f, 0,
+		0, -1.0f, 0,
+		0, -1.0f, 0,
+		0, -1.0f, 0,
+		//front -z
+		//0, 0, -1.0f,
+		//0, 0, -1.0f,
+		//0, 0, -1.0f,
+		//0, 0, -1.0f,
+		//right +x
+		1.0f, 0, 0,
+		1.0f, 0, 0,
+		1.0f, 0, 0,
+		1.0f, 0, 0,
+		//back
+		//0, 0, 1.0f,
+		//0, 0, 1.0f,
+		//0, 0, 1.0f,
+		//0, 0, 1.0f,
+		//left
+		-1.0f, 0, 0,
+		-1.0f, 0, 0,
+		-1.0f, 0, 0,
+		-1.0f, 0, 0,
+		//top +y
+		0, 1.0f, 0,
+		0, 1.0f, 0,
+		0, 1.0f, 0,
+		0, 1.0f, 0
+	};
+	GLuint hollowCubeElement[] = {
+		//down
+		0, 1, 2,
+		0, 2, 3,
+		//front -z
+		//4, 5, 6,
+		//4, 6, 7,
+		//right +x
+		8-4, 9-4, 10-4,
+		8-4, 10-4, 11-4,
+		//back
+		//12, 13, 14,
+		//12, 14, 15,
+		//left
+		16-8, 17-8, 18-8,
+		16-8, 18-8, 19-8,
+		//top +y
+		20-8, 21-8, 22-8,
+		20-8, 22-8, 23-8,
+	};
+	glGenVertexArrays(1, &hollowCube.VAO);
+	glGenBuffers(2, hollowCube.VBO);
+	glGenBuffers(1, &hollowCube.EBO);
+	glBindVertexArray(hollowCube.VAO);
+	hollowCube.element_amount = sizeof(hollowCubeElement) / sizeof(GLuint);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, hollowCube.VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(hollowCubeVertices), hollowCubeVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Normal attribute
+	glBindBuffer(GL_ARRAY_BUFFER, hollowCube.VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(hollowCubeNormal), hollowCubeNormal, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	//Element attribute
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hollowCube.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(hollowCubeElement), hollowCubeElement, GL_STATIC_DRAW);
 	// Unbind VAO
 	glBindVertexArray(0);
 }
@@ -2131,8 +2241,8 @@ void TrainView::drawStuff(bool doingShadows)
 				pierFront.normalize();
 				pierCenter1.y = pierCenter1.y/2-50;
 				pierCenter2.y = pierCenter2.y/2-50;
-				glm::mat4 pierModel1 = MathHelper::getTransformMatrix(pierCenter1.glmvec3(), pierFront.glmvec3(), glm::vec3(0,1,0), glm::vec3(0.4, trackCenter1.y+100, 0.4));
-				glm::mat4 pierModel2 = MathHelper::getTransformMatrix(pierCenter2.glmvec3(), pierFront.glmvec3(), glm::vec3(0, 1, 0), glm::vec3(0.4, trackCenter2.y+100, 0.4));
+				glm::mat4 pierModel1 = MathHelper::getTransformMatrix(pierCenter1.glmvec3(), glm::vec3(0, 1, 0), pierFront.glmvec3(), glm::vec3(0.4, 0.4, trackCenter1.y + 100));
+				glm::mat4 pierModel2 = MathHelper::getTransformMatrix(pierCenter2.glmvec3(), glm::vec3(0, 1, 0), pierFront.glmvec3(), glm::vec3(0.4, 0.4, trackCenter2.y + 100));
 				pierInstance.addModelMatrix(pierModel1);
 				pierInstance.addModelMatrix(pierModel2);
 				last_pier = qt1;
@@ -2177,21 +2287,21 @@ void TrainView::drawStuff(bool doingShadows)
 	}
 	if(USE_MODEL)
 		pierInstance.setTexture(islandHeightTexture);
-	pierInstance.drawByInstance(pierShader, cube, true);
+	pierInstance.drawByInstance(pierShader, hollowCube, true);
 	if (tw->drawShadow->value()) {
-		trackInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
+		trackInstance.drawByInstance(simpleInstanceObjectShader, hollowCube, false);
 		sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
 		trainInstance.drawByInstance(simpleInstanceObjectShader, cube, false);
 
 		trackInstance.setTexture(islandHeightTexture);
-		trackInstance.drawByInstance(instanceShadowShader, cube);
+		trackInstance.drawByInstance(instanceShadowShader, hollowCube);
 		sleeperInstance.setTexture(islandHeightTexture);
 		sleeperInstance.drawByInstance(instanceShadowShader, cube);
 		trainInstance.setTexture(islandHeightTexture);
 		trainInstance.drawByInstance(instanceShadowShader, cube);
 	}
 	else {
-		trackInstance.drawByInstance(simpleInstanceObjectShader, cube);
+		trackInstance.drawByInstance(simpleInstanceObjectShader, hollowCube);
 		sleeperInstance.drawByInstance(simpleInstanceObjectShader, cube);
 		trainInstance.drawByInstance(simpleInstanceObjectShader, cube);
 	}

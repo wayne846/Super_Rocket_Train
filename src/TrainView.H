@@ -107,6 +107,7 @@ class TrainView : public Fl_Gl_Window
 		unsigned int getObjectTexture(std::string name);
 
 		void setCube();
+		void setHollowCube();
 		void setCylinder();
 		void setCone();
 		void setSector();
@@ -202,6 +203,7 @@ class TrainView : public Fl_Gl_Window
 
 		//Objects
 		Object cube;
+		Object hollowCube;
 		#define circleVerticesNumber 48	// the fineness of cylinder and cone
 		Object cylinder;
 		Object cone;
