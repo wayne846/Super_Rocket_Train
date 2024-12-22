@@ -104,6 +104,8 @@ namespace RenderDatabase {
     extern const glm::vec3 GRAY_COLOR;
     extern const glm::vec3 DARK_COLOR;
     extern const glm::vec3 BLACK_COLOR;
+    extern const glm::vec3 SUN_COLOR;
+    extern const glm::vec3 WATER_COLOR;
 
     extern const float INIT_TIME_SCALE;
     extern const float BULLET_TIME_SCALE;

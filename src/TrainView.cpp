@@ -104,7 +104,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 #define WATER_RESOLUTION 100
 
 #define USE_MODEL true
-#define USE_WATER_ANIMATION false
+#define USE_WATER_ANIMATION true
 Assimp::Importer importer;
 
 //************************************************************************
@@ -209,7 +209,7 @@ int TrainView::handle(int event)
 				damage(1);
 				return 1;
 			}
-			else {
+			else if(tw->trainCam->value()) {
 				shoot();
 			}
 		};
@@ -1338,10 +1338,12 @@ void TrainView::draw()
 	//
 	//**********************************************************************
 	initLight();
+	//dirLight.direction = glm::vec3(0.577, 0.577, 0.577);
+	//dirLight.diffuse = RenderDatabase::SUN_COLOR;
 	//point light 0, main light
-	pointLights[0].position = glm::vec3(200.0f, 500.0f, 100.0f);
+	pointLights[0].position = glm::vec3(-350.0f, 500.0f, -300.0f);
 	pointLights[0].ambient = RenderDatabase::MIDDLE_GRAY_COLOR;
-	pointLights[0].diffuse = RenderDatabase::LIGHT_GRAY_COLOR;
+	pointLights[0].diffuse = RenderDatabase::SUN_COLOR;
 	pointLights[0].specular = RenderDatabase::WHITE_COLOR;
 	//point light 1, first controlpoint light
 	glm::vec3 firstContropointPos = glm::vec3(m_pTrack->points[0].pos.x, m_pTrack->points[0].pos.y, m_pTrack->points[0].pos.z);
@@ -1405,22 +1407,22 @@ void TrainView::draw()
 	lastSpeed = trainVelocity;
 
 	Pnt3f trainRight = trainFront * trainUp;
-	trainParticle1->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 4.0f - trainUp.glmvec3() * 3.0f + trainRight.glmvec3() * 3.0f);
-	trainParticle1->setDirection(-trainFront.glmvec3() + (2.5 * trainUp).glmvec3());
+	trainParticle1->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 10.0f - trainUp.glmvec3() * 4.0f + trainRight.glmvec3() * 5.0f);
+	trainParticle1->setDirection((-1 * trainFront + (1 * trainUp) + 0.2 * trainRight).glmvec3());
 	trainParticle1->setParticleLife(10);
 	trainParticle1->setGenerateRate(breakerStrength);
-	trainParticle1->setGravity(0.5);
+	trainParticle1->setGravity(0.3);
 	trainParticle1->setParticleVelocityRandomOffset(0.3);
 	trainParticle1->setParticleVelocity(3);
 	trainParticle1->setAngle(5);
 	trainParticle1->setParticleSize(1);
 	trainParticle1->setColor(glm::vec3(1, 0.95, 0), glm::vec3(1, 0.75, 0), glm::vec3(1, 0.75, 0), 0.8);
 
-	trainParticle2->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 4.0f - trainUp.glmvec3() * 3.0f - trainRight.glmvec3() * 3.0f);
-	trainParticle2->setDirection(-trainFront.glmvec3() + (2.5 * trainUp).glmvec3());
+	trainParticle2->setPosition(trainPos.glmvec3() + trainFront.glmvec3() * 10.0f - trainUp.glmvec3() * 4.0f - trainRight.glmvec3() * 5.0f);
+	trainParticle2->setDirection((-1*trainFront + (1 * trainUp) - 0.2 * trainRight).glmvec3());
 	trainParticle2->setParticleLife(10);
 	trainParticle2->setGenerateRate(breakerStrength);
-	trainParticle2->setGravity(0.5);
+	trainParticle2->setGravity(0.3);
 	trainParticle2->setParticleVelocityRandomOffset(0.3);
 	trainParticle2->setParticleVelocity(3);
 	trainParticle2->setAngle(5);
@@ -1825,9 +1827,9 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	glm::mat4 model = MathHelper::getTransformMatrix(pos, FRONT, UP, scale);
 
 	Material waterMaterial = {
-		glm::vec3(0.9255f, 0.7922f, 0.8392f),
-		glm::vec3(0.9255f, 0.7922f, 0.8392f),
-		glm::vec3(1.0f, 0.9725f, 0.9294f),
+		RenderDatabase::WATER_COLOR,
+		RenderDatabase::WATER_COLOR,
+		RenderDatabase::SUN_COLOR,
 		128.0f
 	};
 
