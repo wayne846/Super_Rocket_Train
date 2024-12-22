@@ -32,6 +32,8 @@ set(SRC_SHADER
     ${PROJECT_SOURCE_DIR}/assets/shaders/simpleObjectShadow.frag
     ${PROJECT_SOURCE_DIR}/assets/shaders/islandHeight.vert
     ${PROJECT_SOURCE_DIR}/assets/shaders/islandHeight.frag
+    ${PROJECT_SOURCE_DIR}/assets/shaders/skyBox.vert
+    ${PROJECT_SOURCE_DIR}/assets/shaders/skyBox.frag
 ) 
 
 set(SRC_RENDER_UNIT

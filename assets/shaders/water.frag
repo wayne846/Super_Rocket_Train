@@ -43,6 +43,11 @@ struct SpotLight {
     vec3 specular;
 };
 
+layout (std140) uniform Matrices{
+    mat4 view;
+    mat4 projection;
+};
+
 in V_OUT
 {
    vec3 position;
@@ -77,8 +82,13 @@ void main()
         0.0f, 1.0f, 0.0f
     );
     vec3 norm = texture(normalMap, f_in.texCoords).xyz;
-    norm = normalize(norm * 2.0 - 1.0);
-    norm = normalize(rotate * norm);
+    if(norm==vec3(0,0,0)){   // if not use the texture
+        norm=vec3(0,1,0);
+    } else{
+        norm = normalize(norm * 2.0 - 1.0);
+        norm = normalize(rotate * norm);
+        norm = normalize(norm + vec3(0,3,0));
+    }
     //norm = normalize(mat3(normalMatrix) * norm);
     
     vec3 eyeDir = normalize(eyePosition - f_in.position);
@@ -94,13 +104,12 @@ void main()
     for(int i = 0; i < NR_SPOT_LIGHTS; i++){
         result += CalcSpotLight(spotLights[i], norm, f_in.position, eyeDir);
     }
-
     vec4 reflectColor = texture(skybox, reflect(-eyeDir, norm));
     float ratio = 1.00 / 1.52;
     vec3 R = refract(-eyeDir, norm, ratio);
     vec4 refractColor = vec4(texture(skybox, R).rgb, 1.0);
     
-    f_color = mix(reflectColor, vec4(result, 1.0), 0);//vec4(result, 1.0);
+    f_color = mix(reflectColor, vec4(result, 1.0), 0.3);//vec4(result, 1.0);
     f_color.rgb = pow(f_color.rgb, vec3(1.0/gamma));
 }
 

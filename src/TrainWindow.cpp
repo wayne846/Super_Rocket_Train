@@ -156,6 +156,15 @@ TrainWindow(const int x, const int y)
 
 		pty += 50;
 
+		gamma = new Fl_Value_Slider(655, pty, 140, 20, "gamma");
+		gamma->range(0.1, 5);
+		gamma->value(2);
+		gamma->precision(2);
+		gamma->align(FL_ALIGN_LEFT);
+		gamma->type(FL_HORIZONTAL);
+
+		pty += 30;
+
 		drawShadow = new Fl_Button(605, pty, 60, 20, "Shadow");
 		togglify(drawShadow);
 

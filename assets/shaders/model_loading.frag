@@ -77,6 +77,7 @@ void main()
     }
     
     FragColor = vec4(result, 1.0);
+    FragColor.rgb = pow( FragColor.rgb, vec3(1.0/gamma));
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 eyeDir)

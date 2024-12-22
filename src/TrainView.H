@@ -120,6 +120,9 @@ class TrainView : public Fl_Gl_Window
 		void drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta = 0.0f);
 		void drawSmoke(const std::vector<glm::vec4> &points);
 
+		void setSkybox();
+		void drawSkybox();
+
 		// background
 		void drawSpeedBg();
 
@@ -197,6 +200,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* frameShader;
 		Shader* instanceShadowShader;
 		Shader* islandHeightShader;
+		Shader* skyboxShader;
 
 		//Uniform Buffer
 		unsigned int uboMatrices;
@@ -210,6 +214,7 @@ class TrainView : public Fl_Gl_Window
 		Object sector;
 		Object water; //1x1 plane
 		Object smoke;
+		Object skybox;
 		unsigned int particle; //just VAO
 		unsigned int frameVAO;
 		unsigned int screenFBO;
@@ -239,7 +244,7 @@ class TrainView : public Fl_Gl_Window
 		std::vector<std::pair<std::string,unsigned int>> objectTextures;
 		unsigned int waterHeightMap[200];
 		unsigned int waterNormalMap[200];
-		unsigned int skybox;
+		unsigned int skyboxTexture;
 
 		//particle system
 		ParticleSystem particleSystem;

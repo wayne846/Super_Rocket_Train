@@ -75,6 +75,9 @@
 #define OBJ_SHADOW_FRAG_PATH "/assets/shaders/simpleObjectshadow.frag"
 #define ISLAND_HEIGHT_VERT_PATH "/assets/shaders/islandHeight.vert"
 #define ISLAND_HEIGHT_FRAG_PATH "/assets/shaders/islandHeight.frag"
+#define SKYBOX_VERT_PATH "/assets/shaders/skyBox.vert"
+#define SKYBOX_FRAG_PATH "/assets/shaders/skyBox.frag"
+
 
 #define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
 #define WATER_NORMAL_PATH "/assets/images/waterNormal/"
@@ -100,8 +103,8 @@ const std::vector<std::string> SKYBOX_PATH = {
 
 #define WATER_RESOLUTION 100
 
-#define USE_MODEL false
-#define USE_WATER_ANIMATION false
+#define USE_MODEL true
+#define USE_WATER_ANIMATION true
 Assimp::Importer importer;
 
 //************************************************************************
@@ -327,7 +330,7 @@ void TrainView::initRander() {
 	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
 	instanceShadowShader = new Shader(PROJECT_DIR INSTANCE_SHADOW_VERT_PATH, PROJECT_DIR OBJ_SHADOW_FRAG_PATH);
 	islandHeightShader = new Shader(PROJECT_DIR ISLAND_HEIGHT_VERT_PATH, PROJECT_DIR ISLAND_HEIGHT_FRAG_PATH);
-
+	skyboxShader = new Shader(PROJECT_DIR SKYBOX_VERT_PATH, PROJECT_DIR SKYBOX_FRAG_PATH);
 
 	//init texture
 	if (USE_WATER_ANIMATION) {
@@ -345,7 +348,7 @@ void TrainView::initRander() {
 		}
 	}
 
-	skybox = RenderDatabase::loadCubemap(SKYBOX_PATH);
+	skyboxTexture = RenderDatabase::loadCubemap(SKYBOX_PATH);
 
 	// set object textures
 	setObjectTexture("targetImage", "targetImage.png");
@@ -368,6 +371,7 @@ void TrainView::initRander() {
 	speedBgShader->setBlock("Matrices", 0);
 	instanceShadowShader->setBlock("Matrices", 0);
 	islandHeightShader->setBlock("Matrices", 0);
+	skyboxShader->setBlock("Matrices", 0);
 
 	//set ubo
 	//0 for view and project matrix
@@ -389,6 +393,7 @@ void TrainView::initRander() {
 	setSector();
 	setWater();
 	setSmoke();
+	setSkybox();
 	setFBOs();
 	glGenVertexArrays(1, &particle);
 
@@ -1435,8 +1440,14 @@ void TrainView::draw()
 		drawStuff(true);
 		unsetupShadows();
 	}*/
+
+	
+
 	if (animationFrame >= keyFrame[8]) {
 		drawSpeedBg();
+	}
+	else {
+		drawSkybox();
 	}
 
 	if (RenderDatabase::timeScale == RenderDatabase::BULLET_TIME_SCALE)
@@ -1679,8 +1690,10 @@ void TrainView::setShaders() {
 			shaders[i]->setFloat("spotLights[" + std::to_string(j) + "].quadratic", spotLights[j].quadratic);
 		}
 
-		shaders[i]->setFloat("gamma", 2);
+		shaders[i]->setFloat("gamma", tw->gamma->value());
 	}
+	skyboxShader->use();
+	skyboxShader->setFloat("gamma", tw->gamma->value());
 
 	//set back to opengl fixed pipeline
 	glUseProgram(0);
@@ -1771,9 +1784,9 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	glm::mat4 model = MathHelper::getTransformMatrix(pos, FRONT, UP, scale);
 
 	Material waterMaterial = {
-		glm::vec3(0.25f, 0.52f, 0.96f),
-		glm::vec3(0.25f, 0.52f, 0.96f),
-		glm::vec3(1.0f, 1.0f, 1.0f),
+		glm::vec3(0.9255f, 0.7922f, 0.8392f),
+		glm::vec3(0.9255f, 0.7922f, 0.8392f),
+		glm::vec3(1.0f, 0.9725f, 0.9294f),
 		128.0f
 	};
 
@@ -1797,7 +1810,7 @@ void TrainView::drawWater(glm::vec3 pos, glm::vec3 scale, float rotateTheta) {
 	glBindTexture(GL_TEXTURE_2D, waterNormalMap[frameNum % 200]);
 	waterShader->setInt("normalMap", 1);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
 	waterShader->setInt("skybox", 2);
 
 	glBindVertexArray(water.VAO);
@@ -1825,6 +1838,79 @@ void TrainView::drawSmoke(const std::vector<glm::vec4>& points)
 
 	//unbind shader(switch to fixed pipeline)
 	glUseProgram(0);
+}
+void TrainView::setSkybox()
+{
+	float skyBoxVertices[] = {
+		// positions          
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
+	};
+
+	glGenVertexArrays(1, &skybox.VAO);
+	glGenBuffers(2, skybox.VBO);
+	glGenBuffers(1, &skybox.EBO);
+	glBindVertexArray(skybox.VAO);
+	// Position attribute
+	glBindBuffer(GL_ARRAY_BUFFER, skybox.VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyBoxVertices), skyBoxVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+void TrainView::drawSkybox()
+{
+	glDepthFunc(GL_LEQUAL);
+	skyboxShader->use();
+	glBindVertexArray(skybox.VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skybox.VBO[0]);
+	glActiveTexture(GL_TEXTURE0);
+	skyboxShader->setInt("skybox", 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+	glDepthFunc(GL_LESS);
 }
 void TrainView::drawSpeedBg()
 {
@@ -2040,11 +2126,13 @@ void TrainView::drawStuff(bool doingShadows)
 	//drawTree(glm::vec3(0, 0, 0));
 
 	//draw the water
-	drawWater(glm::vec3(0, -120, 0), glm::vec3(1000, 1, 1000));
+	drawWater(glm::vec3(0, -120, 0), glm::vec3(2500, 1, 2500));
 
 	//draw modle
 	if (USE_MODEL) {
 		modelShader->use();
+		float modelGamma = log2(tw->gamma->value()*10)/4.32193;
+		modelShader->setFloat("gamma", modelGamma);
 
 		//draw island
 		glm::mat4 islandModel = MathHelper::getTransformMatrix(glm::vec3(-150, -280, 170), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.5, 0.5, 0.5));
@@ -2077,6 +2165,7 @@ void TrainView::drawStuff(bool doingShadows)
 
 		//FUMO(fumo)(9)
 		if (!tw->trainCam->value() || animationFrame > 0) {
+			modelShader->setFloat("gamma", modelGamma + 1.12);
 			Pnt3f trainRight = trainFront * trainUp;
 			trainRight.normalize();
 			Pnt3f CirnoFront = trainFront + trainRight * 1.25;
@@ -2084,6 +2173,7 @@ void TrainView::drawStuff(bool doingShadows)
 			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
 			modelShader->setMat4("model", CirnoModel);
 			Cirno->Draw(modelShader);
+			modelShader->setFloat("gamma", modelGamma);
 		}
 
 		//draw tank
@@ -2517,10 +2607,12 @@ Pnt3f TrainView::randUnitVector() {
 void TrainView::addTarget()
 {
 	using namespace std;
-	int range = 100;
-	int x = -range + (rand() % (2 * range));
-	int y = 5 + rand() % (range);
-	int z = -range + (rand() % (2 * range));
+	int rangeX = (140) - (-260);
+	int rangeY = 100;
+	int rangeZ = (350) - (-70);
+	int x = -260 + (rand() % rangeX);
+	int y = 5 + rand() % (rangeY);
+	int z = -70 + (rand() % rangeZ);
 
 	Pnt3f front = randUnitVector();
 	front.normalize();
