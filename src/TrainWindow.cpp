@@ -105,6 +105,16 @@ TrainWindow(const int x, const int y)
 		freeCam->value(0);
 		freeCam->selection_color((Fl_Color)3);
 		freeCam->callback((Fl_Callback*)damageCB, this);
+		CirnoCam = new Fl_Button(670, pty, 60, 20, "Cirno");
+		CirnoCam->type(FL_RADIO_BUTTON);
+		CirnoCam->value(0);
+		CirnoCam->selection_color((Fl_Color)3);
+		CirnoCam->callback((Fl_Callback*)damageCB, this);
+		CirnoerCam = new Fl_Button(735, pty, 60, 20, "Cirnoer");
+		CirnoerCam->type(FL_RADIO_BUTTON);
+		CirnoerCam->value(0);
+		CirnoerCam->selection_color((Fl_Color)3);
+		CirnoerCam->callback((Fl_Callback*)damageCB, this);
 		camGroup->end();
 
 		pty += 30;

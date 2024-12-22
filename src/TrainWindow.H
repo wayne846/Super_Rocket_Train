@@ -88,6 +88,8 @@ class TrainWindow : public Fl_Double_Window {
 		Fl_Button*			trainCam;
 		Fl_Button*			topCam;
 		Fl_Button*			freeCam;
+		Fl_Button*			CirnoCam;
+		Fl_Button*			CirnoerCam;
 
 		// the type of the spline (use its value to determine)
 		Fl_Browser*			splineBrowser;

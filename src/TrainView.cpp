@@ -104,7 +104,7 @@ const std::vector<std::string> SKYBOX_PATH = {
 #define WATER_RESOLUTION 100
 
 #define USE_MODEL true
-#define USE_WATER_ANIMATION true
+#define USE_WATER_ANIMATION false
 Assimp::Importer importer;
 
 //************************************************************************
@@ -204,7 +204,7 @@ int TrainView::handle(int event)
 		last_push = Fl::event_button();
 		// if the left button be pushed is left mouse button
 		if (last_push == FL_LEFT_MOUSE) {
-			if (!tw->trainCam->value()) {
+			if (tw->worldCam->value()|| tw->topCam->value() || tw->freeCam->value()) {
 				doPick();
 				damage(1);
 				return 1;
@@ -1441,7 +1441,7 @@ void TrainView::draw()
 		unsetupShadows();
 	}*/
 
-	
+
 
 	if (animationFrame >= keyFrame[8]) {
 		drawSpeedBg();
@@ -1630,7 +1630,42 @@ setProjection()
 			camUp.x, camUp.y, camUp.z
 		);
 	}
+	else if (tw->CirnoCam->value()) {
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(100, aspect, 1, 10000);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
 
+		Pnt3f trainRight = trainFront * trainUp;
+		trainRight.normalize();
+		Pnt3f camPos = trainPos + trainUp * 7.9 + trainFront * 9.99 + trainRight * 0.5;
+		Pnt3f camDir = -1 * trainFront + trainUp * 0.4;
+		Pnt3f camUp = camDir * trainRight;
+		gluLookAt(
+			camPos.x, camPos.y, camPos.z,
+			camPos.x + camDir.x, camPos.y + camDir.y, camPos.z + camDir.z,
+			camUp.x, camUp.y, camUp.z
+		);
+	}
+	else if (tw->CirnoerCam->value()) {
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(100, aspect, 1, 10000);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		Pnt3f trainRight = trainFront * trainUp;
+		trainRight.normalize();
+		Pnt3f camPos = trainPos + trainUp * 7.9 + trainFront * 3.22 + trainRight * 0.5;
+		Pnt3f camDir = -1 * trainFront + trainUp * 0.4;
+		Pnt3f camUp = camDir * trainRight;
+		gluLookAt(
+			camPos.x, camPos.y, camPos.z,
+			camPos.x + camDir.x, camPos.y + camDir.y, camPos.z + camDir.z,
+			camUp.x, camUp.y, camUp.z
+		);
+	}
 }
 
 //set shader uniform, like view, projection, lights...
@@ -1653,6 +1688,7 @@ void TrainView::setShaders() {
 	for (int i = 0; i < size; i++) {
 		shaders[i]->use();
 
+		Pnt3f trainRight = trainFront * trainUp;
 		//set the uniform
 		if (tw->worldCam->value() || tw->topCam->value())
 			eyepos = glm::vec3(view[0][2] * -arcball.getEyePos().z, view[1][2] * -arcball.getEyePos().z, view[2][2] * -arcball.getEyePos().z);
@@ -1660,6 +1696,11 @@ void TrainView::setShaders() {
 			eyepos = freeCamera.getPosition();
 		else if (tw->trainCam->value() && animationFrame == 0)
 			eyepos = trainPos.glmvec3();
+		else if (tw->CirnoCam->value())
+			eyepos = (trainPos + trainUp * 7.9 + trainFront * 9.99 + trainRight * 0.5).glmvec3();
+		else if (tw->CirnoerCam->value())
+			eyepos = (trainPos + trainUp * 7.9 + trainFront * 3.22 + trainRight * 0.5).glmvec3();
+
 
 		shaders[i]->setVec3("eyePosition", eyepos);
 
@@ -2131,7 +2172,7 @@ void TrainView::drawStuff(bool doingShadows)
 	//draw modle
 	if (USE_MODEL) {
 		modelShader->use();
-		float modelGamma = log2(tw->gamma->value()*10)/4.32193;
+		float modelGamma = log2(tw->gamma->value() * 10) / 4.32193;
 		modelShader->setFloat("gamma", modelGamma);
 
 		//draw island
@@ -2312,7 +2353,7 @@ void TrainView::drawStuff(bool doingShadows)
 			static Pnt3f lastPos(qt1);
 			Pnt3f difference = qt1 - qt0;
 			Pnt3f trackUp = (cross_t * difference).glmvec3();
-			float remoteness = (qt0 + (-1) * eyepos).len()*0.2+100;
+			float remoteness = (qt0 + (-1) * eyepos).len() * 0.2 + 100;
 			float Accuracy = (remoteness) / (remoteness - 1) - 0.01;
 			if ((difference.len2() > 0 && MathHelper::cos(lastDir, difference) < Accuracy || MathHelper::cos(lastUp, cross_t) < Accuracy || (lastPos - qt1).len2() > 10000) || finalRound) {
 				Pnt3f trackCenter1 = (qt1 + lastPos + cross_t * 2) * 0.5f;
