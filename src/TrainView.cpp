@@ -1124,7 +1124,7 @@ void TrainView::setWater()
 		for (int j = 0; j < WATER_RESOLUTION; j++) {
 			int t = (i * WATER_RESOLUTION + j) * 3;
 			waterVertices[t] = j / (float)(WATER_RESOLUTION - 1) - 0.5f;
-			waterVertices[t + 1] = 0;
+			waterVertices[t + 1] = -30;
 			waterVertices[t + 2] = i / (float)(WATER_RESOLUTION - 1) - 0.5f;
 		}
 	}

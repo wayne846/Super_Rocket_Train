@@ -42,16 +42,17 @@ void main()
 
     // bullet time
     if (bulletTime){
-        color =reduceSaturation(color,0.8);
 
         vec2 outward = TexCoords-vec2(0.5,0.5);
         color = mix(color,texture(screenTexture, TexCoords-outward*0.04),0.05);
         color = mix(color,texture(screenTexture, TexCoords-outward*0.03),0.1);
         color = mix(color,texture(screenTexture, TexCoords-outward*0.02),0.15);
         color = mix(color,texture(screenTexture, TexCoords-outward*0.01),0.2);
+
+        color =reduceSaturation(color,0.8);
         float r = abs((TexCoords.x-0.5)*(TexCoords.x-0.5)*4+(TexCoords.y-0.5)*(TexCoords.y-0.5)*4);
         color = mix(color,black,(r-0.5)*0.5);
-
+        color = mix(color,black,0.1);
         if(texture(whiteLineTexture, vec2(TexCoords.x+0.0017f,TexCoords.y))!=texture(whiteLineTexture, vec2(TexCoords.x,TexCoords.y+0.0017f)))
             color = white;
     }

@@ -151,7 +151,7 @@ void loadCB(Fl_Widget*, TrainWindow* tw)
 //===========================================================================
 {
 	const char* fname = 
-		fl_file_chooser("Pick a Track File","*.txt","E:\\Documents\\NTUST\\Track Files");
+		fl_file_chooser("Pick a Track File","*.txt","\\Track Files");
 	if (fname) {
 		tw->m_Track.readPoints(fname);
 		tw->damageMe();
