@@ -139,6 +139,11 @@ public:
     {
         loadModel(path);
     }
+
+    Model(std::string path) {
+        loadModel(path);
+    }
+
     void Draw(Shader* shader);
 private:
     // model data 

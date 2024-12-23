@@ -140,6 +140,9 @@ class TrainView : public Fl_Gl_Window
 		void gigaDrillBreak();
 		Pnt3f randUnitVector();
 
+		//get executable file path
+		std::string getExecutableDir();
+
 	public:
 		float DIVIDE_LINE_SCALE = 2; //how many segment are track divide
 		const int MATERIAL_SHAPE = 0;
@@ -160,6 +163,8 @@ class TrainView : public Fl_Gl_Window
 		float trainVelocity = 0;
 
 	private:
+		std::string exePath; //executable file path
+
 		std::vector<float> arcLength;
 		Pnt3f trainPos;
 		Pnt3f trainFront;
