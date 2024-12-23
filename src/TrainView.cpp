@@ -49,56 +49,63 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#define SIMPLE_OBJECT_VERT_PATH "/assets/shaders/simpleObject.vert"
-#define SIMPLE_OBJECT_FRAG_PATH "/assets/shaders/simpleObject.frag"
-#define INSTANCE_OBJECT_VERT_PATH "/assets/shaders/instanceObject.vert"
-#define PIER_FRAG_PATH "/assets/shaders/pier.frag"
-#define SMOKE_VERT_PATH "/assets/shaders/smoke.vert"
-#define SMOKE_FRAG_PATH "/assets/shaders/smoke.frag"
-#define WATER_VERT_PATH "/assets/shaders/water.vert"
-#define WATER_FRAG_PATH "/assets/shaders/water.frag"
-#define MODEL_VERT_PATH "/assets/shaders/model_loading.vert"
-#define MODEL_FRAG_PATH "/assets/shaders/model_loading.frag"
-#define PARTICLE_VERT_PATH "/assets/shaders/particle.vert"
-#define PARTICLE_FRAG_PATH "/assets/shaders/particle.frag"
-#define ELLIPTICAL_PARTICLE_VERT_PATH "/assets/shaders/ellipticalParticle.vert"
-#define ELLIPTICAL_PARTICLE_FRAG_PATH "/assets/shaders/ellipticalParticle.frag"
-#define FRAME_VERT_PATH "/assets/shaders/frame.vert"
-#define FRAME_FRAG_PATH "/assets/shaders/frame.frag"
-#define WHITELINE_VERT_PATH "/assets/shaders/whiteLine.vert"
-#define WHITELINE_FRAG_PATH "/assets/shaders/whiteLine.frag"
-#define DRILL_VERT_PATH "/assets/shaders/drill.vert"
-#define DRILL_FRAG_PATH "/assets/shaders/drill.frag"
-#define SPEEDBG_VERT_PATH "/assets/shaders/speedBg.vert"
-#define SPEEDBG_FRAG_PATH "/assets/shaders/speedBg.frag"
-#define INSTANCE_SHADOW_VERT_PATH "/assets/shaders/instanceObjectShadow.vert"
-#define OBJ_SHADOW_FRAG_PATH "/assets/shaders/simpleObjectshadow.frag"
-#define ISLAND_HEIGHT_VERT_PATH "/assets/shaders/islandHeight.vert"
-#define ISLAND_HEIGHT_FRAG_PATH "/assets/shaders/islandHeight.frag"
-#define SKYBOX_VERT_PATH "/assets/shaders/skyBox.vert"
-#define SKYBOX_FRAG_PATH "/assets/shaders/skyBox.frag"
+#define SIMPLE_OBJECT_VERT_PATH "assets/shaders/simpleObject.vert"
+#define SIMPLE_OBJECT_FRAG_PATH "assets/shaders/simpleObject.frag"
+#define INSTANCE_OBJECT_VERT_PATH "assets/shaders/instanceObject.vert"
+#define PIER_FRAG_PATH "assets/shaders/pier.frag"
+#define SMOKE_VERT_PATH "assets/shaders/smoke.vert"
+#define SMOKE_FRAG_PATH "assets/shaders/smoke.frag"
+#define WATER_VERT_PATH "assets/shaders/water.vert"
+#define WATER_FRAG_PATH "assets/shaders/water.frag"
+#define MODEL_VERT_PATH "assets/shaders/model_loading.vert"
+#define MODEL_FRAG_PATH "assets/shaders/model_loading.frag"
+#define PARTICLE_VERT_PATH "assets/shaders/particle.vert"
+#define PARTICLE_FRAG_PATH "assets/shaders/particle.frag"
+#define ELLIPTICAL_PARTICLE_VERT_PATH "assets/shaders/ellipticalParticle.vert"
+#define ELLIPTICAL_PARTICLE_FRAG_PATH "assets/shaders/ellipticalParticle.frag"
+#define FRAME_VERT_PATH "assets/shaders/frame.vert"
+#define FRAME_FRAG_PATH "assets/shaders/frame.frag"
+#define WHITELINE_VERT_PATH "assets/shaders/whiteLine.vert"
+#define WHITELINE_FRAG_PATH "assets/shaders/whiteLine.frag"
+#define DRILL_VERT_PATH "assets/shaders/drill.vert"
+#define DRILL_FRAG_PATH "assets/shaders/drill.frag"
+#define SPEEDBG_VERT_PATH "assets/shaders/speedBg.vert"
+#define SPEEDBG_FRAG_PATH "assets/shaders/speedBg.frag"
+#define INSTANCE_SHADOW_VERT_PATH "assets/shaders/instanceObjectShadow.vert"
+#define OBJ_SHADOW_FRAG_PATH "assets/shaders/simpleObjectshadow.frag"
+#define ISLAND_HEIGHT_VERT_PATH "assets/shaders/islandHeight.vert"
+#define ISLAND_HEIGHT_FRAG_PATH "assets/shaders/islandHeight.frag"
+#define SKYBOX_VERT_PATH "assets/shaders/skyBox.vert"
+#define SKYBOX_FRAG_PATH "assets/shaders/skyBox.frag"
 
+//3D models path
+#define WATER_HEIGHT_PATH "assets/images/waterHeight/"
+#define WATER_NORMAL_PATH "assets/images/waterNormal/"
+#define OBJECT_TEXTURE_PATH "assets/images/objectTexture/"
+#define BACKPACK_PATH "assets/model/backpack/backpack.obj"
+#define ISLAND_PATH "assets/model/island/floating_island.obj"
+#define STONE_PILLAR_PATH "assets/model/stone_pillar/stone_pillar.obj"
+#define STONE_PILLAR_SECTION_PATH "assets/model/stone_pillar_section/stone_pillar_section.obj"
+#define ARROW_RED_PATH "assets/model/arrow_red/arrow_boi.obj"
+#define ARROW_BLUE_PATH "assets/model/arrow_blue/arrow_boi.obj"
+#define CIRNO_PATH "assets/model/Cirno/cirno_fumo_3d_scan.obj"
+#define TANK_PATH "assets/model/tank/tank.obj"
+#define CANNON_PATH "assets/model/cannon/cannon.obj"
 
-#define WATER_HEIGHT_PATH "/assets/images/waterHeight/"
-#define WATER_NORMAL_PATH "/assets/images/waterNormal/"
-#define OBJECT_TEXTURE_PATH "/assets/images/objectTexture/"
-#define BACKPACK_PATH "/assets/model/backpack/backpack.obj"
-#define ISLAND_PATH "/assets/model/island/floating_island.obj"
-#define STONE_PILLAR_PATH "/assets/model/stone_pillar/stone_pillar.obj"
-#define STONE_PILLAR_SECTION_PATH "/assets/model/stone_pillar_section/stone_pillar_section.obj"
-#define ARROW_RED_PATH "/assets/model/arrow_red/arrow_boi.obj"
-#define ARROW_BLUE_PATH "/assets/model/arrow_blue/arrow_boi.obj"
-#define CIRNO_PATH "/assets/model/Cirno/cirno_fumo_3d_scan.obj"
-#define TANK_PATH "/assets/model/tank/tank.obj"
-#define CANNON_PATH "/assets/model/cannon/cannon.obj"
+//sound path
+#define RPG_EXPLOSION_PATH "assets/Audios/RPGExplosion.wav"
+#define SLOW_MOTION_START_PATH "assets/Audios/slowMotionStart.wav"
+#define SLOW_MOTION_END_PATH "assets/Audios/slowMotionEnd.wav"
+#define METAL_PIPE_FALLING_PATH "assets/Audios/MetalPipeFalling.wav"
+#define GIGA_DRILL_BREAK_PATH "assets/Audios/GigaDrillBreak.wav"
 
-const std::vector<std::string> SKYBOX_PATH = {
-	PROJECT_DIR "/assets/images/skybox/right.jpg",
-	PROJECT_DIR "/assets/images/skybox/left.jpg",
-	PROJECT_DIR "/assets/images/skybox/top.jpg",
-	PROJECT_DIR "/assets/images/skybox/bottom.jpg",
-	PROJECT_DIR "/assets/images/skybox/front.jpg",
-	PROJECT_DIR "/assets/images/skybox/back.jpg"
+std::vector<std::string> SKYBOX_PATH = {
+	"assets/images/skybox/right.jpg",
+	"assets/images/skybox/left.jpg",
+	"assets/images/skybox/top.jpg",
+	"assets/images/skybox/bottom.jpg",
+	"assets/images/skybox/front.jpg",
+	"assets/images/skybox/back.jpg"
 };
 
 #define WATER_RESOLUTION 100
@@ -122,18 +129,26 @@ TrainView(int x, int y, int w, int h, const char* l)
 	freeCamera.setWindow(this);
 	srand(static_cast<unsigned>(time(0)));
 
+	//set the executable file path
+	exePath = getExecutableDir();
+
 	//sound
 	soundDevice = SoundDevice::get();
-	RPGshot = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/RPGExplosion.wav");
-	slowMotionStart = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/slowMotionStart.wav");
-	slowMotionEnd = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/slowMotionEnd.wav");
-	targetExplosion = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/MetalPipeFalling.wav");
-	GDBEffect = SoundBuffer::get()->addSoundEffect(PROJECT_DIR "/Audios/GigaDrillBreak.wav");
+	RPGshot = SoundBuffer::get()->addSoundEffect((exePath + RPG_EXPLOSION_PATH).c_str());
+	slowMotionStart = SoundBuffer::get()->addSoundEffect((exePath + SLOW_MOTION_START_PATH).c_str());
+	slowMotionEnd = SoundBuffer::get()->addSoundEffect((exePath + SLOW_MOTION_END_PATH).c_str());
+	targetExplosion = SoundBuffer::get()->addSoundEffect((exePath + METAL_PIPE_FALLING_PATH).c_str() );
+	GDBEffect = SoundBuffer::get()->addSoundEffect((exePath + GIGA_DRILL_BREAK_PATH).c_str());
 	soundSource_RPGshot = new SoundSource();
 	soundSource_slowMotionStart = new SoundSource();
 	soundSource_slowMotionEnd = new SoundSource();
 	soundSource_targetExplosion = new SoundSource();
 	soundSource_GDBEffect = new SoundSource();
+
+	//set skybox path
+	for (int i = 0; i < SKYBOX_PATH.size(); i++) {
+		SKYBOX_PATH[i] = exePath + SKYBOX_PATH[i];
+	}
 }
 
 //************************************************************************
@@ -316,39 +331,43 @@ int TrainView::handle(int event)
 //init shader, texture, trainModel, VAO. need called under if(gladLoadGL())
 void TrainView::initRander() {
 	//init shader
-	simpleObjectShader = new Shader(PROJECT_DIR SIMPLE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
-	simpleInstanceObjectShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR SIMPLE_OBJECT_FRAG_PATH);
-	pierShader = new Shader(PROJECT_DIR INSTANCE_OBJECT_VERT_PATH, PROJECT_DIR PIER_FRAG_PATH);
-	whiteLineShader = new Shader(PROJECT_DIR WHITELINE_VERT_PATH, PROJECT_DIR WHITELINE_FRAG_PATH);
-	drillShader = new Shader(PROJECT_DIR DRILL_VERT_PATH, PROJECT_DIR DRILL_FRAG_PATH);
-	waterShader = new Shader(PROJECT_DIR WATER_VERT_PATH, PROJECT_DIR WATER_FRAG_PATH);
-	smokeShader = new Shader(PROJECT_DIR SMOKE_VERT_PATH, PROJECT_DIR SMOKE_FRAG_PATH);
-	modelShader = new Shader(PROJECT_DIR MODEL_VERT_PATH, PROJECT_DIR MODEL_FRAG_PATH);
-	particleShader = new Shader(PROJECT_DIR PARTICLE_VERT_PATH, PROJECT_DIR PARTICLE_FRAG_PATH);
-	ellipticalParticleShader = new Shader(PROJECT_DIR ELLIPTICAL_PARTICLE_VERT_PATH, PROJECT_DIR ELLIPTICAL_PARTICLE_FRAG_PATH);
-	speedBgShader = new Shader(PROJECT_DIR SPEEDBG_VERT_PATH, PROJECT_DIR SPEEDBG_FRAG_PATH);
-	frameShader = new Shader(PROJECT_DIR FRAME_VERT_PATH, PROJECT_DIR FRAME_FRAG_PATH);
-	instanceShadowShader = new Shader(PROJECT_DIR INSTANCE_SHADOW_VERT_PATH, PROJECT_DIR OBJ_SHADOW_FRAG_PATH);
-	islandHeightShader = new Shader(PROJECT_DIR ISLAND_HEIGHT_VERT_PATH, PROJECT_DIR ISLAND_HEIGHT_FRAG_PATH);
-	skyboxShader = new Shader(PROJECT_DIR SKYBOX_VERT_PATH, PROJECT_DIR SKYBOX_FRAG_PATH);
+	simpleObjectShader = new Shader((exePath + SIMPLE_OBJECT_VERT_PATH).c_str(), (exePath + SIMPLE_OBJECT_FRAG_PATH).c_str());
+	simpleInstanceObjectShader = new Shader((exePath + INSTANCE_OBJECT_VERT_PATH).c_str(), (exePath + SIMPLE_OBJECT_FRAG_PATH).c_str());
+	pierShader = new Shader((exePath + INSTANCE_OBJECT_VERT_PATH).c_str(), (exePath + PIER_FRAG_PATH).c_str());
+	whiteLineShader = new Shader((exePath + WHITELINE_VERT_PATH).c_str(), (exePath + WHITELINE_FRAG_PATH).c_str());
+	drillShader = new Shader((exePath + DRILL_VERT_PATH).c_str(), (exePath + DRILL_FRAG_PATH).c_str());
+	waterShader = new Shader((exePath + WATER_VERT_PATH).c_str(), (exePath + WATER_FRAG_PATH).c_str());
+	smokeShader = new Shader((exePath + SMOKE_VERT_PATH).c_str(), (exePath + SMOKE_FRAG_PATH).c_str());
+	modelShader = new Shader((exePath + MODEL_VERT_PATH).c_str(), (exePath + MODEL_FRAG_PATH).c_str());
+	particleShader = new Shader((exePath + PARTICLE_VERT_PATH).c_str(), (exePath + PARTICLE_FRAG_PATH).c_str());
+	ellipticalParticleShader = new Shader((exePath + ELLIPTICAL_PARTICLE_VERT_PATH).c_str(), (exePath + ELLIPTICAL_PARTICLE_FRAG_PATH).c_str());
+	speedBgShader = new Shader((exePath + SPEEDBG_VERT_PATH).c_str(), (exePath + SPEEDBG_FRAG_PATH).c_str());
+	frameShader = new Shader((exePath + FRAME_VERT_PATH).c_str(), (exePath + FRAME_FRAG_PATH).c_str());
+	instanceShadowShader = new Shader((exePath + INSTANCE_SHADOW_VERT_PATH).c_str(), (exePath + OBJ_SHADOW_FRAG_PATH).c_str());
+	islandHeightShader = new Shader((exePath + ISLAND_HEIGHT_VERT_PATH).c_str(), (exePath + ISLAND_HEIGHT_FRAG_PATH).c_str());
+	skyboxShader = new Shader((exePath + SKYBOX_VERT_PATH).c_str(), (exePath + SKYBOX_FRAG_PATH).c_str());
 
 	//init texture
+	printf("Loading texture...\n");
+	float textureStart = std::clock();
 	if (USE_WATER_ANIMATION) {
 		for (int i = 0; i < 200; i++) {
 			std::string zero = "00";
 			if (i >= 10 && i < 100) zero = "0";
 			if (i >= 100) zero = "";
-			waterHeightMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
+			waterHeightMap[i] = RenderDatabase::loadTexture(exePath + WATER_HEIGHT_PATH + (zero + std::to_string(i) + ".png"));
 		}
 		for (int i = 0; i < 200; i++) {
 			std::string zero = "00";
 			if (i >= 10 && i < 100) zero = "0";
 			if (i >= 100) zero = "";
-			waterNormalMap[i] = RenderDatabase::loadTexture(PROJECT_DIR WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
+			waterNormalMap[i] = RenderDatabase::loadTexture(exePath + WATER_NORMAL_PATH + (zero + std::to_string(i) + "_normal.png"));
 		}
 	}
 
 	skyboxTexture = RenderDatabase::loadCubemap(SKYBOX_PATH);
+
+	printf("Loading texture done. (use %.2fs)\n", (std::clock() - textureStart) / 1000);
 
 	// set object textures
 	setObjectTexture("targetImage", "targetImage.png");
@@ -402,15 +421,15 @@ void TrainView::initRander() {
 		printf("Loading model...\n");
 		float start = std::clock();
 
-		backpack = new Model(PROJECT_DIR BACKPACK_PATH);
-		island = new Model(PROJECT_DIR ISLAND_PATH);
-		stonePillar = new Model(PROJECT_DIR STONE_PILLAR_PATH);
-		stonePillarSection = new Model(PROJECT_DIR STONE_PILLAR_SECTION_PATH);
-		arrow_red = new Model(PROJECT_DIR ARROW_RED_PATH);
-		arrow_blue = new Model(PROJECT_DIR ARROW_BLUE_PATH);
-		Cirno = new Model(PROJECT_DIR CIRNO_PATH);
-		tank = new Model(PROJECT_DIR TANK_PATH);
-		cannon = new Model(PROJECT_DIR CANNON_PATH);
+		backpack = new Model(exePath + BACKPACK_PATH);
+		island = new Model(exePath + ISLAND_PATH);
+		stonePillar = new Model(exePath + STONE_PILLAR_PATH);
+		stonePillarSection = new Model(exePath + STONE_PILLAR_SECTION_PATH);
+		arrow_red = new Model(exePath + ARROW_RED_PATH);
+		arrow_blue = new Model(exePath + ARROW_BLUE_PATH);
+		Cirno = new Model(exePath + CIRNO_PATH);
+		tank = new Model(exePath + TANK_PATH);
+		cannon = new Model(exePath + CANNON_PATH);
 
 		printf("Loading model done. (use %.2fs)\n", (std::clock() - start) / 1000);
 	}
@@ -1747,7 +1766,7 @@ void TrainView::setObjectTexture(std::string name, std::string texturePath)
 	unsigned int id = getObjectTexture(name);
 	if (id == -1) {
 		objectTextures.push_back(std::make_pair(
-			name, RenderDatabase::loadTexture(PROJECT_DIR OBJECT_TEXTURE_PATH + texturePath)
+			name, RenderDatabase::loadTexture(exePath + OBJECT_TEXTURE_PATH + texturePath)
 		));
 	}
 }
@@ -3097,4 +3116,21 @@ void TrainView::targetChainExplosionUpdate() {
 	if (animationTime > keyFrame[13]) {
 		targetChainExplosionStartTime = INFINITY;
 	}
+}
+
+// 取得執行檔所在目錄，並將路徑分隔符號轉換為 '/'
+std::string TrainView::getExecutableDir() {
+	char buffer[MAX_PATH];
+	GetModuleFileNameA(NULL, buffer, MAX_PATH);           // 取得完整路徑
+	std::string fullPath(buffer);
+
+	// 將 '\' 轉換為 '/'
+	for (char& c : fullPath) {
+		if (c == '\\') {
+			c = '/';
+		}
+	}
+
+	// 取得目錄部分（去除檔案名稱）
+	return fullPath.substr(0, fullPath.find_last_of("/")) + "/";
 }
