@@ -94,10 +94,10 @@
 #define CANNON_PATH "assets/model/cannon/cannon.obj"
 
 //sound path
-#define RPG_EXPLOSION_PATH "assets/Audios/RPGExplosion.wav"
+#define RPG_FIRE_PATH "assets/Audios/audio_player_missile_fire_1_edited.wav"
 #define SLOW_MOTION_START_PATH "assets/Audios/slowMotionStart.wav"
 #define SLOW_MOTION_END_PATH "assets/Audios/slowMotionEnd.wav"
-#define METAL_PIPE_FALLING_PATH "assets/Audios/MetalPipeFalling.wav"
+#define TARGET_EXPLOTION_PATH "assets/Audios/Explosion.wav"
 #define GIGA_DRILL_BREAK_PATH "assets/Audios/GigaDrillBreak.wav"
 
 std::vector<std::string> SKYBOX_PATH = {
@@ -135,10 +135,10 @@ TrainView(int x, int y, int w, int h, const char* l)
 
 	//sound
 	soundDevice = SoundDevice::get();
-	RPGshot = SoundBuffer::get()->addSoundEffect((exePath + RPG_EXPLOSION_PATH).c_str());
+	RPGshot = SoundBuffer::get()->addSoundEffect((exePath + RPG_FIRE_PATH).c_str());
 	slowMotionStart = SoundBuffer::get()->addSoundEffect((exePath + SLOW_MOTION_START_PATH).c_str());
 	slowMotionEnd = SoundBuffer::get()->addSoundEffect((exePath + SLOW_MOTION_END_PATH).c_str());
-	targetExplosion = SoundBuffer::get()->addSoundEffect((exePath + METAL_PIPE_FALLING_PATH).c_str() );
+	targetExplosion = SoundBuffer::get()->addSoundEffect((exePath + TARGET_EXPLOTION_PATH).c_str() );
 	GDBEffect = SoundBuffer::get()->addSoundEffect((exePath + GIGA_DRILL_BREAK_PATH).c_str());
 	soundSource_RPGshot = new SoundSource();
 	soundSource_slowMotionStart = new SoundSource();
