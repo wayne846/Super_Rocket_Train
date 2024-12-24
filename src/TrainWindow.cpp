@@ -89,7 +89,7 @@ TrainWindow(const int x, const int y)
         worldCam->value(1);			// turned on
         worldCam->selection_color((Fl_Color)3); // yellow when pressed
 		worldCam->callback((Fl_Callback*)damageCB,this);
-		trainCam = new Fl_Button(670, pty, 60, 20, "Train");
+		trainCam = new Fl_Button(670, pty, 60, 20, "Tank");
         trainCam->type(FL_RADIO_BUTTON);
         trainCam->value(0);
         trainCam->selection_color((Fl_Color)3);
@@ -177,6 +177,10 @@ TrainWindow(const int x, const int y)
 
 		drawShadow = new Fl_Button(605, pty, 60, 20, "Shadow");
 		togglify(drawShadow);
+		drawShadow->set();
+		showControlPoint = new Fl_Button(670, pty, 60, 20, "Points");
+		togglify(showControlPoint);
+		showControlPoint->set();
 
 		pty += 30;
 

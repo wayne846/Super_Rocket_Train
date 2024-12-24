@@ -124,7 +124,7 @@ public:
     std::vector<Texture>      textures;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
-    void Draw(Shader* shader);
+    void Draw(Shader* shader, bool doingShadow);
 private:
     //  render data
     unsigned int VAO, VBO, EBO;
@@ -144,7 +144,7 @@ public:
         loadModel(path);
     }
 
-    void Draw(Shader* shader);
+    void Draw(Shader* shader, bool doingShadow = false);
 private:
     // model data 
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.

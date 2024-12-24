@@ -72,6 +72,7 @@
 #define SPEEDBG_VERT_PATH "assets/shaders/speedBg.vert"
 #define SPEEDBG_FRAG_PATH "assets/shaders/speedBg.frag"
 #define INSTANCE_SHADOW_VERT_PATH "assets/shaders/instanceObjectShadow.vert"
+#define MODEL_SHADOW_VERT_PATH "assets/shaders/model_loading_shadow.vert"
 #define OBJ_SHADOW_FRAG_PATH "assets/shaders/simpleObjectshadow.frag"
 #define ISLAND_HEIGHT_VERT_PATH "assets/shaders/islandHeight.vert"
 #define ISLAND_HEIGHT_FRAG_PATH "assets/shaders/islandHeight.frag"
@@ -344,6 +345,7 @@ void TrainView::initRander() {
 	speedBgShader = new Shader((exePath + SPEEDBG_VERT_PATH).c_str(), (exePath + SPEEDBG_FRAG_PATH).c_str());
 	frameShader = new Shader((exePath + FRAME_VERT_PATH).c_str(), (exePath + FRAME_FRAG_PATH).c_str());
 	instanceShadowShader = new Shader((exePath + INSTANCE_SHADOW_VERT_PATH).c_str(), (exePath + OBJ_SHADOW_FRAG_PATH).c_str());
+	modelShadowShader = new Shader((exePath + MODEL_SHADOW_VERT_PATH).c_str(), (exePath + OBJ_SHADOW_FRAG_PATH).c_str());
 	islandHeightShader = new Shader((exePath + ISLAND_HEIGHT_VERT_PATH).c_str(), (exePath + ISLAND_HEIGHT_FRAG_PATH).c_str());
 	skyboxShader = new Shader((exePath + SKYBOX_VERT_PATH).c_str(), (exePath + SKYBOX_FRAG_PATH).c_str());
 
@@ -389,6 +391,7 @@ void TrainView::initRander() {
 	ellipticalParticleShader->setBlock("Matrices", 0);
 	speedBgShader->setBlock("Matrices", 0);
 	instanceShadowShader->setBlock("Matrices", 0);
+	modelShadowShader->setBlock("Matrices", 0);
 	islandHeightShader->setBlock("Matrices", 0);
 	skyboxShader->setBlock("Matrices", 0);
 
@@ -1408,6 +1411,9 @@ void TrainView::draw()
 			instanceShadowShader->use();
 			instanceShadowShader->setBool("useModel", true);
 			instanceShadowShader->setInt("islandHeight", 0);
+			modelShadowShader->use();
+			modelShadowShader->setBool("useModel", true);
+			modelShadowShader->setInt("islandHeight", 0);
 		}
 		pierShader->use();
 		pierShader->setBool("useModel", true);
@@ -2166,7 +2172,7 @@ void TrainView::drawStuff(bool doingShadows)
 	// Draw the control points
 	// don't draw the control points if you're driving 
 	// (otherwise you get sea-sick as you drive through them)
-	if (!tw->trainCam->value()) {
+	if (tw->showControlPoint->value() && (tw->worldCam->value() || tw->topCam->value())) {
 		for (size_t i = 0; i < m_pTrack->points.size(); ++i) {
 			if (!doingShadows) {
 				if (((int)i) != selectedCube)
@@ -2235,6 +2241,17 @@ void TrainView::drawStuff(bool doingShadows)
 			glm::mat4 CirnoModel = MathHelper::getTransformMatrix((trainPos + trainFront * 3 + trainUp * 8.8 + trainRight * 4).glmvec3(), CirnoFront.glmvec3(), trainUp.glmvec3(), glm::vec3(0.3, 0.3, 0.3));
 			modelShader->setMat4("model", CirnoModel);
 			Cirno->Draw(modelShader);
+			if (tw->drawShadow->value()) {
+				modelShadowShader->use();
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
+				modelShadowShader->setMat4("model", CirnoModel);
+				modelShadowShader->setBool("useModel", true);
+				modelShadowShader->setInt("islandHeight", 0);
+				Cirno->Draw(modelShadowShader,true);
+				glBindTexture(GL_TEXTURE_2D, 0);
+				modelShader->use();
+			}
 			modelShader->setFloat("gamma", modelGamma);
 		}
 
@@ -2242,17 +2259,47 @@ void TrainView::drawStuff(bool doingShadows)
 		glm::mat4 tankModel = MathHelper::getTransformMatrix(trainPos.glmvec3(), -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
 		modelShader->setMat4("model", tankModel);
 		tank->Draw(modelShader);
+		if (tw->drawShadow->value()) {
+			modelShadowShader->use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
+			modelShadowShader->setMat4("model", tankModel);
+			modelShadowShader->setBool("useModel", true);
+			modelShadowShader->setInt("islandHeight", 0);
+			tank->Draw(modelShadowShader, true);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			modelShader->use();
+		}
 		//draw cannon 
 		if (tw->trainCam->value()) {
 			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 5.0f + trainFront.glmvec3() * 4.0f, -lookingFront.glmvec3(), lookingUp.glmvec3(), glm::vec3(5, 5, 5));
 			modelShader->setMat4("model", cannonModel);
+			cannon->Draw(modelShader);
+			if (tw->drawShadow->value()) {
+				modelShadowShader->use();
+				modelShadowShader->setMat4("model", cannonModel);
+			}
 		}
 		else {
 			glm::mat4 cannonModel = MathHelper::getTransformMatrix(trainPos.glmvec3() + trainUp.glmvec3() * 3.0f + trainFront.glmvec3() * 4.0f, -trainFront.glmvec3(), trainUp.glmvec3(), glm::vec3(5, 5, 5));
 			modelShader->setMat4("model", cannonModel);
+			cannon->Draw(modelShader);
+			if (tw->drawShadow->value()) {
+				modelShadowShader->use();
+				modelShadowShader->setMat4("model", cannonModel);
+			}
 		}
-		cannon->Draw(modelShader);
-
+		
+		if (tw->drawShadow->value()) {
+			modelShadowShader->use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, islandHeightTexture);
+			modelShadowShader->setBool("useModel", true);
+			modelShadowShader->setInt("islandHeight", 0);
+			cannon->Draw(modelShadowShader, true);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			modelShader->use();
+		}
 		glBindVertexArray(0);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glUseProgram(0);

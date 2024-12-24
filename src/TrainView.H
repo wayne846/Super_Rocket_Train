@@ -204,6 +204,7 @@ class TrainView : public Fl_Gl_Window
 		Shader* speedBgShader;
 		Shader* frameShader;
 		Shader* instanceShadowShader;
+		Shader* modelShadowShader;
 		Shader* islandHeightShader;
 		Shader* skyboxShader;
 

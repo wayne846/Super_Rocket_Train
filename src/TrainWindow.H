@@ -102,6 +102,7 @@ class TrainWindow : public Fl_Double_Window {
 		Fl_Button*			arcLength;		// do we use arc length for speed?
 
 		Fl_Button*			drawShadow;
+		Fl_Button*			showControlPoint;
 
 		float clock_time = 0;
 
